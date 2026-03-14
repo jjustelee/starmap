@@ -594,7 +594,7 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
         setIsSealing(true);
         triggerHaptic(50);
 
-        console.log('Sealing prediction for stock:', stockInfo.id, 'Price:', s.currentPriceValue);
+        console.log('Sealing prediction for stock:', stockInfo.id, 'Price:', s.currentPriceValue, 'DEPLOY_CHECK_VER_1');
 
         try {
             const targetXRatio = s.finalTargetDate ? 0.5 : 0.2; 
