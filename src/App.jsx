@@ -167,36 +167,38 @@ function App() {
             <main className={view === 'detail' ? 'w-full py-8' : 'mx-auto max-w-2xl px-5 py-8'}>
                 {view === 'home' ? (
                     <div className="space-y-12 animate-in fade-in duration-700">
-                        {/* Hero */}
-                        <section className="space-y-8 pt-4 text-center">
-                            <div className="space-y-4">
-                                <p className="text-[11px] font-bold tracking-[0.32em] text-white/40 uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
-                                <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
-                                    사람들이 많이 적는<br /> 목표가를 확인하고<br />
-                                    <span className="bg-gradient-to-r from-neon-teal to-neon-pink bg-clip-text text-transparent">
-                                        내 목표가를 기록하세요
-                                    </span>
-                                </h2>
-                                <p className="mx-auto max-w-md text-sm leading-6 text-white/60 md:text-base">
-                                    맞추면 당신의 기록은 성지글이 되고,<br className="hidden sm:block" />
-                                    맞춘 글에는 성지순례가 몰립니다.
-                                </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-                                <button
-                                    onClick={() => popularStocks.length > 0 && handleStockClick(popularStocks[0])}
-                                    className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-5 py-4 text-sm font-extrabold text-white shadow-glowPink transition hover:scale-[1.01] active:scale-95"
-                                >
-                                    목표가 기록하기
-                                </button>
-                                <button
-                                    onClick={() => setView('sacred')}
-                                    className="rounded-2xl border border-white/12 bg-white/5 px-5 py-4 text-sm font-bold text-white/85 transition hover:bg-white/10 active:scale-95"
-                                >
-                                    오늘의 성지글 보기
-                                </button>
-                            </div>
-                        </section>
+                        {/* Hero - Hide when searching */}
+                        {!searchQuery && (
+                            <section className="space-y-8 pt-4 text-center">
+                                <div className="space-y-4">
+                                    <p className="text-[11px] font-bold tracking-[0.32em] text-white/40 uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
+                                    <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
+                                        사람들이 많이 적는<br /> 목표가를 확인하고<br />
+                                        <span className="bg-gradient-to-r from-neon-teal to-neon-pink bg-clip-text text-transparent">
+                                            내 목표가를 기록하세요
+                                        </span>
+                                    </h2>
+                                    <p className="mx-auto max-w-md text-sm leading-6 text-white/60 md:text-base">
+                                        맞추면 당신의 기록은 성지글이 되고,<br className="hidden sm:block" />
+                                        맞춘 글에는 성지순례가 몰립니다.
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                                    <button
+                                        onClick={() => popularStocks.length > 0 && handleStockClick(popularStocks[0])}
+                                        className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-5 py-4 text-sm font-extrabold text-white shadow-glowPink transition hover:scale-[1.01] active:scale-95"
+                                    >
+                                        목표가 기록하기
+                                    </button>
+                                    <button
+                                        onClick={() => setView('sacred')}
+                                        className="rounded-2xl border border-white/12 bg-white/5 px-5 py-4 text-sm font-bold text-white/85 transition hover:bg-white/10 active:scale-95"
+                                    >
+                                        오늘의 성지글 보기
+                                    </button>
+                                </div>
+                            </section>
+                        )}
 
                         {/* Search & Popular */}
                         <section className="space-y-6">
@@ -220,74 +222,108 @@ function App() {
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white/35">인기 종목</p>
-                                <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
-                                    {filteredStocks.map((stock) => (
-                                        <button
-                                            key={stock.id}
-                                            onClick={() => handleStockClick(stock)}
-                                            type="button"
-                                            className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:border-neon-teal/40 hover:bg-white/10"
-                                        >
-                                            {stock.name}
-                                        </button>
-                                    ))}
-                                    {stocksLoading && (
-                                        <div className="flex items-center gap-2 px-4 py-2 text-white/30 text-sm">
-                                            <div className="w-3 h-3 border border-white/20 border-t-neon-teal rounded-full animate-spin"></div>
-                                            로딩 중...
+                            <div className="space-y-4">
+                                {searchQuery ? (
+                                    <div className="space-y-2">
+                                        <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white/35">검색 결과</p>
+                                        <div className="grid gap-2">
+                                            {filteredStocks.length > 0 ? (
+                                                filteredStocks.map((stock) => (
+                                                    <button
+                                                        key={stock.id}
+                                                        onClick={() => handleStockClick(stock)}
+                                                        type="button"
+                                                        className="flex items-center justify-between w-full p-4 rounded-2xl border border-white/10 bg-white/5 transition hover:border-neon-teal/40 hover:bg-white/10 group animate-in slide-in-from-left-2 duration-300"
+                                                    >
+                                                        <div className="flex flex-col items-start gap-0.5">
+                                                            <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{stock.symbol}</span>
+                                                            <span className="text-lg font-black text-white group-hover:text-neon-teal transition-colors">{stock.name}</span>
+                                                        </div>
+                                                        <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-neon-teal transition-colors" />
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="py-12 text-center crystal-glass rounded-2xl border-white/5 bg-white/5">
+                                                    <p className="text-white/30 font-bold mb-1">검색 결과가 없습니다</p>
+                                                    <p className="text-[11px] text-white/20">종목명이나 코드를 다시 확인해 주세요</p>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white/35">인기 종목</p>
+                                        <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                                            {popularStocks.slice(0, 10).map((stock) => (
+                                                <button
+                                                    key={stock.id}
+                                                    onClick={() => handleStockClick(stock)}
+                                                    type="button"
+                                                    className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:border-neon-teal/40 hover:bg-white/10"
+                                                >
+                                                    {stock.name}
+                                                </button>
+                                            ))}
+                                            {stocksLoading && (
+                                                <div className="flex items-center gap-2 px-4 py-2 text-white/30 text-sm">
+                                                    <div className="w-3 h-3 border border-white/20 border-t-neon-teal rounded-full animate-spin"></div>
+                                                    로딩 중...
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </section>
 
-                        {/* Featured Distribution */}
-                        <section
-                            className="crystal-glass relative overflow-hidden rounded-[2.25rem] p-7 md:p-8 cursor-pointer group"
-                            onClick={() => popularStocks.length > 0 && handleStockClick(popularStocks[0])}
-                        >
-                            <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-neon-teal/10 blur-3xl"></div>
-                            <div className="mb-8 flex items-end justify-between gap-4">
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
-                                    <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white uppercase leading-none">지금 뜨는 종목</h3>
-                                </div>
-                                <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
-                            </div>
-                            <div className="rounded-[1.75rem] glass-soft p-5 border border-white/5">
-                                <div className="flex justify-between items-start mb-4">
+                        {/* Featured Distribution - Hide when searching */}
+                        {!searchQuery && (
+                            <section
+                                className="crystal-glass relative overflow-hidden rounded-[2.25rem] p-7 md:p-8 cursor-pointer group"
+                                onClick={() => popularStocks.length > 0 && handleStockClick(popularStocks[0])}
+                            >
+                                <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-neon-teal/10 blur-3xl"></div>
+                                <div className="mb-8 flex items-end justify-between gap-4">
                                     <div>
-                                        <p className="text-sm font-bold text-white/40 mb-1">삼성전자</p>
-                                        <p className="text-3xl font-black text-white">183,500 <span className="text-sm font-medium opacity-30">KRW</span></p>
+                                        <p className="text-[11px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
+                                        <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white uppercase leading-none">지금 뜨는 종목</h3>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-[11px] font-black text-neon-pink uppercase tracking-widest">기록 수</p>
-                                        <p className="text-xl font-black text-white">2,431건</p>
+                                    <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
+                                </div>
+                                <div className="rounded-[1.75rem] glass-soft p-5 border border-white/5">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <p className="text-sm font-bold text-white/40 mb-1">삼성전자</p>
+                                            <p className="text-3xl font-black text-white">183,500 <span className="text-sm font-medium opacity-30">KRW</span></p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[11px] font-black text-neon-pink uppercase tracking-widest">기록 수</p>
+                                            <p className="text-xl font-black text-white">2,431건</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-xs font-bold text-white/50">
+                                            <span>최빈 목표가 82,000원</span>
+                                            <span>86% 집중</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full w-[86%] bg-gradient-to-r from-neon-teal to-neon-pink"></div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-xs font-bold text-white/50">
-                                        <span>최빈 목표가 82,000원</span>
-                                        <span>86% 집중</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full w-[86%] bg-gradient-to-r from-neon-teal to-neon-pink"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                            </section>
+                        )}
 
-                        {/* Sacred Posts Section */}
-                        <section className="space-y-6">
-                            <div className="flex items-end justify-between px-1">
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">최근 성지글</p>
-                                    <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
+                        {/* Sacred Posts Section - Hide when searching */}
+                        {!searchQuery && (
+                            <section className="space-y-6">
+                                <div className="flex items-end justify-between px-1">
+                                    <div>
+                                        <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">최근 성지글</p>
+                                        <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
+                                    </div>
+                                    <button onClick={() => setView('sacred')} className="text-sm font-bold text-neon-pink hover:text-white transition">더 보기 →</button>
                                 </div>
-                                <button onClick={() => setView('sacred')} className="text-sm font-bold text-neon-pink hover:text-white transition">더 보기 →</button>
-                            </div>
 
                             <div className="space-y-4">
                                 {SACRED_POSTS.slice(0, 2).map((post) => (
@@ -322,6 +358,7 @@ function App() {
                                 ))}
                             </div>
                         </section>
+                        )}
                     </div>
                 ) : view === 'detail' ? (
                     <StockDetail
