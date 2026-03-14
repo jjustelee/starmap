@@ -19,7 +19,7 @@ import { RecordSuccess } from './components/RecordSuccess'
 import { SacredList } from './components/SacredList'
 import { SacredDetail } from './components/SacredDetail'
 import MyPage from './components/MyPage'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 
 // [백엔드] 종목 리스트는 Supabase에서 동적으로 로드됩니다.
 
@@ -29,6 +29,26 @@ const SACRED_POSTS = [
     { id: 3, title: '비트코인 1억 고지 적중', author: '코인도사', date: '2026.02.25', hitDate: '2026.03.05', members: 12500, color: 'neon-teal' },
     { id: 4, title: '에코프로 반등 성공 적중', author: '배터리왕', date: '2026.03.01', hitDate: '2026.03.08', members: 4300, color: 'neon-pink' },
 ];
+
+const HeaderProfileButton = ({ setView }) => {
+    const { isLoggedIn, profile } = useAuth();
+    
+    return (
+        <button
+            onClick={() => setView('mypage')}
+            aria-label="마이페이지"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 overflow-hidden"
+        >
+            {isLoggedIn && profile?.avatar ? (
+                <img src={profile.avatar} alt="P" className="w-full h-full object-cover" />
+            ) : isLoggedIn && profile?.nickname ? (
+                <span className="text-[14px] font-black text-neon-teal">{profile.nickname.charAt(0)}</span>
+            ) : (
+                <User className="w-5 h-5 text-white/80" />
+            )}
+        </button>
+    );
+};
 
 function App() {
     const [stars, setStars] = useState([]);
@@ -139,12 +159,7 @@ function App() {
                             </div>
                         </div>
 
-                        <button
-                            aria-label="마이페이지"
-                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10"
-                        >
-                            <User className="w-5 h-5 text-white/80" />
-                        </button>
+                        <HeaderProfileButton setView={setView} />
                     </div>
                 </header>
             )}
