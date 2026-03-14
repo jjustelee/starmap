@@ -122,7 +122,7 @@ import CommunityDashboard from './CommunityDashboard';
    StockDetail Main Component (Only renders when data is ready)
    ────────────────────────────────────────── */
 const StockDetailMain = ({ stock, onBack, onRecord }) => {
-    const { user, isLoggedIn } = useAuth();
+    const { user, isLoggedIn, profile } = useAuth();
     const [showLoginSheet, setShowLoginSheet] = useState(false);
     const [pendingSeal, setPendingSeal] = useState(false);
     const [showSuccessCertificate, setShowSuccessCertificate] = useState(false);
@@ -626,7 +626,7 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
             setIsSealing(false);
             alert('박제에 실패했습니다. 다시 시도해 주세요.');
         }
-    }, [onRecord, isSealing, stockInfo, state, isLoggedIn, user]);
+    }, [onRecord, isSealing, stockInfo, state, isLoggedIn, user, profile]);
 
     // [백엔드] 로그인 완료 후 대기 중이던 박제 자동 재개
     useEffect(() => {
