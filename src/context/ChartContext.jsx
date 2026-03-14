@@ -1,0 +1,109 @@
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { fetchStockInfo, fetchPriceHistory, fetchPredictions, fetchCommunityDashboard } from '../utils/mockData';
+
+const ChartContext = createContext(null);
+
+export const useChartContext = () => {
+    const context = useContext(ChartContext);
+    if (!context) {
+        throw new Error('useChartContext must be used within a ChartProvider');
+    }
+    return context;
+};
+
+export const ChartProvider = ({ children, symbol = '005930' }) => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [stockInfo, setStockInfo] = useState(null);
+    const [historyData, setHistoryData] = useState([]);
+    const [starsData, setStarsData] = useState([]);
+    const [dashboardData, setDashboardData] = useState(null);
+    
+    // UI States
+    const [chartDims, setChartDims] = useState({ width: 0, height: 0 });
+    const [isSealing, setIsSealing] = useState(false);
+    const [vowCount, setVowCount] = useState(5);
+
+    // Initial constants (will be updated after loading)
+    const basePrice = stockInfo?.currentPrice || stockInfo?.base_price || 0;
+    const INITIAL_MIN = Math.max(0, Math.round(basePrice * 0.75));
+    const INITIAL_MAX = Math.round(basePrice * 1.25);
+
+    // Mutable state (Ref)
+    const stateRef = useRef({
+        currentPriceValue: 0,
+        currentPriceMin: 0,
+        currentPriceMax: 0,
+        axisPriceMin: 0,
+        axisPriceMax: 0,
+        selectedDateText: '',
+        isTargeting: false,
+        isSheetOpen: false,
+        isManualMode: false,
+        finalTargetDate: null,
+        isDragging: false,
+        dragStartY: 0,
+        dragStartPrice: 0,
+        scaleTimer: null,
+        doSyncSheet: null // To be populated by StockDetail
+    });
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            setIsLoading(true);
+            const stock = await fetchStockInfo(symbol);
+            if (stock) {
+                setStockInfo(stock);
+                const [history, stars] = await Promise.all([
+                    fetchPriceHistory(stock.id, stock.symbol),
+                    fetchPredictions(stock.id)
+                ]);
+                setHistoryData(history);
+                setStarsData(stars);
+
+                // [백엔드] Community Dashboard + Distribution Summary 통합 데이터 로드
+                const dashboard = await fetchCommunityDashboard(symbol);
+                if (dashboard) {
+                    setDashboardData(dashboard);
+                }
+
+                // Update mutable state with real-time price
+                const realPrice = Number(stock.currentPrice || stock.base_price);
+                const iMin = Math.max(0, Math.round(realPrice * 0.75));
+                const iMax = Math.round(realPrice * 1.25);
+
+                const s = stateRef.current;
+                s.currentPriceValue = realPrice;
+                s.currentPriceMin = iMin;
+                s.currentPriceMax = iMax;
+                s.axisPriceMin = iMin;
+                s.axisPriceMax = iMax;
+            }
+            setIsLoading(false);
+        };
+        loadInitialData();
+    }, [symbol]);
+
+    const value = {
+        stateRef,
+        isLoading,
+        stockInfo,
+        historyData,
+        starsData,
+        dashboardData,
+        basePrice,
+        initialMin: INITIAL_MIN,
+        initialMax: INITIAL_MAX,
+        chartDims,
+        setChartDims,
+        isSealing,
+        setIsSealing,
+        vowCount,
+        setVowCount
+    };
+
+    return (
+        <ChartContext.Provider value={value}>
+            {children}
+        </ChartContext.Provider>
+    );
+};
