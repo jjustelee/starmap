@@ -125,7 +125,6 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
     const { user, isLoggedIn, profile } = useAuth();
     const [showLoginSheet, setShowLoginSheet] = useState(false);
     const [pendingSeal, setPendingSeal] = useState(false);
-    const [showSuccessCertificate, setShowSuccessCertificate] = useState(false);
     const [successData, setSuccessData] = useState(null);
     const { 
         stateRef: state, 
@@ -610,17 +609,8 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
                 targetDateText
             );
 
-            // 성공 데이터 설정 및 인증서 노출
-            setSuccessData({
-                stockName: stockInfo.name,
-                symbol: stockInfo.symbol,
-                targetPrice: s.currentPriceValue.toLocaleString(),
-                targetDateText: targetDateText,
-                nickname: profile?.nickname || '별지기',
-                sacredId: sacredId
-            });
-            setShowSuccessCertificate(true);
-            // onRecord는 이제 SuccessCertificate가 닫힐 때 호출됩니다.
+            // 성공 시 알림 없이 바로 결과 페이지로 이동
+            onRecord(s.currentPriceValue);
         } catch (error) {
             console.error('CRITICAL: Failed to seal prediction:', error);
             setIsSealing(false);
@@ -949,16 +939,8 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
                         null,
                         targetDateText
                     ).then(() => {
-                        setSuccessData({
-                            stockName: stockInfo.name,
-                            symbol: stockInfo.symbol,
-                            targetPrice: s.currentPriceValue.toLocaleString(),
-                            targetDateText: targetDateText,
-                            nickname: '익명의 별지기',
-                            sacredId: sacredId
-                        });
-                        setShowSuccessCertificate(true);
-                        // onRecord는 이제 SuccessCertificate가 닫힐 때 호출됩니다.
+                        // 익명 박제 성공 시 바로 결과 페이지로 이동 (인증서 스킵)
+                        onRecord(s.currentPriceValue);
                     }).catch((err) => {
                         console.error('Anonymous seal failed:', err);
                         setIsSealing(false);
@@ -966,16 +948,6 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
                 }}
             />
 
-            {/* [NEW] 성지글 성공 인증서 오버레이 */}
-            <SuccessCertificate 
-                isOpen={showSuccessCertificate}
-                onClose={() => {
-                    setShowSuccessCertificate(false);
-                    // 인증서를 닫을 때 메인 성공 화면으로 전환하거나 홈으로 이동
-                    onRecord(state.current.currentPriceValue);
-                }}
-                data={successData}
-            />
                 </>
     );
 };
