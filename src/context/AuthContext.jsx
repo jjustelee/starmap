@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }) => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'kakao',
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: window.location.href, // 현재 페이지로 돌아오도록 수정
                 queryParams: {
                     scope: 'profile_nickname,profile_image',
                 },
@@ -117,6 +117,23 @@ export const AuthProvider = ({ children }) => {
         if (error) {
             console.error('Kakao login error:', error.message);
         }
+    };
+
+    const signInWithEmail = async (email, password, onSuccessAction = null) => {
+        if (onSuccessAction) {
+            postLoginAction.current = onSuccessAction;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            console.error('Email login error:', error.message);
+            throw error;
+        }
+        return data;
     };
 
     const signOut = async () => {
@@ -148,17 +165,16 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
-        profile: profile
-            ? {
-                  nickname: profile.nickname,
-                  avatar: profile.avatar_url,
-                  isOnboarded: profile.is_onboarded,
-                  email: user?.email || null,
-              }
-            : null,
+        profile: {
+            nickname: profile?.nickname || (user ? '별지기' : null),
+            avatar: profile?.avatar_url || null,
+            isOnboarded: profile?.is_onboarded || false,
+            email: user?.email || null,
+        },
         isLoggedIn: !!user,
         isLoading,
         signInWithKakao,
+        signInWithEmail,
         signOut,
         updateProfile,
     };

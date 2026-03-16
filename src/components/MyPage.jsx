@@ -9,7 +9,7 @@ import { Target, LogOut, Star, TrendingUp, Clock, ChevronRight } from 'lucide-re
  * 전체 톤앤매너(누아르/글래스모피즘)를 유지합니다.
  */
 const MyPage = ({ onBack, onStockClick }) => {
-    const { user, isLoggedIn, profile, signInWithKakao, signOut } = useAuth();
+    const { user, isLoggedIn, isLoading, profile, signInWithKakao, signOut } = useAuth();
     const [predictions, setPredictions] = useState([]);
     const [isLoadingPreds, setIsLoadingPreds] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
@@ -26,6 +26,16 @@ const MyPage = ({ onBack, onStockClick }) => {
             load();
         }
     }, [isLoggedIn, user]);
+
+    // ── 로딩 상태 ──
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="w-8 h-8 border-4 border-neon-teal/20 border-t-neon-teal rounded-full animate-spin"></div>
+                <p className="text-white/20 text-[13px] font-bold">오성(五星)을 연결하는 중...</p>
+            </div>
+        );
+    }
 
     // ── 비로그인 상태 ──
     if (!isLoggedIn) {
