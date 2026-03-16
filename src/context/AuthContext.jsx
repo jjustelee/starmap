@@ -18,21 +18,48 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const fetchProfile = async (userId) => {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+        
+        if (error) {
+            console.error('Error fetching profile:', error.message);
+            return null;
+        }
+        return data;
+    };
+
     useEffect(() => {
-        // [백엔드] 현재 세션 복원 (리프레시 후에도 로그인 유지)
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+            
+            if (currentUser) {
+                const userProfile = await fetchProfile(currentUser.id);
+                setProfile(userProfile);
+            }
             setIsLoading(false);
         };
         getSession();
 
-        // [백엔드] Auth 상태 변경 리스너 (로그인/로그아웃 시 자동 갱신)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
-                setUser(session?.user ?? null);
+            async (_event, session) => {
+                const currentUser = session?.user ?? null;
+                setUser(currentUser);
+                
+                if (currentUser) {
+                    const userProfile = await fetchProfile(currentUser.id);
+                    setProfile(userProfile);
+                } else {
+                    setProfile(null);
+                }
                 setIsLoading(false);
             }
         );
@@ -40,17 +67,11 @@ export const AuthProvider = ({ children }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    /**
-     * 카카오 OAuth 로그인
-     * Supabase가 카카오 인증 페이지로 리다이렉트합니다.
-     * 로그인 완료 후 앱으로 돌아오면 onAuthStateChange가 자동 발동합니다.
-     */
     const signInWithKakao = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'kakao',
             options: {
                 redirectTo: window.location.origin,
-                // [백엔드] account_email 권한이 없는 경우를 대비해 닉네임과 프로필만 요청
                 queryParams: {
                     scope: 'profile_nickname,profile_image'
                 }
@@ -68,23 +89,39 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = async (updates) => {
+        if (!user) return;
+        
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                ...updates,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id);
+
+        if (error) {
+            console.error('Error updating profile:', error.message);
+            throw error;
+        }
+
+        // 로컬 상태 갱신
+        setProfile(prev => ({ ...prev, ...updates }));
+    };
+
     const value = {
         user,
+        profile: profile ? {
+            nickname: profile.nickname,
+            avatar: profile.avatar_url,
+            isOnboarded: profile.is_onboarded,
+            email: user?.email || null,
+        } : null,
         isLoggedIn: !!user,
         isLoading,
         signInWithKakao,
         signOut,
-        // 카카오 프로필 정보 (user_metadata에서 추출)
-        profile: user ? {
-            nickname: user.user_metadata?.name 
-                    || user.user_metadata?.full_name 
-                    || user.user_metadata?.preferred_username
-                    || '별지기',
-            avatar: user.user_metadata?.avatar_url 
-                    || user.user_metadata?.picture 
-                    || null,
-            email: user.email || null,
-        } : null,
+        updateProfile,
     };
 
     return (

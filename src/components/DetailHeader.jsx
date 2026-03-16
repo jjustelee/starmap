@@ -12,7 +12,7 @@ const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, onBack }
                 </button>
                 <div>
                     <h1 className="text-xl font-black text-white leading-tight tracking-tight">{stock.name}</h1>
-                    <p className="font-brandEn text-[13px] font-black tracking-widest text-white/60 uppercase">Symbol: {stock.symbol}</p>
+                    <p className="font-brandEn text-[13px] font-black tracking-widest text-white/60 uppercase">{stock.symbol}</p>
                 </div>
             </div>
             <div className="text-right flex flex-col items-end gap-1">

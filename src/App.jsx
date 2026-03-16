@@ -12,6 +12,7 @@ import { RecordSuccess } from './components/RecordSuccess'
 import { SacredList } from './components/SacredList'
 import { SacredDetail } from './components/SacredDetail'
 import MyPage from './components/MyPage'
+import NicknameSetupSheet from './components/NicknameSetupSheet'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 // [백엔드] 종목 리스트는 Supabase에서 동적으로 로드됩니다.
@@ -24,9 +25,11 @@ const SACRED_POSTS = [
 ];
 
 const HeaderProfileButton = () => {
-    const { isLoggedIn, profile } = useAuth();
+    const { isLoggedIn, isLoading: authLoading, profile } = useAuth();
     const navigate = useNavigate();
     
+    if (authLoading) return null;
+
     return (
         <button
             onClick={() => navigate('/mypage')}
@@ -347,9 +350,17 @@ function App() {
         window.scrollTo(0, 0);
     };
 
+    const { isLoggedIn, isLoading: authLoading, profile } = useAuth();
+    
+    // 온보딩(닉네임 설정) 노출 여부: 로그인 상태이며 온보딩 미완료인 경우
+    const showOnboarding = isLoggedIn && profile && !profile.isOnboarded;
+
+    if (authLoading) return null;
+
     return (
-        <AuthProvider>
         <div className="font-display overflow-x-hidden min-h-screen text-soft-white pb-36">
+            {/* Onboarding Sheet */}
+            <NicknameSetupSheet isOpen={showOnboarding} />
             {/* Background Layer */}
             <div className="star-container">
                 {stars.map((star) => (
@@ -729,7 +740,6 @@ function App() {
                 </div>
             )}
         </div>
-        </AuthProvider>
     );
 }
 
