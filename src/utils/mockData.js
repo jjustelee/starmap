@@ -85,8 +85,8 @@ export const fetchStockInfo = async (symbol) => {
             return {
                 ...dbData,
                 currentPrice: realPrice,
-                change: Number(kisData.output.prdy_vrss),
-                changeRate: Number(kisData.output.prdy_ctrt),
+                price_change: Number(kisData.output.prdy_vrss),
+                price_change_rate: Number(kisData.output.prdy_ctrt),
                 high: Number(kisData.output.stck_hgpr),
                 low: Number(kisData.output.stck_lwpr),
             };

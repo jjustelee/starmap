@@ -127,6 +127,8 @@ function App() {
                         name, 
                         base_price, 
                         current_price,
+                        price_change,
+                        price_change_rate,
                         predictions:predictions(id)
                     `);
 
@@ -136,6 +138,8 @@ function App() {
                         name: s.name,
                         symbol: s.symbol,
                         currentPrice: Number(s.current_price || s.base_price),
+                        priceChange: Number(s.price_change || 0),
+                        priceChangeRate: Number(s.price_change_rate || 0),
                         predictionCount: s.predictions ? s.predictions.length : 0
                     }))
                     .sort((a, b) => b.predictionCount - a.predictionCount)
@@ -204,6 +208,9 @@ function App() {
                 symbol: s.code,
                 name: s.name,
                 market: s.market_type,
+                currentPrice: Number(s.current_price || 0),
+                priceChange: Number(s.price_change || 0),
+                priceChangeRate: Number(s.price_change_rate || 0),
                 isFromDb: false
             }));
 
@@ -491,6 +498,14 @@ function App() {
                                                                             {renderHighlightedName(stock.name, searchQuery)}
                                                                         </span>
                                                                     </div>
+                                                                    {stock.currentPrice > 0 && (
+                                                                        <div className="text-right mr-4 ml-auto">
+                                                                            <p className="text-sm font-black text-white">{stock.currentPrice.toLocaleString()}</p>
+                                                                            <p className={`text-[10px] font-bold ${stock.priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
+                                                                                {stock.priceChange >= 0 ? '▲' : '▼'} {Math.abs(stock.priceChange).toLocaleString()} ({stock.priceChangeRate.toFixed(2)}%)
+                                                                            </p>
+                                                                        </div>
+                                                                    )}
                                                                     <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-neon-teal transition-colors" />
                                                                 </button>
                                                             );
@@ -554,7 +569,13 @@ function App() {
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <p className="text-sm font-bold text-white/40 mb-1">{popularStocks[0].name}</p>
-                                                <p className="text-3xl font-black text-white">{popularStocks[0].currentPrice.toLocaleString()} <span className="text-sm font-medium opacity-30">KRW</span></p>
+                                                <p className="text-3xl font-black text-white">
+                                                    {popularStocks[0].currentPrice.toLocaleString()} 
+                                                    <span className="text-sm font-medium opacity-30 ml-2">KRW</span>
+                                                </p>
+                                                <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
+                                                    {popularStocks[0].priceChange >= 0 ? '▲' : '▼'} {Math.abs(popularStocks[0].priceChange).toLocaleString()} ({popularStocks[0].priceChangeRate.toFixed(2)}%)
+                                                </p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-[11px] font-black text-neon-pink uppercase tracking-widest">기록 수</p>

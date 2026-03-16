@@ -765,7 +765,13 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
             <div className="fixed inset-0 z-[-1] pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 30%, rgba(34, 211, 238, 0.05), transparent 60%), radial-gradient(circle at 80% 70%, rgba(244, 63, 94, 0.05), transparent 60%)', filter: 'blur(100px)' }}></div>
 
             {/* ── Sticky Header ── */}
-            <DetailHeader stock={stock} basePrice={BASE_PRICE} onBack={onBack} />
+            <DetailHeader 
+                stock={stock} 
+                basePrice={BASE_PRICE} 
+                priceChange={stockInfo?.price_change}
+                priceChangeRate={stockInfo?.price_change_rate}
+                onBack={onBack} 
+            />
 
             {/* ── Main Content ── */}
             <div ref={mainContentRef} className="w-full mt-6 relative z-40 pointer-events-none transition-all duration-700 ease-out">

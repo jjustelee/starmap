@@ -27,6 +27,18 @@ body {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
+.text-neon-pink {
+    color: #f4258c !important;
+}
+
+.text-neon-blue {
+    color: #0099ff !important;
+}
+
+.text-neon-teal {
+    color: #22d3ee !important;
+}
+
 .glass-soft {
     background: rgba(255, 255, 255, 0.02);
     backdrop-filter: blur(14px);
