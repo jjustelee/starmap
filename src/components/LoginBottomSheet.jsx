@@ -12,7 +12,27 @@ import { useAuth } from '../context/AuthContext';
  * - onSkip: "나중에 할게요" 선택 시 (익명 박제 진행)
  */
 const LoginBottomSheet = ({ isOpen, onClose, onSkip, onSuccessAction }) => {
-    const { signInWithKakao } = useAuth();
+    const { signInWithKakao, signInWithEmail } = useAuth();
+    const [showEmailForm, setShowEmailForm] = React.useState(false);
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [error, setError] = React.useState(null);
+
+    const handleEmailLogin = async (e) => {
+        if (e) e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+        try {
+            await signInWithEmail(email, password, onSuccessAction);
+            onClose();
+        } catch (err) {
+            setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+            console.error('Login error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -77,10 +97,71 @@ const LoginBottomSheet = ({ isOpen, onClose, onSkip, onSuccessAction }) => {
                             카카오로 시작하기
                         </button>
 
+                        {/* Email Login Section */}
+                        {!showEmailForm ? (
+                            <button
+                                onClick={() => setShowEmailForm(true)}
+                                className="w-full mt-4 py-3 text-center text-[13px] font-bold text-white/40 
+                                           hover:text-white/60 transition-colors duration-200"
+                            >
+                                이메일로 로그인하기
+                            </button>
+                        ) : (
+                            <form onSubmit={handleEmailLogin} className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="space-y-1.5">
+                                    <input 
+                                        type="email" 
+                                        placeholder="이메일" 
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neon-teal/50 transition-colors"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <input 
+                                        type="password" 
+                                        placeholder="비밀번호" 
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neon-teal/50 transition-colors"
+                                        required
+                                    />
+                                </div>
+
+                                {error && (
+                                    <p className="text-neon-pink text-[12px] font-bold text-center">{error}</p>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full flex items-center justify-center gap-3
+                                               bg-white/10 hover:bg-white/20 active:bg-white/30
+                                               text-white font-black text-[15px]
+                                               rounded-xl py-3.5 px-6
+                                               transition-all duration-200 active:scale-[0.98]
+                                               disabled:opacity-50"
+                                >
+                                    {isLoading ? (
+                                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                    ) : '로그인'}
+                                </button>
+                                
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEmailForm(false)}
+                                    className="w-full text-center text-[12px] text-white/30 hover:text-white/50 py-1"
+                                >
+                                    뒤로 가기
+                                </button>
+                            </form>
+                        )}
+
                         {/* Skip */}
                         <button
                             onClick={onSkip}
-                            className="w-full mt-4 py-3 text-center text-[13px] font-bold text-white/30 
+                            className="w-full mt-6 py-3 text-center text-[13px] font-bold text-white/30 
                                        hover:text-white/50 transition-colors duration-200"
                         >
                             나중에 할게요
