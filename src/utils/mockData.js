@@ -38,9 +38,14 @@ export const callKisGateway = async (symbol, type = 'price') => {
     return data;
 };
 
+// [참고] 전 종목 검색은 searchEngine.js의 로컬 필터링으로 대체됨
+// stock_master 테이블 데이터를 앱 시작 시 캐싱하여 메모리 내 즉시 검색
+
+
 /**
  * Fetch stock information from Supabase
  * [백엔드] DB의 기본 정보와 KIS의 실시간 시세를 결합
+ * DB에 price=0인 새 종목도 KIS API로 가격을 채워서 반환
  */
 export const fetchStockInfo = async (symbol) => {
     // 1. DB에서 기본 정보(이름 등) 가져오기
@@ -61,9 +66,25 @@ export const fetchStockInfo = async (symbol) => {
     try {
         const kisData = await callKisGateway(symbol, 'price');
         if (kisData && kisData.output) {
+            const realPrice = Number(kisData.output.stck_prpr);
+            
+            // [백엔드] DB에 가격이 없거나 0이면 KIS 가격으로 업데이트
+            if (realPrice > 0 && (!dbData.base_price || Number(dbData.base_price) === 0)) {
+                await supabase
+                    .from('stocks')
+                    .update({
+                        base_price: realPrice,
+                        current_price: realPrice,
+                        price_change: Number(kisData.output.prdy_vrss),
+                        price_change_rate: Number(kisData.output.prdy_ctrt),
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('symbol', symbol);
+            }
+
             return {
                 ...dbData,
-                currentPrice: Number(kisData.output.stck_prpr),
+                currentPrice: realPrice,
                 change: Number(kisData.output.prdy_vrss),
                 changeRate: Number(kisData.output.prdy_ctrt),
                 high: Number(kisData.output.stck_hgpr),
@@ -74,9 +95,11 @@ export const fetchStockInfo = async (symbol) => {
         console.warn('Failed to fetch real-time price, falling back to base_price', e);
     }
 
+    // 3. KIS 실패 시 DB 가격 사용 (0이면 stock_master에서 보완 시도)
+    const price = Number(dbData.current_price || dbData.base_price);
     return {
         ...dbData,
-        currentPrice: Number(dbData.current_price || dbData.base_price)
+        currentPrice: price > 0 ? price : 50000 // 극단적 fallback: 임시 기본가 (차트 렌더링 보장)
     };
 };
 
@@ -202,8 +225,9 @@ export const fetchMyPredictions = async (userId) => {
         stockSymbol: item.stocks?.symbol,
         currentPrice: item.stocks?.current_price ? Number(item.stocks.current_price) : (item.stocks?.base_price ? Number(item.stocks.base_price) : 0),
         // [백엔드] 적중/빗나감 판정 (MVP: 단순 비교)
-        isHit: false, // 추후 price 도달 여부로 확장
-        isMissed: false,
+        // currentPrice가 0이면 아직 로딩 전이거나 데이터 없음
+        isHit: item.stocks?.current_price && Math.abs(Number(item.stocks.current_price) - Number(item.price_target)) / Number(item.price_target) < 0.05,
+        isMissed: item.stocks?.current_price && (Number(item.stocks.current_price) < Number(item.price_target) * 0.8), // 예: 목표가보다 20% 이상 낮으면 빗나감 (단순 예시)
         stock: item.stocks ? {
             id: item.stocks.id,
             name: item.stocks.name,
@@ -211,6 +235,23 @@ export const fetchMyPredictions = async (userId) => {
             currentPrice: item.stocks.current_price ? Number(item.stocks.current_price) : Number(item.stocks.base_price)
         } : null
     }));
+};
+
+/**
+ * Delete a specific prediction from Supabase
+ * [백엔드] 전역 반영: DB에서 삭제하므로 차트 등 모든 곳에서 즉시 사라집니다.
+ */
+export const deletePrediction = async (predictionId) => {
+    const { error } = await supabase
+        .from('predictions')
+        .delete()
+        .eq('id', predictionId);
+
+    if (error) {
+        console.error('Error deleting prediction:', error);
+        throw error;
+    }
+    return true;
 };
 
 // --- Legacy Dummy Generators (Falling back if needed) ---

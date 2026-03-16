@@ -18,6 +18,10 @@ export default {
                 "history-high": "#fbbf24",
                 "pred-min": "#94a3b8",
                 "pred-max": "#fda4af",
+                // 감정 기반 컬러
+                "hope-green": "#10b981",  // 진행중 (긍정)
+                "joy-gold": "#fbbf24",    // 적중 (기쁨)
+                "sad-blue": "#64748b",    // 빗나감 (슬픔)
             },
             fontFamily: {
                 display: ["Outfit", "sans-serif"],

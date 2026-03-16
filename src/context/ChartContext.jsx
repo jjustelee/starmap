@@ -57,8 +57,20 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
                     fetchPriceHistory(stock.id, stock.symbol),
                     fetchPredictions(stock.id)
                 ]);
-                setHistoryData(history);
-                setStarsData(stars);
+
+                // [백엔드] 히스토리 데이터가 없는 신규 종목은 현재가 기반 더미 생성
+                const realPrice = Number(stock.currentPrice || stock.base_price) || 50000;
+                if (!history || history.length < 2) {
+                    const dummyHistory = [];
+                    for (let i = 0; i < 30; i++) {
+                        const noise = (Math.random() - 0.5) * (realPrice * 0.04);
+                        dummyHistory.push(Math.round(realPrice + noise));
+                    }
+                    setHistoryData(dummyHistory);
+                } else {
+                    setHistoryData(history);
+                }
+                setStarsData(stars || []);
 
                 // [백엔드] Community Dashboard + Distribution Summary 통합 데이터 로드
                 const dashboard = await fetchCommunityDashboard(symbol);
@@ -67,7 +79,6 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
                 }
 
                 // Update mutable state with real-time price
-                const realPrice = Number(stock.currentPrice || stock.base_price);
                 const iMin = Math.max(0, Math.round(realPrice * 0.75));
                 const iMax = Math.round(realPrice * 1.25);
 

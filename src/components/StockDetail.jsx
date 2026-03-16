@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import DistributionSummary from './DistributionSummary';
 import DetailHeader from './DetailHeader';
 import TargetControlBar from './TargetControlBar';
@@ -972,9 +973,12 @@ export const StockDetailContent = (props) => {
 };
 
 export const StockDetail = (props) => {
+    const { symbol } = useParams();
+    const effectiveStock = props.stock || { symbol };
+    
     return (
-        <ChartProvider symbol={props.stock.symbol}>
-            <StockDetailContent {...props} />
+        <ChartProvider symbol={effectiveStock.symbol}>
+            <StockDetailContent {...props} stock={effectiveStock} />
         </ChartProvider>
     );
 };
