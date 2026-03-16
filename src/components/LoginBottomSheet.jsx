@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
  * - onClose: 닫기 핸들러
  * - onSkip: "나중에 할게요" 선택 시 (익명 박제 진행)
  */
-const LoginBottomSheet = ({ isOpen, onClose, onSkip }) => {
+const LoginBottomSheet = ({ isOpen, onClose, onSkip, onSuccessAction }) => {
     const { signInWithKakao } = useAuth();
 
     if (!isOpen) return null;
@@ -62,7 +62,7 @@ const LoginBottomSheet = ({ isOpen, onClose, onSkip }) => {
 
                         {/* Kakao Login Button */}
                         <button
-                            onClick={signInWithKakao}
+                            onClick={() => signInWithKakao(onSuccessAction)}
                             className="w-full flex items-center justify-center gap-3
                                        bg-[#FEE500] hover:bg-[#FADA0A] active:bg-[#E5CF00]
                                        text-[#191919] font-black text-[16px]

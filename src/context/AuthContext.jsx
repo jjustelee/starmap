@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const postLoginAction = React.useRef(null);
 
     const fetchProfile = async (userId) => {
         const { data, error } = await supabase
@@ -27,7 +28,7 @@ export const AuthProvider = ({ children }) => {
             .select('*')
             .eq('id', userId)
             .maybeSingle();
-        
+
         if (error) {
             console.error('Error fetching profile:', error.message);
             return null;
@@ -36,45 +37,81 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-            
-            if (currentUser) {
-                const userProfile = await fetchProfile(currentUser.id);
-                setProfile(userProfile);
+        let isMounted = true;
+
+        const refreshProfile = async (userId) => {
+            try {
+                const userProfile = await fetchProfile(userId);
+                if (!isMounted) return;
+                setProfile(userProfile || null);
+
+                // 로그인 성공 시 지연 실행할 액션이 있다면 실행
+                if (userProfile && postLoginAction.current) {
+                    console.log('AuthContext: Executing post-login action');
+                    const action = postLoginAction.current;
+                    postLoginAction.current = null;
+                    action(userId);
+                }
+            } catch (err) {
+                if (!isMounted) return;
+                console.error('AuthContext: Profile refresh failed:', err);
+                setProfile(null);
             }
-            setIsLoading(false);
         };
+
+        const applySession = (currentUser) => {
+            if (!isMounted) return;
+            setUser(currentUser);
+            // 로딩 해제는 프로필 조회와 분리해서 항상 빠르게 보장
+            setIsLoading(false);
+
+            if (currentUser) {
+                // 이전 프로필이 남아있지 않도록 초기화 후 비동기 갱신
+                setProfile(null);
+                void refreshProfile(currentUser.id);
+            } else {
+                setProfile(null);
+            }
+        };
+
+        const getSession = async () => {
+            try {
+                const {
+                    data: { session },
+                } = await supabase.auth.getSession();
+                applySession(session?.user ?? null);
+            } catch (err) {
+                console.error('AuthContext: Error in getSession:', err);
+                if (isMounted) setIsLoading(false);
+            }
+        };
+
         getSession();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                const currentUser = session?.user ?? null;
-                setUser(currentUser);
-                
-                if (currentUser) {
-                    const userProfile = await fetchProfile(currentUser.id);
-                    setProfile(userProfile);
-                } else {
-                    setProfile(null);
-                }
-                setIsLoading(false);
-            }
-        );
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            applySession(session?.user ?? null);
+        });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
-    const signInWithKakao = async () => {
+    const signInWithKakao = async (onSuccessAction = null) => {
+        if (onSuccessAction) {
+            postLoginAction.current = onSuccessAction;
+        }
+        
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'kakao',
             options: {
                 redirectTo: window.location.origin,
                 queryParams: {
-                    scope: 'profile_nickname,profile_image'
-                }
+                    scope: 'profile_nickname,profile_image',
+                },
             },
         });
         if (error) {
@@ -91,12 +128,12 @@ export const AuthProvider = ({ children }) => {
 
     const updateProfile = async (updates) => {
         if (!user) return;
-        
+
         const { error } = await supabase
             .from('profiles')
             .update({
                 ...updates,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
             })
             .eq('id', user.id);
 
@@ -106,17 +143,19 @@ export const AuthProvider = ({ children }) => {
         }
 
         // 로컬 상태 갱신
-        setProfile(prev => ({ ...prev, ...updates }));
+        setProfile((prev) => ({ ...prev, ...updates }));
     };
 
     const value = {
         user,
-        profile: profile ? {
-            nickname: profile.nickname,
-            avatar: profile.avatar_url,
-            isOnboarded: profile.is_onboarded,
-            email: user?.email || null,
-        } : null,
+        profile: profile
+            ? {
+                  nickname: profile.nickname,
+                  avatar: profile.avatar_url,
+                  isOnboarded: profile.is_onboarded,
+                  email: user?.email || null,
+              }
+            : null,
         isLoggedIn: !!user,
         isLoading,
         signInWithKakao,
@@ -124,9 +163,5 @@ export const AuthProvider = ({ children }) => {
         updateProfile,
     };
 
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

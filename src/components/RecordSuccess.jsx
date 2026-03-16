@@ -2,6 +2,8 @@ import React from 'react';
 import { BadgeCheck, Share2, ChevronRight, Home, ExternalLink } from 'lucide-react';
 
 export const RecordSuccess = ({ stock, targetPrice, onHome }) => {
+    if (!stock) return <div className="text-white p-12 text-center font-bold">종목 정보를 찾을 수 없습니다.</div>;
+
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 text-center animate-in zoom-in-95 duration-700">
             {/* Success Icon with Glow */}

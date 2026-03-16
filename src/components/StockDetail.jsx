@@ -123,7 +123,7 @@ import CommunityDashboard from './CommunityDashboard';
    StockDetail Main Component (Only renders when data is ready)
    ────────────────────────────────────────── */
 const StockDetailMain = ({ stock, onBack, onRecord }) => {
-    const { user, isLoggedIn, profile } = useAuth();
+    const { user, isLoggedIn, profile, signInWithKakao } = useAuth();
     const [showLoginSheet, setShowLoginSheet] = useState(false);
     const [pendingSeal, setPendingSeal] = useState(false);
     const [successData, setSuccessData] = useState(null);
@@ -584,9 +584,16 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
         const s = state.current;
         if (sealBtnRef.current?.disabled || isSealing) return;
 
-        // [백엔드] 비로그인 유저는 로그인 바텀시트 표시
+        // [백엔드] 비로그인 유저는 Ghost Save 전략 실행
         if (!isLoggedIn) {
-            setPendingSeal(true);
+            // 1. 현재 입력값 임시 저장 (Ghost Save)
+            const ghostData = {
+                price: s.currentPriceValue,
+                date: s.selectedDateText || '3개월'
+            };
+            localStorage.setItem(`ghost_prediction_${stockInfo.symbol}`, JSON.stringify(ghostData));
+            
+            // 2. 로그인 유도 (로그인 성공 시 이 함수가 다시 실행되도록 콜백 등록)
             setShowLoginSheet(true);
             return;
         }
@@ -594,12 +601,11 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
         setIsSealing(true);
         triggerHaptic(50);
 
-        console.log('Sealing prediction for stock:', stockInfo.id, 'Price:', s.currentPriceValue, 'DEPLOY_CHECK_VER_1');
+        console.log('Sealing prediction for stock:', stockInfo.id, 'Price:', s.currentPriceValue);
 
         try {
             const targetXRatio = s.finalTargetDate ? 0.5 : 0.2; 
             const targetDateText = s.selectedDateText || '3개월';
-            const sacredId = generateSacredId(stockInfo.symbol, user?.id, targetDateText);
             
             await submitPrediction(
                 stockInfo.id,
@@ -610,23 +616,15 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
                 targetDateText
             );
 
-            // 성공 시 알림 없이 바로 결과 페이지로 이동
+            // 성공 시 로컬스토리지 비우기
+            localStorage.removeItem(`ghost_prediction_${stockInfo.symbol}`);
             onRecord(s.currentPriceValue);
         } catch (error) {
             console.error('CRITICAL: Failed to seal prediction:', error);
             setIsSealing(false);
             alert('박제에 실패했습니다. 다시 시도해 주세요.');
         }
-    }, [onRecord, isSealing, stockInfo, state, isLoggedIn, user, profile]);
-
-    // [백엔드] 로그인 완료 후 대기 중이던 박제 자동 재개
-    useEffect(() => {
-        if (isLoggedIn && pendingSeal) {
-            setPendingSeal(false);
-            setShowLoginSheet(false);
-            handleSeal();
-        }
-    }, [isLoggedIn, pendingSeal, handleSeal]);
+    }, [onRecord, isSealing, stockInfo, state, isLoggedIn, user]);
 
     /* ── Mode toggle (slider <-> manual) ── */
     const switchToManual = useCallback(() => {
@@ -926,33 +924,9 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
             {/* [백엔드] 박제 시점 로그인 유도 바텀시트 */}
             <LoginBottomSheet 
                 isOpen={showLoginSheet}
-                onClose={() => { setShowLoginSheet(false); setPendingSeal(false); }}
-                onSkip={() => {
-                    // 익명 박제 허용: 로그인 없이 바로 박제 진행
-                    setShowLoginSheet(false);
-                    setPendingSeal(false);
-                    setIsSealing(true);
-                    triggerHaptic(50);
-                    const s = state.current;
-                    const targetXRatio = s.finalTargetDate ? 0.5 : 0.2;
-                    const targetDateText = s.selectedDateText || '3개월';
-                    const sacredId = generateSacredId(stockInfo.symbol, null, targetDateText);
-
-                    submitPrediction(
-                        stockInfo.id,
-                        s.currentPriceValue,
-                        targetXRatio,
-                        0.30 + (Math.random() * 0.25),
-                        null,
-                        targetDateText
-                    ).then(() => {
-                        // 익명 박제 성공 시 바로 결과 페이지로 이동 (인증서 스킵)
-                        onRecord(s.currentPriceValue);
-                    }).catch((err) => {
-                        console.error('Anonymous seal failed:', err);
-                        setIsSealing(false);
-                    });
-                }}
+                onClose={() => { setShowLoginSheet(false); }}
+                onSkip={() => { setShowLoginSheet(false); }}
+                onSuccessAction={handleSeal}
             />
 
                 </>

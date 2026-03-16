@@ -284,46 +284,10 @@ function App() {
         setStars(newStars);
     }, []);
 
-    const handleStockClick = async (stock) => {
-        // [UX] 검색 상태를 초기화하지 않고 유지합니다. (뒤로가기 시 복원을 위해)
-        
-        // [백엔드] stock_master에서 온 검색 결과 → stocks 테이블 확인 후 자동 등록
-        if (!stock.isFromDb && !stock.id) {
-            try {
-                const { data: existing } = await supabase
-                    .from('stocks')
-                    .select('*')
-                    .eq('symbol', stock.symbol)
-                    .maybeSingle();
-
-                if (existing) {
-                    setSelectedStock(existing);
-                } else {
-                    const { data: newStock, error } = await supabase
-                        .from('stocks')
-                        .insert([{
-                            symbol: stock.symbol,
-                            name: stock.name,
-                            base_price: 0,
-                            current_price: 0
-                        }])
-                        .select()
-                        .single();
-
-                    if (!error && newStock) {
-                        setSelectedStock(newStock);
-                    } else {
-                        setSelectedStock({ ...stock, id: null });
-                    }
-                }
-            } catch (err) {
-                console.error("Auto-sync failed:", err);
-                setSelectedStock({ ...stock, id: null });
-            }
-        } else {
-            setSelectedStock(stock);
-        }
-        
+    const handleStockClick = (stock) => {
+        // [보안] 클라이언트에서의 stocks 테이블 INSERT 로직은 서버로 이관되었습니다.
+        // 하지만 UI 전반(RecordSuccess 등)에서 현재 선택된 종목 정보를 참조하므로 상태는 유지합니다.
+        setSelectedStock(stock);
         navigate(`/stock/${stock.symbol}`);
         window.scrollTo(0, 0);
     };
@@ -353,9 +317,16 @@ function App() {
     const { isLoggedIn, isLoading: authLoading, profile } = useAuth();
     
     // 온보딩(닉네임 설정) 노출 여부: 로그인 상태이며 온보딩 미완료인 경우
-    const showOnboarding = isLoggedIn && profile && !profile.isOnboarded;
+    const showOnboarding = Boolean(isLoggedIn && profile && !profile.isOnboarded);
 
-    if (authLoading) return null;
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-black text-soft-white flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-white/10 border-t-neon-teal rounded-full animate-spin"></div>
+                <p className="text-sm font-bold text-white/60">인증 상태를 확인하는 중...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="font-display overflow-x-hidden min-h-screen text-soft-white pb-36">
