@@ -49,7 +49,7 @@ export const callKisGateway = async (symbol, type = 'price') => {
  */
 export const fetchStockInfo = async (symbol) => {
     // 1. DB에서 기본 정보(이름 등) 가져오기
-    const { data: dbData, error } = await supabase
+    let { data: dbData, error } = await supabase
         .from('stocks')
         .select('*')
         .eq('symbol', symbol)
@@ -60,7 +60,29 @@ export const fetchStockInfo = async (symbol) => {
         return null;
     }
 
-    if (!dbData) return null;
+    // [백엔드] 만약 stocks 테이블에 아직 없는 종목(검색 결과 등)일 경우, stock_master에서 보완
+    if (!dbData) {
+        console.log(`[fetchStockInfo] ${symbol} not found in stocks, checking stock_master...`);
+        const { data: masterData } = await supabase
+            .from('stock_master')
+            .select('name, market_type')
+            .eq('code', symbol)
+            .maybeSingle();
+
+        if (masterData) {
+            // 임시 객체 생성 (나중에 KIS 가격 로드 후 DB에 INSERT 됨)
+            dbData = {
+                symbol: symbol,
+                name: masterData.name,
+                market_type: masterData.market_type,
+                base_price: 0,
+                current_price: 0
+            };
+        } else {
+            // stock_master에도 없으면 진짜 없는 종목
+            return null;
+        }
+    }
 
     // 2. KIS API에서 실시간 시세 가져오기 (시도)
     try {
@@ -68,18 +90,29 @@ export const fetchStockInfo = async (symbol) => {
         if (kisData && kisData.output) {
             const realPrice = Number(kisData.output.stck_prpr);
             
-            // [백엔드] DB에 가격이 없거나 0이면 KIS 가격으로 업데이트
-            if (realPrice > 0 && (!dbData.base_price || Number(dbData.base_price) === 0)) {
-                await supabase
+            // [백엔드] DB에 없던 종목이거나 가격이 0이면 INSERT 또는 UPDATE
+            if (realPrice > 0 && (!dbData.id || !dbData.base_price || Number(dbData.base_price) === 0)) {
+                const upsertData = {
+                    symbol: symbol,
+                    name: dbData.name,
+                    base_price: realPrice,
+                    current_price: realPrice,
+                    price_change: Number(kisData.output.prdy_vrss),
+                    price_change_rate: Number(kisData.output.prdy_ctrt),
+                    updated_at: new Date().toISOString(),
+                };
+
+                const { data: newData, error: upsertError } = await supabase
                     .from('stocks')
-                    .update({
-                        base_price: realPrice,
-                        current_price: realPrice,
-                        price_change: Number(kisData.output.prdy_vrss),
-                        price_change_rate: Number(kisData.output.prdy_ctrt),
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq('symbol', symbol);
+                    .upsert(upsertData, { onConflict: 'symbol' })
+                    .select()
+                    .single();
+
+                if (!upsertError && newData) {
+                    dbData = newData; // ID가 포함된 최신 데이터로 교체
+                } else {
+                    console.error('Error upserting stock to DB:', upsertError);
+                }
             }
 
             return {
@@ -124,6 +157,8 @@ export const fetchPriceHistory = async (stockId, symbol) => {
     }
 
     // 2. Fallback: DB 이력
+    if (!stockId) return []; // ID가 없으면 DB 조회 건너뜀
+
     const { data, error } = await supabase
         .from('price_history')
         .select('price')
@@ -135,14 +170,16 @@ export const fetchPriceHistory = async (stockId, symbol) => {
 };
 
 /**
- * Fetch user predictions (Stars)... (생략 - 기존 유지)
+ * [백엔드] 해당 종목의 모든 유저 예측치 (Chart Interaction 용)
  */
 export const fetchPredictions = async (stockId) => {
+    if (!stockId) return []; // ID가 없으면 빈 배열 반환 (새 종목 등)
+
     const { data, error } = await supabase
         .from('predictions')
         .select('price_target, x_future_ratio, opacity')
         .eq('stock_id', stockId);
-
+    
     if (error) {
         console.error('Error fetching predictions:', error);
         return [];
@@ -165,6 +202,22 @@ export const fetchCommunityDashboard = async (symbol) => {
     
     if (error) {
         console.error('Error fetching dashboard:', error);
+        return null;
+    }
+    return data;
+};
+
+/**
+ * Fetch Market Reality data from KIS Gateway
+ * [백엔드] KIS API 통합 분석 데이터를 가져옵니다.
+ */
+export const fetchMarketReality = async (symbol) => {
+    const { data, error } = await supabase.functions.invoke('kis-gateway', {
+        body: { symbol, type: 'reality' }
+    });
+
+    if (error) {
+        console.error('Error fetching market reality:', error);
         return null;
     }
     return data;
@@ -198,6 +251,44 @@ export const submitPrediction = async (stockId, priceTarget, xFutureRatio, opaci
  * [백엔드] user_id로 필터링하여 내 기록만 조회. stocks JOIN으로 종목명도 반환.
  */
 export const fetchMyPredictions = async (userId) => {
+    const mapRpcRows = (rows = []) => rows.map((row) => {
+        const priceTarget = Number(row.price_target);
+        const currentPrice = Number(row.stock_current_price ?? row.stock_base_price ?? 0);
+        const judgmentStatus = String(row.judgment_status || 'PENDING');
+        const judgmentLabel = String(row.judgment_label || '진행중');
+        const deviation = row.deviation_pct == null ? null : Number(row.deviation_pct);
+        return {
+            id: row.id,
+            price_target: Number.isFinite(priceTarget) ? priceTarget : 0,
+            target_date: row.target_date,
+            created_at: row.created_at,
+            stockName: row.stock_name || '알 수 없음',
+            stockSymbol: row.stock_symbol,
+            currentPrice: Number.isFinite(currentPrice) ? currentPrice : 0,
+            judgmentStatus,
+            judgmentLabel,
+            isHit: judgmentStatus === 'HIT_EXACT' || judgmentStatus === 'HIT_NEAR',
+            isMissed: judgmentStatus === 'MISSED',
+            deviationPct: Number.isFinite(deviation) ? deviation : null,
+            stock: row.stock_id ? {
+                id: row.stock_id,
+                name: row.stock_name || '알 수 없음',
+                symbol: row.stock_symbol,
+                currentPrice: Number.isFinite(currentPrice) ? currentPrice : 0
+            } : null
+        };
+    });
+
+    const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_my_predictions_with_judgment');
+
+    if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+        return mapRpcRows(rpcData);
+    }
+    if (rpcError) {
+        console.warn('get_my_predictions_with_judgment RPC failed, falling back to legacy query:', rpcError.message);
+    }
+
     const { data, error } = await supabase
         .from('predictions')
         .select(`
@@ -207,7 +298,7 @@ export const fetchMyPredictions = async (userId) => {
             target_date,
             created_at,
             stock_id,
-            stocks ( id, name, symbol, base_price )
+            stocks ( id, name, symbol, base_price, current_price )
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -216,7 +307,60 @@ export const fetchMyPredictions = async (userId) => {
         console.error('Error fetching my predictions:', error);
         return [];
     }
+
+    const parseYmd = (value) => {
+        if (typeof value !== 'string') return null;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+        const dt = new Date(`${value}T00:00:00`);
+        return Number.isNaN(dt.getTime()) ? null : dt;
+    };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const getJudgment = ({ currentPrice, targetPrice, targetDate }) => {
+        const current = Number(currentPrice);
+        const target = Number(targetPrice);
+        const targetDt = parseYmd(targetDate);
+        const isJudgeableDate = targetDt ? today >= targetDt : false;
+
+        if (!Number.isFinite(current) || !Number.isFinite(target) || target <= 0) {
+            return { code: 'PENDING', label: '진행중', isHit: false, isMissed: false, deviationPct: null };
+        }
+
+        if (!isJudgeableDate) {
+            return { code: 'PENDING', label: '진행중', isHit: false, isMissed: false, deviationPct: null };
+        }
+
+        const deviationPct = Math.abs(current - target) / target * 100;
+
+        if (deviationPct <= 1) {
+            return { code: 'HIT_EXACT', label: '적중 완료', isHit: true, isMissed: false, deviationPct };
+        }
+        if (deviationPct <= 3) {
+            return { code: 'HIT_NEAR', label: '근접 적중', isHit: true, isMissed: false, deviationPct };
+        }
+        if (deviationPct <= 5) {
+            return { code: 'CLOSE_CALL', label: '아슬아슬', isHit: false, isMissed: false, deviationPct };
+        }
+        return { code: 'MISSED', label: '빗나감', isHit: false, isMissed: true, deviationPct };
+    };
+
     return data.map(item => ({
+        ...(() => {
+            const judged = getJudgment({
+                currentPrice: item.stocks?.current_price,
+                targetPrice: item.price_target,
+                targetDate: item.target_date
+            });
+            return {
+                judgmentStatus: judged.code,
+                judgmentLabel: judged.label,
+                isHit: judged.isHit,
+                isMissed: judged.isMissed,
+                deviationPct: judged.deviationPct
+            };
+        })(),
         id: item.id,
         price_target: item.price_target,
         target_date: item.target_date,
@@ -224,10 +368,6 @@ export const fetchMyPredictions = async (userId) => {
         stockName: item.stocks?.name || '알 수 없음',
         stockSymbol: item.stocks?.symbol,
         currentPrice: item.stocks?.current_price ? Number(item.stocks.current_price) : (item.stocks?.base_price ? Number(item.stocks.base_price) : 0),
-        // [백엔드] 적중/빗나감 판정 (MVP: 단순 비교)
-        // currentPrice가 0이면 아직 로딩 전이거나 데이터 없음
-        isHit: item.stocks?.current_price && Math.abs(Number(item.stocks.current_price) - Number(item.price_target)) / Number(item.price_target) < 0.05,
-        isMissed: item.stocks?.current_price && (Number(item.stocks.current_price) < Number(item.price_target) * 0.8), // 예: 목표가보다 20% 이상 낮으면 빗나감 (단순 예시)
         stock: item.stocks ? {
             id: item.stocks.id,
             name: item.stocks.name,

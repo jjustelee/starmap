@@ -48,35 +48,35 @@ const LoginBottomSheet = ({ isOpen, onClose, onSkip, onSuccessAction }) => {
             <div className="fixed bottom-0 left-0 right-0 z-[9999] animate-in slide-in-from-bottom duration-500">
                 <div className="mx-auto max-w-lg">
                     <div className="bg-[#141419]/95 backdrop-blur-[60px] border-t border-x border-white/10 
-                                    rounded-t-[2.5rem] p-8 pb-12
+                                    rounded-t-[2rem] sm:rounded-t-[2.5rem] p-6 sm:p-8 pb-9 sm:pb-12
                                     shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.9),inset_0_1px_1px_rgba(255,255,255,0.05)]">
                         
                         {/* Handle */}
-                        <div className="flex justify-center mb-8">
+                        <div className="flex justify-center mb-6 sm:mb-8">
                             <div className="w-10 h-1 bg-white/20 rounded-full"></div>
                         </div>
 
                         {/* Icon */}
-                        <div className="flex justify-center mb-6">
+                        <div className="flex justify-center mb-5 sm:mb-6">
                             <div className="relative">
-                                <div className="w-16 h-16 bg-gradient-to-br from-neon-teal/20 to-neon-pink/20 
+                                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-neon-teal/20 to-neon-pink/20 
                                                 rounded-full flex items-center justify-center
                                                 border border-white/10">
-                                    <span className="text-3xl">⭐</span>
+                                    <span className="text-[26px] sm:text-3xl">⭐</span>
                                 </div>
                                 <div className="absolute -inset-4 bg-neon-teal/10 rounded-full blur-xl -z-10 animate-pulse"></div>
                             </div>
                         </div>
 
                         {/* Message */}
-                        <div className="text-center space-y-3 mb-8">
-                            <h3 className="text-[22px] font-black text-white leading-tight">
-                                예언을 영구 보관하시겠습니까?
+                        <div className="text-center space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
+                            <h3 className="text-[20px] sm:text-[22px] font-black text-white leading-tight">
+                                이번 예언, 계정에 박제할까요?
                             </h3>
-                            <p className="text-[14px] text-white/50 leading-relaxed font-medium">
+                            <p className="text-[13px] sm:text-[14px] text-white/50 leading-6 sm:leading-relaxed font-medium">
                                 카카오로 1초만에 시작하면<br />
                                 당신의 예언이 성지글이 되었을 때<br />
-                                <span className="text-neon-teal font-bold">가장 먼저 알림</span>을 보내드립니다.
+                                <span className="text-neon-teal font-bold">적중 뜨면 바로 알림</span>을 보내드립니다.
                             </p>
                         </div>
 
@@ -85,8 +85,8 @@ const LoginBottomSheet = ({ isOpen, onClose, onSkip, onSuccessAction }) => {
                             onClick={() => signInWithKakao(onSuccessAction)}
                             className="w-full flex items-center justify-center gap-3
                                        bg-[#FEE500] hover:bg-[#FADA0A] active:bg-[#E5CF00]
-                                       text-[#191919] font-black text-[16px]
-                                       rounded-2xl py-4 px-6
+                                       text-[#191919] font-black text-[15px] sm:text-[16px]
+                                       rounded-2xl py-3.5 sm:py-4 px-5 sm:px-6
                                        transition-all duration-200 active:scale-[0.98]
                                        shadow-[0_4px_20px_rgba(254,229,0,0.25)]"
                         >
@@ -101,13 +101,13 @@ const LoginBottomSheet = ({ isOpen, onClose, onSkip, onSuccessAction }) => {
                         {!showEmailForm ? (
                             <button
                                 onClick={() => setShowEmailForm(true)}
-                                className="w-full mt-4 py-3 text-center text-[13px] font-bold text-white/40 
+                                className="w-full mt-3.5 sm:mt-4 py-2.5 sm:py-3 text-center text-[12px] sm:text-[13px] font-bold text-white/40 
                                            hover:text-white/60 transition-colors duration-200"
                             >
                                 이메일로 로그인하기
                             </button>
                         ) : (
-                            <form onSubmit={handleEmailLogin} className="mt-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <form onSubmit={handleEmailLogin} className="mt-5 sm:mt-6 space-y-3.5 sm:space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                 <div className="space-y-1.5">
                                     <input 
                                         type="email" 
@@ -161,14 +161,14 @@ const LoginBottomSheet = ({ isOpen, onClose, onSkip, onSuccessAction }) => {
                         {/* Skip */}
                         <button
                             onClick={onSkip}
-                            className="w-full mt-6 py-3 text-center text-[13px] font-bold text-white/30 
+                            className="w-full mt-5 sm:mt-6 py-2.5 sm:py-3 text-center text-[12px] sm:text-[13px] font-bold text-white/30 
                                        hover:text-white/50 transition-colors duration-200"
                         >
                             나중에 할게요
                         </button>
 
                         {/* Social Proof */}
-                        <p className="text-center text-[11px] text-white/20 mt-4">
+                        <p className="text-center text-[10px] sm:text-[11px] text-white/20 mt-3 sm:mt-4">
                             지금까지 <span className="text-white/40 font-bold">1,247명</span>의 별지기가 예언을 기록했습니다
                         </p>
                     </div>

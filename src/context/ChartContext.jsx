@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { fetchStockInfo, fetchPriceHistory, fetchPredictions, fetchCommunityDashboard } from '../utils/mockData';
+import { fetchStockInfo, fetchPriceHistory, fetchPredictions, fetchCommunityDashboard, fetchMarketReality } from '../utils/mockData';
 
 const ChartContext = createContext(null);
 
@@ -17,6 +17,7 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
     const [historyData, setHistoryData] = useState([]);
     const [starsData, setStarsData] = useState([]);
     const [dashboardData, setDashboardData] = useState(null);
+    const [realityData, setRealityData] = useState(null);
     
     // UI States
     const [chartDims, setChartDims] = useState({ width: 0, height: 0 });
@@ -53,12 +54,17 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
             const stock = await fetchStockInfo(symbol);
             if (stock) {
                 setStockInfo(stock);
-                const [history, stars] = await Promise.all([
-                    fetchPriceHistory(stock.id, stock.symbol),
-                    fetchPredictions(stock.id)
+                
+                // [백엔드] 병렬 데이터 로드 (하나라도 실패해도 나머지는 진행되도록 catch 처리)
+                const [history, stars, reality, dashboard] = await Promise.all([
+                    fetchPriceHistory(stock.id, stock.symbol).catch(() => []),
+                    fetchPredictions(stock.id).catch(() => []),
+                    fetchMarketReality(stock.symbol).catch(() => null),
+                    fetchCommunityDashboard(stock.symbol).catch(() => null)
                 ]);
 
                 // [백엔드] 히스토리 데이터가 없는 신규 종목은 현재가 기반 더미 생성
+                // KIS history가 실패하거나 데이터가 없을 때만 dummy 생성
                 const realPrice = Number(stock.currentPrice || stock.base_price) || 50000;
                 if (!history || history.length < 2) {
                     const dummyHistory = [];
@@ -70,13 +76,26 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
                 } else {
                     setHistoryData(history);
                 }
+                
                 setStarsData(stars || []);
-
-                // [백엔드] Community Dashboard + Distribution Summary 통합 데이터 로드
-                const dashboard = await fetchCommunityDashboard(symbol);
-                if (dashboard) {
-                    setDashboardData(dashboard);
+                setRealityData(reality);
+                
+                // [백엔드] 가격 및 지표 미러링: DB 집계 결과보다 KIS 실시간 시세를 우선순위로 적용 (Single Source of Truth)
+                if (dashboard && dashboard.distribution && dashboard.distribution.history) {
+                    const hist = dashboard.distribution.history;
+                    const mkt = dashboard.market || {};
+                    
+                    // 1. 현재 가격 동기화
+                    hist.current = realPrice;
+                    
+                    // 2. 52주 지표 재계산 (DB 반영 전 Race Condition 해결)
+                    if (hist.high52 && hist.low52 && (hist.high52 - hist.low52) > 0) {
+                        mkt.level52 = Math.round(((realPrice - hist.low52) / (hist.high52 - hist.low52)) * 100);
+                        mkt.gap52 = Math.max(0, hist.high52 - realPrice);
+                    }
+                    dashboard.market = mkt;
                 }
+                setDashboardData(dashboard);
 
                 // Update mutable state with real-time price
                 const iMin = Math.max(0, Math.round(realPrice * 0.75));
@@ -101,6 +120,7 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
         historyData,
         starsData,
         dashboardData,
+        realityData,
         basePrice,
         initialMin: INITIAL_MIN,
         initialMax: INITIAL_MAX,

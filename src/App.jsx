@@ -158,10 +158,12 @@ function App() {
                     const syncPromises = top5.map(async (stock) => {
                         try {
                             const info = await fetchStockInfo(stock.symbol);
-                            if (info && info.stck_prpr) {
+                            if (info && Number(info.currentPrice) > 0) {
                                 return {
                                     ...stock,
-                                    currentPrice: Number(info.stck_prpr)
+                                    currentPrice: Number(info.currentPrice),
+                                    priceChange: Number(info.price_change || 0),
+                                    priceChangeRate: Number(info.price_change_rate || 0)
                                 };
                             }
                         } catch (err) {
@@ -273,6 +275,12 @@ function App() {
     }, []);
 
     useEffect(() => {
+        // [성능 최적화] 모바일 기기(768px 미만)에서는 별 데이터를 생성하지 않음
+        if (window.innerWidth < 768) {
+            setStars([]);
+            return;
+        }
+
         const starCount = 75;
         const newStars = Array.from({ length: starCount }).map((_, i) => ({
             id: i,
@@ -332,8 +340,8 @@ function App() {
         <div className="font-display overflow-x-hidden min-h-screen text-soft-white pb-36">
             {/* Onboarding Sheet */}
             <NicknameSetupSheet isOpen={showOnboarding} />
-            {/* Background Layer */}
-            <div className="star-container">
+            {/* Background Layer (Desktop only) */}
+            <div className="star-container hidden md:block">
                 {stars.map((star) => (
                     <div
                         key={star.id}
@@ -352,8 +360,8 @@ function App() {
 
             {/* Global Header */}
             {(view === 'home' || view === 'sacred' || view === 'mypage') && (
-                <header className="sticky top-4 z-50 mx-auto mt-4 w-[calc(100%-2rem)] max-w-2xl rounded-2xl crystal-glass">
-                    <div className="flex items-center justify-between px-5 py-4">
+                <header className="sticky top-3 sm:top-4 z-50 mx-auto mt-3 sm:mt-4 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-2xl rounded-2xl crystal-glass">
+                    <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4">
                         <div 
                             className="flex items-center gap-3 cursor-pointer group/logo"
                             onClick={() => {
@@ -367,8 +375,8 @@ function App() {
                             <Target className="w-7 h-7 text-neon-teal group-hover:scale-110 transition-transform" />
                             <div className="leading-none">
                                 <h1 className="flex items-end gap-2">
-                                    <span className="font-brandKo text-[24px] font-extrabold tracking-[-0.03em] text-white/95 group-hover:text-white transition-colors">콕콕</span>
-                                    <span className="font-brandEn text-[24px] font-extrabold tracking-[0.05em] uppercase text-neon-teal/90 group-hover:text-neon-teal transition-colors">KOKOK</span>
+                                    <span className="font-brandKo text-[22px] sm:text-[24px] font-extrabold tracking-[-0.03em] text-white/95 group-hover:text-white transition-colors">콕콕</span>
+                                    <span className="font-brandEn text-[22px] sm:text-[24px] font-extrabold tracking-[0.05em] uppercase text-neon-teal/90 group-hover:text-neon-teal transition-colors">KOKOK</span>
                                 </h1>
                             </div>
                         </div>
@@ -378,52 +386,52 @@ function App() {
                 </header>
             )}
 
-            <main className={view === 'detail' ? 'w-full py-8' : 'mx-auto max-w-2xl px-5 py-8'}>
+            <main className={view === 'detail' ? 'w-full py-8' : 'mx-auto max-w-2xl px-4 sm:px-5 py-6 sm:py-8'}>
                 <Routes>
                     <Route path="/" element={
-                        <div className="space-y-12 animate-in fade-in duration-700">
+                        <div className="space-y-8 sm:space-y-12 animate-in fade-in duration-700">
                             {/* Hero - Hide when searching */}
                             {!searchQuery && (
-                                <section className="space-y-8 pt-4 text-center">
-                                    <div className="space-y-4">
+                                <section className="space-y-6 sm:space-y-8 pt-2 sm:pt-4 text-center">
+                                    <div className="space-y-3 sm:space-y-4">
                                         <p className="text-[11px] font-bold tracking-[0.32em] text-white/40 uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
-                                        <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
+                                        <h2 className="text-[30px] sm:text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
                                             사람들이 많이 적는<br /> 목표가를 확인하고<br />
                                             <span className="bg-gradient-to-r from-neon-teal to-neon-pink bg-clip-text text-transparent">
                                                 내 목표가를 기록하세요
                                             </span>
                                         </h2>
-                                        <p className="mx-auto max-w-md text-sm leading-6 text-white/60 md:text-base">
+                                        <p className="mx-auto max-w-md text-[13px] sm:text-sm leading-5 sm:leading-6 text-white/60 md:text-base">
                                             맞추면 당신의 기록은 성지글이 되고,<br className="hidden sm:block" />
-                                            맞춘 글에는 성지순례가 몰립니다.
+                                            적중하면 성지순례 댓글이 붙습니다
                                         </p>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto">
                                         <button
                                             onClick={() => popularStocks.length > 0 && handleStockClick(popularStocks[0])}
-                                            className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-5 py-4 text-sm font-extrabold text-white shadow-glowPink transition hover:scale-[1.01] active:scale-95"
+                                            className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-extrabold text-white shadow-glowPink transition hover:scale-[1.01] active:scale-95"
                                         >
                                             목표가 기록하기
                                         </button>
                                         <button
                                             onClick={() => navigate('/sacred')}
-                                            className="rounded-2xl border border-white/12 bg-white/5 px-5 py-4 text-sm font-bold text-white/85 transition hover:bg-white/10 active:scale-95"
+                                            className="rounded-2xl border border-white/12 bg-white/5 px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-bold text-white/85 transition hover:bg-white/10 active:scale-95"
                                         >
-                                            오늘의 성지글 보기
+                                            오늘 뜨는 성지글 보기
                                         </button>
                                     </div>
                                 </section>
                             )}
 
                             {/* Search & Popular */}
-                            <section className="space-y-6">
+                            <section className="space-y-5 sm:space-y-6">
                                 <div className="relative group">
                                     <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-neon-teal/30 to-neon-pink/30 opacity-20 blur transition duration-700 group-hover:opacity-90"></div>
-                                    <div className="relative crystal-glass flex items-center rounded-2xl border-white/15 px-5">
+                                    <div className="relative crystal-glass flex items-center rounded-2xl border-white/15 px-4 sm:px-5">
                                         <Search className="mr-3 text-white/35 w-5 h-5" />
                                         <input
                                             aria-label="종목 검색"
-                                            className="w-full bg-transparent py-5 text-base font-semibold text-white placeholder:text-white/35 focus:outline-none"
+                                            className="w-full bg-transparent py-4 sm:py-5 text-[15px] sm:text-base font-semibold text-white placeholder:text-white/35 focus:outline-none"
                                             placeholder="종목명을 검색해 목표가를 확인하세요"
                                             type="text"
                                             value={searchQuery}
@@ -472,11 +480,11 @@ function App() {
                                                                     key={stock.symbol}
                                                                     onClick={() => handleStockClick(stock)}
                                                                     type="button"
-                                                                    className="flex items-center justify-between w-full p-4 rounded-2xl border border-white/10 bg-white/5 transition hover:border-neon-teal/40 hover:bg-white/10 group animate-in slide-in-from-left-2 duration-300"
+                                                                    className="flex items-center justify-between w-full p-3 sm:p-4 rounded-2xl border border-white/10 bg-white/5 transition hover:border-neon-teal/40 hover:bg-white/10 group animate-in slide-in-from-left-2 duration-300"
                                                                 >
                                                                     <div className="flex flex-col items-start gap-0.5">
                                                                         <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{stock.symbol}</span>
-                                                                        <span className="text-lg font-black text-white group-hover:text-neon-teal transition-colors">
+                                                                        <span className="text-base sm:text-lg font-black text-white group-hover:text-neon-teal transition-colors max-w-[180px] sm:max-w-none truncate">
                                                                             {renderHighlightedName(stock.name, searchQuery)}
                                                                         </span>
                                                                     </div>
@@ -516,7 +524,7 @@ function App() {
                                                         key={stock.symbol}
                                                         onClick={() => handleStockClick(stock)}
                                                         type="button"
-                                                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:border-neon-teal/40 hover:bg-white/10"
+                                                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm font-semibold text-white/80 transition hover:border-neon-teal/40 hover:bg-white/10"
                                                     >
                                                         {stock.name}
                                                     </button>
@@ -536,22 +544,22 @@ function App() {
                             {/* Featured Distribution - Hide when searching */}
                             {!searchQuery && popularStocks.length > 0 && (
                                 <section
-                                    className="crystal-glass relative overflow-hidden rounded-[2.25rem] p-7 md:p-8 cursor-pointer group"
+                                    className="crystal-glass relative overflow-hidden rounded-[1.75rem] sm:rounded-[2.25rem] p-5 sm:p-7 md:p-8 cursor-pointer group"
                                     onClick={() => handleStockClick(popularStocks[0])}
                                 >
                                     <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-neon-teal/10 blur-3xl"></div>
-                                    <div className="mb-8 flex items-end justify-between gap-4">
+                                    <div className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
                                         <div>
                                             <p className="text-[11px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
-                                            <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white uppercase leading-none">지금 뜨는 종목</h3>
+                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase leading-none">지금 뜨는 종목</h3>
                                         </div>
                                         <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
                                     </div>
-                                    <div className="rounded-[1.75rem] glass-soft p-5 border border-white/5">
+                                    <div className="rounded-[1.5rem] sm:rounded-[1.75rem] glass-soft p-4 sm:p-5 border border-white/5">
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <p className="text-sm font-bold text-white/40 mb-1">{popularStocks[0].name}</p>
-                                                <p className="text-3xl font-black text-white">
+                                                <p className="text-[28px] sm:text-3xl font-black text-white">
                                                     {popularStocks[0].currentPrice.toLocaleString()} 
                                                     <span className="text-sm font-medium opacity-30 ml-2">KRW</span>
                                                 </p>
@@ -579,11 +587,11 @@ function App() {
 
                             {/* Sacred Posts Section - Hide when searching */}
                             {!searchQuery && (
-                                <section className="space-y-6">
+                                <section className="space-y-5 sm:space-y-6">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
                                             <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">최근 성지글</p>
-                                            <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
+                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
                                         </div>
                                         <button onClick={() => navigate('/sacred')} className="text-sm font-bold text-neon-pink hover:text-white transition">더 보기 →</button>
                                     </div>
@@ -593,15 +601,15 @@ function App() {
                                         <article
                                             key={post.id}
                                             onClick={() => handleSacredSelect(post)}
-                                            className={`group relative overflow-hidden rounded-[2rem] border ${post.color === 'neon-pink' ? 'border-neon-pink/25 shadow-glowPink' : 'border-neon-teal/25 shadow-glowTeal'} bg-white/5 p-6 crystal-glass hover:scale-[1.01] transition-all cursor-pointer`}
+                                            className={`group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border ${post.color === 'neon-pink' ? 'border-neon-pink/25 shadow-glowPink' : 'border-neon-teal/25 shadow-glowTeal'} bg-white/5 p-4 sm:p-6 crystal-glass hover:scale-[1.01] transition-all cursor-pointer`}
                                         >
                                             <div className="relative">
                                                 <div className="mb-5 flex items-start justify-between gap-4">
                                                     <div className="flex items-center gap-3">
                                                         {post.color === 'neon-teal' ? (
-                                                            <BadgeCheck className="w-10 h-10 text-neon-teal" />
+                                                            <BadgeCheck className="w-8 h-8 sm:w-10 sm:h-10 text-neon-teal" />
                                                         ) : (
-                                                            <Award className="w-10 h-10 text-neon-pink" />
+                                                            <Award className="w-8 h-8 sm:w-10 sm:h-10 text-neon-pink" />
                                                         )}
                                                         <div>
                                                             <p className={`text-xs font-black tracking-[0.18em] uppercase ${post.color === 'neon-pink' ? 'text-neon-pink' : 'text-neon-teal'}`}>성지글</p>
@@ -610,7 +618,7 @@ function App() {
                                                     </div>
                                                     <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white/60">적중 완료</span>
                                                 </div>
-                                                <h4 className={`text-2xl font-black tracking-tight text-white group-hover:${post.color === 'neon-pink' ? 'text-neon-pink' : 'text-neon-teal'} transition-colors`}>
+                                                <h4 className={`text-xl sm:text-2xl font-black tracking-tight text-white group-hover:${post.color === 'neon-pink' ? 'text-neon-pink' : 'text-neon-teal'} transition-colors`}>
                                                     {post.title}
                                                 </h4>
                                                 <p className="mt-2 text-xs font-medium text-white/50">
@@ -661,31 +669,31 @@ function App() {
 
             {/* Bottom Nav */}
             {view !== 'detail' && view !== 'success' && (
-                <div className="fixed bottom-6 left-1/2 z-50 w-[92%] max-w-md -translate-x-1/2">
-                    <nav className="crystal-glass rounded-[2rem] border-white/10 px-3 py-2.5 shadow-glass">
+                <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 w-[94%] sm:w-[92%] max-w-md -translate-x-1/2">
+                    <nav className="crystal-glass rounded-[1.5rem] sm:rounded-[2rem] border-white/10 px-2.5 sm:px-3 py-2 sm:py-2.5 shadow-glass">
                         <ul className="grid grid-cols-5 items-end">
                             <li className="flex justify-center">
                                 <button
                                     onClick={() => changeView('home')}
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'home' || view === 'detail' || view === 'success' ? 'text-neon-teal' : 'text-white/45'}`}
                                 >
-                                    <Home className="w-6 h-6" />
+                                    <Home className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-black tracking-[0.12em]">홈</span>
                                 </button>
                             </li>
                             <li className="flex justify-center">
                                 <button className="flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-white/45 transition hover:text-white active:scale-95">
-                                    <Compass className="w-6 h-6" />
+                                    <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-bold tracking-[0.12em]">탐색</span>
                                 </button>
                             </li>
                             <li className="relative flex justify-center">
                                 <button
                                     onClick={() => changeView('home')}
-                                    className="group relative -mt-8 flex h-16 w-16 flex-col items-center justify-center rounded-full bg-gradient-to-tr from-neon-teal via-neon-pink to-purple-600 text-white shadow-lg transition active:scale-95"
+                                    className="group relative -mt-7 sm:-mt-8 flex h-14 w-14 sm:h-16 sm:w-16 flex-col items-center justify-center rounded-full bg-gradient-to-tr from-neon-teal via-neon-pink to-purple-600 text-white shadow-lg transition active:scale-95"
                                 >
                                     <div className="absolute -inset-2 rounded-full bg-neon-pink/20 opacity-60 blur-xl"></div>
-                                    <Pencil className="w-8 h-8 relative" />
+                                    <Pencil className="w-7 h-7 sm:w-8 sm:h-8 relative" />
                                 </button>
                             </li>
                             <li className="flex justify-center">
@@ -693,7 +701,7 @@ function App() {
                                     onClick={() => changeView('sacred')}
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'sacred' || view === 'sacred-detail' ? 'text-neon-teal' : 'text-white/45'}`}
                                 >
-                                    <BookOpen className="w-6 h-6" />
+                                    <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-bold tracking-[0.12em]">성지글</span>
                                 </button>
                             </li>
@@ -702,7 +710,7 @@ function App() {
                                     onClick={() => changeView('mypage')}
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'mypage' ? 'text-neon-teal' : 'text-white/45'}`}
                                 >
-                                    <Settings className="w-6 h-6" />
+                                    <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-bold tracking-[0.12em]">마이</span>
                                 </button>
                             </li>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchMyPredictions } from '../utils/mockData';
-import { Target, LogOut, Star, TrendingUp, Clock, ChevronRight } from 'lucide-react';
+import { Target, LogOut, Star, TrendingUp, Clock, ChevronRight, Trash2 } from 'lucide-react';
 
 /**
  * MyPage Component
@@ -13,6 +13,7 @@ const MyPage = ({ onBack, onStockClick }) => {
     const [predictions, setPredictions] = useState([]);
     const [isLoadingPreds, setIsLoadingPreds] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
+    const [isGuideExpanded, setIsGuideExpanded] = useState(false);
 
     // [백엔드] 로그인 유저의 예언 기록 로드
     useEffect(() => {
@@ -40,15 +41,15 @@ const MyPage = ({ onBack, onStockClick }) => {
     // ── 비로그인 상태 ──
     if (!isLoggedIn) {
         return (
-            <div className="mx-auto max-w-2xl px-5 animate-in fade-in duration-700">
-                <div className="text-center pt-16 pb-8 space-y-8">
+            <div className="mx-auto max-w-2xl px-4 sm:px-5 animate-in fade-in duration-700">
+                <div className="text-center pt-12 sm:pt-16 pb-8 space-y-6 sm:space-y-8">
                     {/* Hero Icon */}
                     <div className="flex justify-center">
                         <div className="relative">
-                            <div className="w-24 h-24 bg-gradient-to-br from-neon-teal/10 to-neon-pink/10 
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-neon-teal/10 to-neon-pink/10 
                                             rounded-full flex items-center justify-center
                                             border border-white/10">
-                                <Star className="w-12 h-12 text-white/20" />
+                                <Star className="w-10 h-10 sm:w-12 sm:h-12 text-white/20" />
                             </div>
                             <div className="absolute -inset-6 bg-neon-teal/5 rounded-full blur-2xl -z-10"></div>
                         </div>
@@ -56,23 +57,23 @@ const MyPage = ({ onBack, onStockClick }) => {
 
                     {/* Message */}
                     <div className="space-y-4">
-                        <h2 className="text-[28px] font-black text-white leading-tight">
+                        <h2 className="text-[22px] sm:text-[25px] font-black text-white leading-tight">
                             내 예언을<br />관리하고 싶다면
                         </h2>
-                        <p className="text-[14px] text-white/40 leading-relaxed max-w-xs mx-auto">
+                        <p className="text-[12px] sm:text-[13px] text-white/40 leading-6 sm:leading-relaxed max-w-xs mx-auto">
                             카카오로 시작하면 박제한 기록을 모아볼 수 있고,<br />
                             적중 시 <span className="text-neon-teal font-bold">성지글 알림</span>을 받을 수 있습니다.
                         </p>
                     </div>
 
                     {/* Kakao Login */}
-                    <div className="max-w-sm mx-auto space-y-4">
+                    <div className="max-w-sm mx-auto space-y-3.5 sm:space-y-4">
                         <button
                             onClick={signInWithKakao}
                             className="w-full flex items-center justify-center gap-3
                                        bg-[#FEE500] hover:bg-[#FADA0A] active:bg-[#E5CF00]
-                                       text-[#191919] font-black text-[16px]
-                                       rounded-2xl py-4 px-6
+                                       text-[#191919] font-black text-[14px] sm:text-[15px]
+                                       rounded-2xl py-3.5 sm:py-4 px-5 sm:px-6
                                        transition-all duration-200 active:scale-[0.98]
                                        shadow-[0_4px_20px_rgba(254,229,0,0.15)]"
                         >
@@ -84,16 +85,16 @@ const MyPage = ({ onBack, onStockClick }) => {
                     </div>
 
                     {/* Features */}
-                    <div className="grid grid-cols-1 gap-3 max-w-sm mx-auto pt-4">
+                    <div className="grid grid-cols-1 gap-2.5 sm:gap-3 max-w-sm mx-auto pt-3 sm:pt-4">
                         {[
                             { icon: <Star className="w-4 h-4" />, text: '내 예언 기록 관리' },
                             { icon: <TrendingUp className="w-4 h-4" />, text: '적중률 추적 & 성지글 알림' },
                             { icon: <Clock className="w-4 h-4" />, text: '예측 히스토리 타임라인' },
                         ].map((f, i) => (
-                            <div key={i} className="flex items-center gap-3 px-5 py-3 
+                            <div key={i} className="flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 
                                                       bg-white/5 border border-white/5 rounded-2xl">
                                 <div className="text-neon-teal/60">{f.icon}</div>
-                                <span className="text-[13px] font-bold text-white/50">{f.text}</span>
+                                <span className="text-[12px] sm:text-[13px] font-bold text-white/50">{f.text}</span>
                             </div>
                         ))}
                     </div>
@@ -104,23 +105,23 @@ const MyPage = ({ onBack, onStockClick }) => {
 
     // ── 로그인 상태 ──
     return (
-        <div className="mx-auto max-w-2xl px-5 animate-in fade-in duration-700">
+        <div className="mx-auto max-w-2xl px-4 sm:px-5 animate-in fade-in duration-700">
             {/* Profile Card */}
-            <div className="crystal-glass rounded-[2rem] p-6 mb-6 border border-white/10 
+            <div className="crystal-glass rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 mb-5 sm:mb-6 border border-white/10 
                             shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_10px_30px_-5px_rgba(0,0,0,0.6)]">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                     {/* Avatar */}
                     <div className="relative shrink-0">
                         {profile?.avatar ? (
                             <img 
                                 src={profile.avatar} 
                                 alt="프로필" 
-                                className="w-16 h-16 rounded-full border-2 border-neon-teal/30 object-cover"
+                                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-neon-teal/30 object-cover"
                             />
                         ) : (
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neon-teal/20 to-neon-pink/20 
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-neon-teal/20 to-neon-pink/20 
                                             border-2 border-white/10 flex items-center justify-center">
-                                <span className="text-2xl font-black text-white/60">
+                                <span className="text-xl sm:text-2xl font-black text-white/60">
                                     {profile?.nickname?.charAt(0) || '⭐'}
                                 </span>
                             </div>
@@ -133,14 +134,14 @@ const MyPage = ({ onBack, onStockClick }) => {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                        <h3 className={`text-lg font-black text-neon-teal brightness-125 truncate`}>{profile?.nickname || '별지기'}</h3>
-                        <p className="text-[12px] font-bold text-neon-teal/40 truncate">{profile?.email || '카카오 로그인'}</p>
+                        <h3 className={`text-[15px] sm:text-[17px] font-black text-neon-teal brightness-125 truncate`}>{profile?.nickname || '별지기'}</h3>
+                        <p className="text-[11px] sm:text-[12px] font-bold text-neon-teal/40 truncate">{profile?.email || '카카오 로그인'}</p>
                         <div className="flex items-center gap-2 mt-1.5">
                             <span className="px-2 py-0.5 bg-neon-teal/10 border border-neon-teal/20 
                                              rounded-full text-[10px] font-black text-neon-teal uppercase tracking-wider">
                                 정식 별지기
                             </span>
-                            <span className="text-[11px] font-bold text-neon-teal/30">
+                            <span className="text-[10px] sm:text-[11px] font-bold text-neon-teal/30">
                                 기록 {predictions.length}개
                             </span>
                         </div>
@@ -149,10 +150,32 @@ const MyPage = ({ onBack, onStockClick }) => {
             </div>
 
             {/* My Predictions */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between px-1">
-                    <h4 className="text-[13px] font-black text-neon-teal/60 uppercase tracking-[0.25em]">내 예언 기록</h4>
-                    <span className="text-[12px] font-bold text-neon-teal/30">{predictions.length}건</span>
+                    <h4 className="text-[12px] sm:text-[13px] font-black text-neon-teal/60 uppercase tracking-[0.22em]">내 예언 기록</h4>
+                    <span className="text-[11px] sm:text-[12px] font-bold text-neon-teal/30">{predictions.length}건</span>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
+                    <p className="text-[11px] sm:text-[12px] font-black text-neon-teal/70 tracking-wider uppercase">판정 룰 치트키</p>
+                    <p className="text-[11px] sm:text-[12px] text-white/60">기한일 종가 기준으로 판정합니다.</p>
+                    <p className="text-[11px] sm:text-[12px] text-white/60"><span className="text-joy-gold font-bold">1%</span> 적중 · <span className="text-joy-gold/90 font-bold">3%</span> 근접 · <span className="text-hope-green font-bold">5%</span> 아슬아슬 · <span className="text-sad-blue font-bold">5%+</span> 빗나감</p>
+                    <button
+                        type="button"
+                        onClick={() => setIsGuideExpanded(prev => !prev)}
+                        className="text-[11px] sm:text-[12px] font-bold text-neon-teal/80 hover:text-neon-teal transition-colors pt-1"
+                    >
+                        {isGuideExpanded ? '접기' : '더보기'}
+                    </button>
+                    {isGuideExpanded && (
+                        <div className="mt-1.5 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 space-y-1.5">
+                            <p className="text-[11px] sm:text-[12px] text-white/70">1. 기한일 종가로 최종 판정합니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-white/70">2. 오차율 = `|실제 종가 - 예언가| / 예언가 × 100`</p>
+                            <p className="text-[11px] sm:text-[12px] text-white/70">3. 근접 적중은 적중 그룹으로 집계됩니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-white/70">4. 기한 전에는 진행중으로 표시됩니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-white/50">시장 휴장/데이터 지연 시 실제 반영 시점이 늦어질 수 있습니다.</p>
+                        </div>
+                    )}
                 </div>
 
                 {isLoadingPreds ? (
@@ -167,7 +190,7 @@ const MyPage = ({ onBack, onStockClick }) => {
                         <p className="text-[12px] text-white/15">종목 상세에서 목표가를 조준해보세요</p>
                     </div>
                 ) : (
-                    <div className="relative ml-4 pl-8 border-l border-white/10 space-y-8 pb-10">
+                    <div className="relative ml-2.5 sm:ml-4 pl-5 sm:pl-8 border-l border-white/10 space-y-5 sm:space-y-8 pb-7 sm:pb-10">
                         {predictions.map((pred, idx) => {
                             const date = new Date(pred.created_at);
                             const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
@@ -182,23 +205,32 @@ const MyPage = ({ onBack, onStockClick }) => {
                                 dot: 'bg-hope-green shadow-[0_0_10px_#10b981]'
                             };
 
-                            if (pred.isHit) {
+                            if (pred.judgmentStatus === 'HIT_EXACT' || pred.judgmentStatus === 'HIT_NEAR') {
                                 theme = {
                                     color: 'text-joy-gold',
                                     bg: 'bg-joy-gold/15',
                                     border: 'border-joy-gold/40',
                                     glow: 'shadow-[0_0_20px_rgba(251,191,36,0.2)]',
-                                    label: '적중 완료',
+                                    label: pred.judgmentLabel || '적중 완료',
                                     dot: 'bg-joy-gold shadow-[0_0_12px_#fbbf24]'
                                 };
-                            } else if (pred.isMissed) {
+                            } else if (pred.judgmentStatus === 'MISSED') {
                                 theme = {
                                     color: 'text-sad-blue',
                                     bg: 'bg-sad-blue/10',
                                     border: 'border-sad-blue/30',
                                     glow: 'shadow-none',
-                                    label: '빗나감',
+                                    label: pred.judgmentLabel || '빗나감',
                                     dot: 'bg-sad-blue shadow-[0_0_8px_#64748b]'
+                                };
+                            } else if (pred.judgmentStatus === 'CLOSE_CALL') {
+                                theme = {
+                                    color: 'text-hope-green',
+                                    bg: 'bg-hope-green/10',
+                                    border: 'border-hope-green/40',
+                                    glow: 'shadow-[0_0_16px_rgba(16,185,129,0.12)]',
+                                    label: pred.judgmentLabel || '아슬아슬',
+                                    dot: 'bg-hope-green shadow-[0_0_10px_#10b981]'
                                 };
                             } else {
                                 // 진행중 (긍정/에메랄드) - 보더와 글로우 강화
@@ -207,7 +239,7 @@ const MyPage = ({ onBack, onStockClick }) => {
                                     bg: 'bg-hope-green/10',
                                     border: 'border-hope-green/40',
                                     glow: 'shadow-[0_0_20px_rgba(16,185,129,0.15)]',
-                                    label: '진행중',
+                                    label: pred.judgmentLabel || '진행중',
                                     dot: 'bg-hope-green shadow-[0_0_10px_#10b981]'
                                 };
                             }
@@ -215,32 +247,32 @@ const MyPage = ({ onBack, onStockClick }) => {
                             return (
                                 <div key={pred.id} className="relative animate-in slide-in-from-left duration-500" style={{ delay: `${idx * 100}ms` }}>
                                     {/* Timeline Dot */}
-                                    <div className={`absolute -left-[41px] top-6 w-4 h-4 rounded-full border-4 border-[#0a0a10] z-10 ${theme.dot}`}></div>
+                                    <div className={`absolute -left-[27px] sm:-left-[41px] top-4.5 sm:top-6 w-3 h-3 sm:w-4 sm:h-4 rounded-full border-[3px] sm:border-4 border-[#0a0a10] z-10 ${theme.dot}`}></div>
                                     
                                     {/* Date Header */}
-                                    <div className="mb-3">
+                                    <div className="mb-2.5 sm:mb-3">
                                         <span className="text-[11px] font-black text-neon-teal/30 tracking-widest uppercase">{dateStr}</span>
                                     </div>
 
                                     {/* Card */}
-                                    <div className={`group relative crystal-glass rounded-[2rem] p-6 border-[0.5px] transition-all duration-300 ${theme.bg} ${theme.border} hover:bg-white/10 ${theme.glow}`}>
+                                    <div className={`group relative crystal-glass rounded-[1.35rem] sm:rounded-[2rem] p-3.5 sm:p-6 border-[0.5px] transition-all duration-300 ${theme.bg} ${theme.border} hover:bg-white/10 ${theme.glow}`}>
                                         {/* Header: Name + Status + Deletion */}
-                                        <div className="flex justify-between items-start mb-6">
+                                        <div className="flex justify-between items-start mb-3.5 sm:mb-6 gap-3">
                                             <div 
-                                                className="cursor-pointer flex flex-col gap-1.5"
+                                                className="cursor-pointer flex flex-col gap-1.5 min-w-0 flex-1"
                                                 onClick={() => pred.stock && onStockClick?.(pred.stock)}
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-[42px] font-black ${theme.color} brightness-125 group-hover:brightness-150 transition-all leading-none tracking-tighter`}>{pred.stockName}</span>
-                                                    <span className={`text-[12px] font-black ${theme.color} opacity-40 uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md border border-white/10`}>{pred.stockSymbol}</span>
-                                                </div>
-                                                <div className="flex items-center gap-5 mt-2">
-                                                    <span className={`text-[12px] font-black uppercase tracking-widest px-4 py-1.5 rounded-xl border ${theme.border} ${theme.color} bg-black/60 shadow-lg shadow-black/20`}>
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <span className={`text-[10px] sm:text-[12px] font-black uppercase tracking-widest px-2.5 sm:px-4 py-1.5 rounded-xl border ${theme.border} ${theme.color} bg-black/60 shadow-lg shadow-black/20 shrink-0`}>
                                                         {theme.label}
                                                     </span>
-                                                    <div className="flex items-center gap-2.5">
-                                                        <span className={`text-[14px] font-black ${theme.color} opacity-30 uppercase tracking-tighter`}>기한</span>
-                                                        <span className={`text-[16px] font-black ${theme.color}`}>{pred.target_date}</span>
+                                                    <span className={`text-[19px] sm:text-[32px] font-black ${theme.color} brightness-125 group-hover:brightness-150 transition-all leading-none tracking-tighter truncate`}>{pred.stockName}</span>
+                                                    <span className={`text-[11px] sm:text-[12px] font-black ${theme.color} opacity-40 uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md border border-white/10 shrink-0`}>{pred.stockSymbol}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2.5 sm:gap-5 mt-1.5 sm:mt-2 min-w-0">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className={`text-[12px] sm:text-[14px] font-black ${theme.color} opacity-30 uppercase tracking-tighter shrink-0`}>기한</span>
+                                                        <span className={`text-[13px] sm:text-[15px] font-black ${theme.color} truncate`}>{pred.target_date}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -281,26 +313,26 @@ const MyPage = ({ onBack, onStockClick }) => {
                                                             e.stopPropagation();
                                                             setDeletingId(pred.id);
                                                         }}
-                                                        className={`p-2 ${theme.color} opacity-20 hover:opacity-100 hover:bg-white/5 rounded-full transition-all`}
+                                                        className={`p-2 ${theme.color} opacity-25 hover:opacity-100 hover:bg-white/5 rounded-full transition-all shrink-0`}
                                                     >
-                                                        <LogOut className="w-6 h-6 rotate-180" />
+                                                        <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
                                                     </button>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Content: Price Comparison (Super High Clarity Grid) */}
-                                        <div className="grid grid-cols-2 gap-px bg-white/5 border-[0.5px] border-white/10 rounded-2xl overflow-hidden mb-8 shadow-2xl">
-                                            <div className="bg-black/40 p-7 space-y-3">
-                                                <p className={`text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>현재가</p>
-                                                <p className={`text-[34px] font-black font-brandEn ${theme.color} brightness-110 leading-none`}>
-                                                    {Number(pred.currentPrice).toLocaleString()}<span className="text-[16px] ml-1 opacity-20 font-brandKo">원</span>
+                                        <div className="grid grid-cols-2 gap-px bg-white/5 border-[0.5px] border-white/10 rounded-2xl overflow-hidden mb-5 sm:mb-8 shadow-2xl">
+                                            <div className="bg-black/40 p-3.5 sm:p-7 space-y-2 sm:space-y-3">
+                                                <p className={`text-[11px] sm:text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>현재가</p>
+                                                <p className={`text-[22px] sm:text-[28px] font-black font-brandEn ${theme.color} brightness-110 leading-none truncate`}>
+                                                    {Number(pred.currentPrice).toLocaleString()}<span className="text-[11px] sm:text-[16px] ml-1 opacity-20 font-brandKo">원</span>
                                                 </p>
                                             </div>
-                                            <div className={`bg-black/60 p-7 space-y-3 text-right`}>
-                                                <p className={`text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>목표가</p>
-                                                <p className={`text-[34px] font-black font-brandEn leading-none ${theme.color} brightness-125`}>
-                                                    {Number(pred.price_target).toLocaleString()}<span className="text-[16px] ml-1 opacity-20 font-brandKo">원</span>
+                                            <div className={`bg-black/60 p-3.5 sm:p-7 space-y-2 sm:space-y-3 text-right`}>
+                                                <p className={`text-[11px] sm:text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>목표가</p>
+                                                <p className={`text-[22px] sm:text-[28px] font-black font-brandEn leading-none ${theme.color} brightness-125 truncate`}>
+                                                    {Number(pred.price_target).toLocaleString()}<span className="text-[11px] sm:text-[16px] ml-1 opacity-20 font-brandKo">원</span>
                                                 </p>
                                             </div>
                                         </div>
@@ -308,7 +340,7 @@ const MyPage = ({ onBack, onStockClick }) => {
                                         {/* Footer: Prominent Action */}
                                         <button 
                                             onClick={() => pred.stock && onStockClick?.(pred.stock)}
-                                            className={`w-full flex items-center justify-between py-4 px-8 rounded-2xl text-[15px] font-black ${theme.color} bg-white/5 hover:bg-white/10 border-[0.5px] ${theme.border} transition-all duration-300 group/btn shadow-lg`}
+                                            className={`w-full flex items-center justify-between py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl text-[13px] sm:text-[14px] font-black ${theme.color} bg-white/5 hover:bg-white/10 border-[0.5px] ${theme.border} transition-all duration-300 group/btn shadow-lg`}
                                         >
                                             <span className="tracking-tight">성지 분석 리포트 확인</span>
                                             <ChevronRight className={`w-6 h-6 group-hover:translate-x-1.5 transition-transform`} />

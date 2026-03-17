@@ -1,16 +1,26 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import DistributionSummary from './DistributionSummary';
 import DetailHeader from './DetailHeader';
 import TargetControlBar from './TargetControlBar';
 import OrderBottomSheet from './OrderBottomSheet';
 import StockSvgChart from './StockSvgChart';
+import StockDetailV2 from './StockDetailV2';
 import { useChartInteraction } from '../hooks/useChartInteraction';
 import { ChartProvider, useChartContext } from '../context/ChartContext';
 import { useAuth } from '../context/AuthContext';
 import { submitPrediction, generateSacredId } from '../utils/mockData';
 import LoginBottomSheet from './LoginBottomSheet';
 import SuccessCertificate from './SuccessCertificate';
+import MarketReality from './MarketReality';
+
+/**
+ * Integration Notes
+ * - 레거시 차트(v1)와 신규 차트(v2)의 프론트 토글 경계 파일.
+ * - BACKEND_TODO(API): query 기반 토글을 서버 실험 플래그(user segment)로 전환 가능.
+ * - BACKEND_TODO(SUPABASE): v1/v2 전환 비율과 이탈률을 event log로 수집해 점진 전환 판단.
+ * - BACKEND_TODO(KIS): 상세 공통 현재가 소스는 KIS 동기화 캐시로 단일화.
+ */
 
 /* ──────────────────────────────────────────
    Constants
@@ -95,19 +105,19 @@ function triggerHaptic(duration = 15) {
 
 function getSealBtnText(dateText, priceValue, isManual) {
     const priceStr = priceValue.toLocaleString() + '원';
-    if (isManual) return `${dateText}까지 ${priceStr} 찍는다`;
+    if (isManual) return `${dateText}까지 ${priceStr} 목표`;
     switch (dateText) {
-        case '내일': return `내일까지 ${priceStr} 무조건 간다`;
-        case '이번주': return `이번주까지 ${priceStr} 찍는다`;
-        case '다음주': return `다음주까지 ${priceStr} 간다`;
-        case '이번달': return `이번달 안에 ${priceStr} 간다`;
+        case '내일': return `내일까지 ${priceStr} 각 본다`;
+        case '이번주': return `이번주까지 ${priceStr} 도전`;
+        case '다음주': return `다음주까지 ${priceStr} 도전`;
+        case '이번달': return `이번달 안에 ${priceStr} 도전`;
         case '다음달': return `다음달 안에 ${priceStr} 돌파한다`;
-        case '3개월': return `3개월 안에 ${priceStr} 찍는다`;
-        case '올해': return `올해 안에 ${priceStr} 무조건 간다`;
+        case '3개월': return `3개월 안에 ${priceStr} 도전`;
+        case '올해': return `올해 안에 ${priceStr} 노려본다`;
         case '1년': return `1년 안에 ${priceStr} 도달한다`;
-        case '3년': return `3년 안에 ${priceStr} 간다`;
-        case '언젠가': return `언젠가 ${priceStr} 무조건 간다`;
-        default: return `[${dateText}] ${priceStr} 간다`;
+        case '3년': return `3년 안에 ${priceStr} 도전`;
+        case '언젠가': return `언젠가 ${priceStr} 찍어보자`;
+        default: return `[${dateText}] ${priceStr} 도전`;
     }
 }
 
@@ -133,6 +143,7 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
         historyData,
         starsData,
         dashboardData,
+        realityData,
         basePrice: BASE_PRICE, 
         initialMin: INITIAL_MIN, 
         initialMax: INITIAL_MAX,
@@ -764,7 +775,7 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
 
             {/* ── Sticky Header ── */}
             <DetailHeader 
-                stock={stock} 
+                stock={stockInfo || stock} 
                 basePrice={BASE_PRICE} 
                 priceChange={stockInfo?.price_change}
                 priceChangeRate={stockInfo?.price_change_rate}
@@ -776,6 +787,10 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
                 {/* [중앙 집중형 고정폭 영역: Dashboard & UI] */}
                 <div className="mx-auto max-w-2xl px-5">
                     {/* Community Dashboard - [백엔드] 실시간 DB 데이터 */}
+                    {/* Market Reality (Fact) */}
+                    <MarketReality kisData={realityData} />
+
+                    {/* Community Dashboard (Imagination) */}
                     <CommunityDashboard dashboardData={dashboardData} />
 
                     {/* ── Distribution Summary - [백엔드] DB Function에서 반환된 데이터 ── */}
@@ -936,8 +951,9 @@ const StockDetailMain = ({ stock, onBack, onRecord }) => {
 /* ── StockDetail Content Wrapper (Handles Loading UI) ── */
 export const StockDetailContent = (props) => {
     const { isLoading, stockInfo } = useChartContext();
+    const location = useLocation();
 
-    if (isLoading || !stockInfo) {
+    if (isLoading) {
         return (
             <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
                 <div className="w-16 h-16 border-4 border-white/10 border-t-neon-pink rounded-full animate-spin mb-6"></div>
@@ -949,7 +965,32 @@ export const StockDetailContent = (props) => {
         );
     }
 
-    return <StockDetailMain {...props} />;
+    if (!stockInfo) {
+        return (
+            <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center mb-6">
+                    <span className="text-neon-pink text-3xl font-black">!</span>
+                </div>
+                <h2 className="text-xl font-black text-white/90 mb-2 font-brandKo tracking-tight">종목을 찾을 수 없습니다</h2>
+                <p className="text-white/40 text-[13px] font-medium leading-relaxed max-w-[280px] mb-8">
+                    해당 종목의 데이터를 불러오는데 실패했거나 <br/>유효하지 않은 종목 코드입니다.
+                </p>
+                <button 
+                    onClick={props.onBack}
+                    className="px-8 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all active:scale-95"
+                >
+                    홈으로 돌아가기
+                </button>
+            </div>
+        );
+    }
+
+    // Integration Notes
+    // - BACKEND_TODO(API): 기본 V2 노출 여부를 서버 실험 플래그로 대체.
+    // - BACKEND_TODO(SUPABASE): legacy 진입(query=v1) 사용자 행동 추적으로 회귀 의존성 확인.
+    // - 현재는 기본 V2, 비상 복구 경로로 URL query `?chart=v1`만 레거시를 노출.
+    const forceLegacyV1 = new URLSearchParams(location.search).get('chart') === 'v1';
+    return forceLegacyV1 ? <StockDetailMain {...props} /> : <StockDetailV2 {...props} />;
 };
 
 export const StockDetail = (props) => {

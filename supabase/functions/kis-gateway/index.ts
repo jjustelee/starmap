@@ -17,9 +17,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(JSON.stringify({ error: "Invalid JSON body or empty request" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
     const { symbol, type = 'price' } = body;
-    console.log(`[KIS Gateway] Received request: type=${type}, symbol=${symbol}, query=${body.query}`);
+    console.log(`[KIS Gateway] Received request: type=${type}, symbol=${symbol}`);
 
     let resultData;
 
@@ -31,7 +40,7 @@ serve(async (req) => {
       const searchRes = await fetch(`https://ac.stock.naver.com/ac?q=${encodeURIComponent(query)}&target=stock`);
       resultData = await searchRes.json();
     } else {
-      // KIS 관련 요청 (price, history)
+      // KIS 관련 요청 (price, history, reality)
       if (!symbol) throw new Error("Symbol is required");
 
       const KIS_APP_KEY = Deno.env.get("KIS_APP_KEY");
@@ -98,6 +107,8 @@ serve(async (req) => {
               price_change_rate: Number(out.prdy_ctrt),
               price_high: Number(out.stck_hgpr),
               price_low: Number(out.stck_lwpr),
+              high_52w: Number(out.w52_hgpr),
+              low_52w: Number(out.w52_lwpr),
               updated_at: new Date().toISOString(),
             })
             .eq("symbol", symbol);
@@ -117,6 +128,60 @@ serve(async (req) => {
           },
         });
         resultData = await historyRes.json();
+      } else if (type === 'reality') {
+        const safeFetch = async (url: string, trId: string) => {
+          try {
+            const res = await fetch(url, {
+              headers: {
+                "Content-Type": "application/json",
+                "authorization": `Bearer ${accessToken}`,
+                "appkey": KIS_APP_KEY,
+                "appsecret": KIS_APP_SECRET,
+                "tr_id": trId,
+                "custtype": "P",
+              },
+            });
+            const text = await res.text();
+            console.log(`[KIS Gateway] ${trId} Response (${res.status}): ${text.substring(0, 100)}`);
+            if (!res.ok) return { _error: true, status: res.status, text: text.substring(0, 100) };
+            return JSON.parse(text);
+          } catch (e) {
+            console.error(`[KIS Gateway] ${trId} Fetch Error:`, e.message);
+            return { _error: true, message: e.message };
+          }
+        };
+
+        const pricePromise = safeFetch(`${KIS_URL}/uapi/domestic-stock/v1/quotations/inquire-price?fid_cond_mrkt_div_code=J&fid_input_iscd=${symbol}`, "FHKST01010100");
+        const investorPromise = safeFetch(`${KIS_URL}/uapi/domestic-stock/v1/quotations/inquire-investor?fid_cond_mrkt_div_code=J&fid_input_iscd=${symbol}`, "FHKST01010900");
+        // 경로 수정: /quotations -> /finance
+        const ratioPromise = safeFetch(`${KIS_URL}/uapi/domestic-stock/v1/finance/financial-ratio?fid_cond_mrkt_div_code=J&fid_input_iscd=${symbol}&fid_div_cls_code=0`, "FHKST66430300");
+
+        const [priceData, investorData, ratioData] = await Promise.all([pricePromise, investorPromise, ratioPromise]);
+        
+        // 데이터 정제
+        const p = priceData.output || {};
+        const inv = investorData.output || [];
+        // FHKST66430300은 output이 배열일 가능성이 있음 (연도별/분기별)
+        const ratOutput = ratioData.output || [];
+        const rat = Array.isArray(ratOutput) ? (ratOutput[0] || {}) : ratOutput;
+        
+        // 최근 5일 기관+외인 합산 수급 계산
+        const last5Days = Array.isArray(inv) ? inv.slice(0, 5) : [];
+        const supply5d = last5Days.reduce((acc, day) => 
+          acc + Number(day.frgn_ntby_qty || 0) + Number(day.orgn_ntby_qty || 0), 0
+        );
+
+        resultData = {
+          per: p.per,
+          pbr: p.pbr,
+          ind_area_per: p.ind_area_per,
+          beta: p.beta || "0.95",
+          supply_5d: supply5d,
+          // 실시간 재무비율 적용 (영업이익률, 부채비율)
+          // 확인된 필드명: bsop_prfi_inrt(영업이익율), lblt_rate(부채비율)
+          op_margin: Number(rat.bsop_prfi_inrt || rat.op_prfi_rate || rat.oprtr_prfit_rate || 0),
+          debt_ratio: Number(rat.lblt_rate || rat.debt_rate || 0)
+        };
       }
     }
 
