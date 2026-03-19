@@ -32,8 +32,9 @@ const PERIOD_PRESETS = [
  * - onSubmit: () => Promise<void> | void
  * - isSubmitting: boolean
  * - errorMessage: string
+ * - onVisibilityChange?: (visible: boolean) => void
  */
-const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmitting, errorMessage }) => {
+const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmitting, errorMessage, forceOpenSignal = 0, onVisibilityChange }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [sheetMaxHeight, setSheetMaxHeight] = useState(460);
     const [showManualPrice, setShowManualPrice] = useState(false);
@@ -89,6 +90,19 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
             setIsExpanded(true);
         }
     }, [errorMessage]);
+
+    useEffect(() => {
+        if (forceOpenSignal > 0) {
+            setIsExpanded(true);
+        }
+    }, [forceOpenSignal]);
+
+    useEffect(() => {
+        onVisibilityChange?.(true);
+        return () => {
+            onVisibilityChange?.(false);
+        };
+    }, [onVisibilityChange]);
 
     useEffect(() => {
         if (!isExpanded) {

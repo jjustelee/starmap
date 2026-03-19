@@ -1,5 +1,193 @@
 import React, { useState } from 'react';
 
+const toNum = (value) => {
+    const normalized = typeof value === 'string'
+        ? value.replace(/,/g, '').replace(/%/g, '').trim()
+        : value;
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : null;
+};
+
+const formatUpdatedAt = (value) => {
+    if (!value) return null;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const formatRatio = (value, suffix = '%') => {
+    const n = toNum(value);
+    if (n === null) return '-';
+    return `${trimNumber(n)}${suffix}`;
+};
+
+const formatSignedPercent = (value) => {
+    const n = toNum(value);
+    if (n === null) return '-';
+    const sign = n > 0 ? '+' : '';
+    return `${sign}${trimNumber(n)}%`;
+};
+
+const formatPlainNumber = (value) => {
+    const n = toNum(value);
+    if (n === null) return '-';
+    return Math.round(n).toLocaleString();
+};
+
+const trimNumber = (value) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return '-';
+    const fixed = Math.abs(n) >= 100 ? n.toFixed(0) : n.toFixed(2);
+    return fixed.replace(/\.00$/, '').replace(/(\.\d*[1-9])0$/, '$1');
+};
+
+const getSupplyState = (data) => {
+    const supply = toNum(data.supply_5d);
+    if (supply === null) {
+        return { hasData: false, tag: '수급 데이터 대기', supply: null };
+    }
+    return {
+        hasData: true,
+        tag: supply > 0 ? '유입세' : '관망/이탈',
+        supply
+    };
+};
+
+const getFundamentalState = (data) => {
+    const roe = toNum(data.roe);
+    const debt = toNum(data.debt_ratio);
+    const eps = toNum(data.eps);
+    const bps = toNum(data.bps);
+
+    if (roe === null && debt === null) {
+        return { hasData: false, tag: '재무 데이터 대기', roe: null, debt: null, eps, bps, level: 'pending' };
+    }
+
+    let level = 'warning';
+    let tag = '주의';
+
+    if (roe !== null && debt !== null) {
+        if (roe >= 10 && debt <= 100) {
+            level = 'strong';
+            tag = '탄탄';
+        } else if (roe > 0 && debt <= 200) {
+            level = 'mid';
+            tag = '보통';
+        }
+    } else if (roe !== null) {
+        if (roe >= 10) {
+            level = 'strong';
+            tag = '탄탄';
+        } else if (roe > 0) {
+            level = 'mid';
+            tag = '보통';
+        }
+    } else if (debt !== null) {
+        if (debt <= 100) {
+            level = 'strong';
+            tag = '탄탄';
+        } else if (debt <= 200) {
+            level = 'mid';
+            tag = '보통';
+        }
+    }
+
+    return { hasData: true, tag, roe, debt, eps, bps, level };
+};
+
+const getValueState = (data) => {
+    const per = toNum(data.per);
+    const pbr = toNum(data.pbr);
+    const eps = toNum(data.eps);
+    const bps = toNum(data.bps);
+
+    if (per === null && pbr === null) {
+        return { hasData: false, tag: '밸류 데이터 대기', per: null, pbr: null, eps, bps, level: 'pending', mode: 'none' };
+    }
+
+    let level = 'high';
+    let tag = '높은 편';
+    let mode = 'both';
+
+    if (per !== null && pbr !== null) {
+        if (per <= 10 && pbr <= 1.5) {
+            level = 'low';
+            tag = '낮은 편';
+        } else if (per <= 20 && pbr <= 3) {
+            level = 'mid';
+            tag = '보통';
+        }
+    } else if (per !== null) {
+        mode = 'per';
+        if (per <= 10) {
+            level = 'low';
+            tag = '낮은 편';
+        } else if (per <= 20) {
+            level = 'mid';
+            tag = '보통';
+        }
+    } else {
+        mode = 'pbr';
+        if (pbr <= 1) {
+            level = 'low';
+            tag = '낮은 편';
+        } else if (pbr <= 3) {
+            level = 'mid';
+            tag = '보통';
+        }
+    }
+
+    return { hasData: true, tag, per, pbr, eps, bps, level, mode };
+};
+
+const getRiskState = (data) => {
+    const currentPrice = toNum(data.currentPrice);
+    const priceChangeRate = toNum(data.priceChangeRate);
+    const priceHigh = toNum(data.priceHigh);
+    const priceLow = toNum(data.priceLow);
+    const intradaySwing = currentPrice && priceHigh !== null && priceLow !== null
+        ? ((priceHigh - priceLow) / currentPrice) * 100
+        : null;
+
+    if (priceChangeRate === null && intradaySwing === null) {
+        return {
+            hasData: false,
+            tag: '변동 데이터 대기',
+            currentPrice,
+            priceChangeRate,
+            priceHigh,
+            priceLow,
+            intradaySwing: null,
+            score: null,
+            level: 'pending'
+        };
+    }
+
+    const score = Math.max(Math.abs(priceChangeRate ?? 0), intradaySwing ?? 0);
+    let tag = '큰 편';
+    let level = 'high';
+
+    if (score < 2) {
+        tag = '잔잔';
+        level = 'low';
+    } else if (score < 5) {
+        tag = '보통';
+        level = 'mid';
+    }
+
+    return {
+        hasData: true,
+        tag,
+        currentPrice,
+        priceChangeRate,
+        priceHigh,
+        priceLow,
+        intradaySwing,
+        score,
+        level
+    };
+};
+
 /**
  * 지표별 해석 가이드 설명 데이터
  */
@@ -11,18 +199,18 @@ const INDICATOR_METADATA = {
     },
     fundamental: {
         title: "기업 기본 체력 해석 가이드",
-        description: "돈을 얼마나 잘 벌고(영업이익률), 빚(부채비율)은 적은지 체크하여 튼튼한 회사인지 판별합니다.",
-        formulaLabel: "영업이익률 10%↑ & 부채 100%↓ 기준",
+        description: "자기자본 수익률(ROE)과 부채비율로 회사 체력이 얼마나 탄탄한지 빠르게 확인합니다.",
+        formulaLabel: "ROE 10%↑ & 부채 100%↓ 기준",
     },
     value: {
         title: "가치 평가 해석 가이드",
-        description: "동종 업계 평균과 비교하여 현재 주가가 실적 대비 싼지 비싼지 판단합니다.",
-        formulaLabel: "(현재 PER ÷ 업종 평균 PER) × 100",
+        description: "PER와 PBR로 현재 가격 부담이 낮은 편인지, 보통인지, 높은 편인지 참고합니다.",
+        formulaLabel: "PER + PBR 참고",
     },
     risk: {
-        title: "시장 위험성 해석 가이드",
-        description: "지수 변동 대비 이 종목이 얼마나 민감하게 반응하는지 보여줍니다.",
-        formulaLabel: "베타(β) 계수 (시장 변동 대비 민감도)",
+        title: "가격 흔들림 해석 가이드",
+        description: "전일 등락률과 장중 고저폭으로 이 종목이 오늘 얼마나 출렁였는지 체감형으로 보여줍니다.",
+        formulaLabel: "max(|전일등락률|, 일중 변동폭)",
     }
 };
 
@@ -39,9 +227,9 @@ const formatValue = (val) => {
 /**
  * 지표별 시각적 게이지 및 값 표시 컴포넌트
  */
-const MetricGauge = ({ type, data }) => {
+const MetricGauge = ({ type, analysis }) => {
     if (type === 'supply') {
-        const energyRaw = data.supply_5d || 0;
+        const energyRaw = analysis.supply ?? 0;
         const energy = Math.min(10, Math.max(0, (energyRaw / 1000000) + 5));
         return (
             <div className="flex flex-col items-end gap-1.5 min-w-[76px] min-[380px]:min-w-[100px]">
@@ -60,26 +248,25 @@ const MetricGauge = ({ type, data }) => {
         );
     }
     if (type === 'fundamental') {
-        const isSafe = data.op_margin >= 10 && data.debt_ratio <= 100;
+        const fillClass = analysis.level === 'strong'
+            ? 'w-full bg-neon-teal shadow-[0_0_8px_#22d3ee]'
+            : (analysis.level === 'mid' ? 'w-3/5 bg-yellow-400' : 'w-1/4 bg-neon-pink');
         return (
             <div className="flex flex-col items-end gap-1.5 min-w-[76px] min-[380px]:min-w-[100px]">
                 <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
                     <div 
-                        className={`absolute left-0 top-0 h-full transition-all duration-1000 ${isSafe ? 'w-full bg-neon-teal shadow-[0_0_8px_#22d3ee]' : 'w-1/2 bg-yellow-400'}`}
+                        className={`absolute left-0 top-0 h-full transition-all duration-1000 ${fillClass}`}
                     />
                 </div>
                 <div className="flex gap-2">
-                    <span className="text-[10px] font-black text-white/50">이익 {data.op_margin}%</span>
-                    <span className="text-[10px] font-black text-white/50">부채 {data.debt_ratio}%</span>
+                    <span className="text-[10px] font-black text-white/50">ROE {formatRatio(analysis.roe)}</span>
+                    <span className="text-[10px] font-black text-white/50">부채 {formatRatio(analysis.debt)}</span>
                 </div>
             </div>
         );
     }
     if (type === 'value') {
-        const per = Number(data.per) || 0;
-        const indPer = Number(data.ind_area_per) || 1;
-        const ratio = per / indPer;
-        const pos = Math.min(90, Math.max(10, (ratio / 2) * 100));
+        const pos = analysis.level === 'low' ? 18 : (analysis.level === 'mid' ? 50 : 82);
         return (
             <div className="flex flex-col items-end gap-1.5 min-w-[76px] min-[380px]:min-w-[100px]">
                 <div className="w-full h-1 bg-white/10 rounded-full relative">
@@ -89,13 +276,15 @@ const MetricGauge = ({ type, data }) => {
                         style={{ left: `${pos}%`, transform: 'translate(-50%, -50%)' }}
                     />
                 </div>
-                <span className="text-[10px] font-black text-white/80">{per}x</span>
+                <span className="text-[10px] font-black text-white/80">
+                    {analysis.per !== null ? `PER ${formatRatio(analysis.per, 'x')}` : `PBR ${formatRatio(analysis.pbr, 'x')}`}
+                </span>
             </div>
         );
     }
     if (type === 'risk') {
-        const beta = Number(data.beta) || 1;
-        const pos = Math.min(90, Math.max(10, ((beta - 0.5) / 1) * 100));
+        const score = Math.min(10, Math.max(0, analysis.score ?? 0));
+        const pos = Math.min(90, Math.max(10, (score / 10) * 100));
         return (
             <div className="flex flex-col items-end gap-1 min-w-[76px] min-[380px]:min-w-[100px]">
                 <div className="w-full h-1 bg-gradient-to-r from-blue-400 via-neon-teal to-red-400 rounded-full relative">
@@ -104,7 +293,9 @@ const MetricGauge = ({ type, data }) => {
                         style={{ left: `${pos}%`, transform: 'translate(-50%, -50%)' }}
                     />
                 </div>
-                <span className="text-[10px] font-black text-white/80">β {beta}</span>
+                <span className="text-[10px] font-black text-white/80">
+                    {analysis.score === null ? '동기화 중' : `${trimNumber(analysis.score)}%`}
+                </span>
             </div>
         );
     }
@@ -114,43 +305,61 @@ const MetricGauge = ({ type, data }) => {
 /**
  * 실시간 값이 대입된 라이브 수식 렌더러
  */
-const LiveFormula = ({ type, data }) => {
+const LiveFormula = ({ type, analysis }) => {
     if (type === 'supply') {
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1">
                 <p className="text-white/60 font-medium">{INDICATOR_METADATA.supply.formulaLabel}</p>
-                <p className="text-neon-teal font-bold">{formatValue(data.supply_5d)}</p>
+                <p className="text-neon-teal font-bold">{analysis.supply === null ? '동기화 중' : formatValue(analysis.supply)}</p>
             </div>
         );
     }
     if (type === 'fundamental') {
-        const isSafe = data.op_margin >= 10 && data.debt_ratio <= 100;
+        if (analysis.roe === null && analysis.debt === null) {
+            return (
+                <div className="text-[11px] font-mono leading-tight space-y-1">
+                    <p className="text-white/60 font-medium">ROE / 부채비율</p>
+                    <p className="text-neon-teal font-bold">동기화 중</p>
+                </div>
+            );
+        }
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1">
-                <p className="text-white/60 font-medium">이익률({data.op_margin}%) & 부채({data.debt_ratio}%)</p>
-                <p className={`${isSafe ? 'text-neon-teal' : 'text-yellow-400'} font-bold`}>
-                    {isSafe ? '판단: 재무 건전성 우수' : '판단: 주의 깊은 관찰 필요'}
+                <p className="text-white/60 font-medium">ROE({formatRatio(analysis.roe)}) & 부채({formatRatio(analysis.debt)})</p>
+                {(analysis.eps !== null || analysis.bps !== null) ? (
+                    <p className="text-white/50 font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
+                ) : null}
+                <p className={`${analysis.level === 'strong' ? 'text-neon-teal' : (analysis.level === 'mid' ? 'text-yellow-400' : 'text-neon-pink')} font-bold`}>
+                    판단: {analysis.tag}
                 </p>
             </div>
         );
     }
     if (type === 'value') {
-        const per = Number(data.per) || 0;
-        const ind_area_per = Number(data.ind_area_per) || 1;
-        const score = ((per / ind_area_per) * 100).toFixed(1);
+        if (analysis.per === null && analysis.pbr === null) {
+            return (
+                <div className="text-[11px] font-mono leading-tight space-y-1 text-white/90">
+                    <p className="text-white/60 font-medium">PER + PBR 참고</p>
+                    <p className="text-neon-teal font-bold">결과: 동기화 중</p>
+                </div>
+            );
+        }
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1 text-white/90">
-                <p className="text-white/60 font-medium">({per} ÷ {ind_area_per}) × 100</p>
-                <p className="text-neon-teal font-bold">결과: {score}% (업종평균 대비)</p>
+                <p className="text-white/60 font-medium">PER {formatRatio(analysis.per, 'x')} / PBR {formatRatio(analysis.pbr, 'x')}</p>
+                {(analysis.eps !== null || analysis.bps !== null) ? (
+                    <p className="text-white/50 font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
+                ) : null}
+                <p className="text-neon-teal font-bold">결과: 밸류 부담 {analysis.tag}</p>
             </div>
         );
     }
     if (type === 'risk') {
-        const beta = Number(data.beta) || 1;
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1">
-                <p className="text-white/60 font-medium">시장 민감도 지수</p>
-                <p className="text-neon-teal font-bold">β {beta}</p>
+                <p className="text-white/60 font-medium">전일등락률 {formatSignedPercent(analysis.priceChangeRate)}</p>
+                <p className="text-white/50 font-medium">일중 변동폭 {formatRatio(analysis.intradaySwing)}</p>
+                <p className="text-neon-teal font-bold">체감 흔들림 {analysis.score === null ? '동기화 중' : `${trimNumber(analysis.score)}%`}</p>
             </div>
         );
     }
@@ -160,35 +369,59 @@ const LiveFormula = ({ type, data }) => {
 /**
  * 판단 기준(Criteria) 목록 및 활성화 상태 표시 컴포넌트
  */
-const CriteriaList = ({ type, data }) => {
+const CriteriaList = ({ type, analysis }) => {
     const getCriteria = () => {
         if (type === 'supply') {
+            if (analysis.supply === null) {
+                return [{ label: "수급 데이터 대기", desc: "동기화 중", active: true }];
+            }
             return [
-                { label: "기관/외인 유입세", desc: "0보다큼", active: data.supply_5d > 0 },
-                { label: "개인 위주 관망", desc: "0이하", active: data.supply_5d <= 0 }
+                { label: "외인/기관 유입세", desc: "0 초과", active: analysis.supply > 0 },
+                { label: "관망/이탈", desc: "0 이하", active: analysis.supply <= 0 }
             ];
         }
         if (type === 'fundamental') {
-            const isSafe = data.op_margin >= 10 && data.debt_ratio <= 100;
+            if (analysis.roe === null && analysis.debt === null) {
+                return [{ label: "재무 데이터 대기", desc: "동기화 중", active: true }];
+            }
             return [
-                { label: "재무 매우 안전", desc: "이익10%↑ & 부채100%↓", active: isSafe },
-                { label: "재무 상태 보통", desc: "기준 미달 시", active: !isSafe }
+                { label: "탄탄", desc: "ROE 10%↑ & 부채 100%↓", active: analysis.level === 'strong' },
+                { label: "보통", desc: "ROE 0%↑ & 부채 200%↓", active: analysis.level === 'mid' },
+                { label: "주의", desc: "그 외", active: analysis.level === 'warning' }
             ];
         }
         if (type === 'value') {
-            const ratio = Number(data.per) / Number(data.ind_area_per);
+            if (analysis.per === null && analysis.pbr === null) {
+                return [{ label: "밸류 데이터 대기", desc: "동기화 중", active: true }];
+            }
+            if (analysis.mode === 'per') {
+                return [
+                    { label: "낮은 편", desc: "PER 10 이하", active: analysis.level === 'low' },
+                    { label: "보통", desc: "PER 20 이하", active: analysis.level === 'mid' },
+                    { label: "높은 편", desc: "PER 20 초과", active: analysis.level === 'high' }
+                ];
+            }
+            if (analysis.mode === 'pbr') {
+                return [
+                    { label: "낮은 편", desc: "PBR 1 이하", active: analysis.level === 'low' },
+                    { label: "보통", desc: "PBR 3 이하", active: analysis.level === 'mid' },
+                    { label: "높은 편", desc: "PBR 3 초과", active: analysis.level === 'high' }
+                ];
+            }
             return [
-                { label: "업종대비 저평가", desc: "80% 미만", active: ratio < 0.8 },
-                { label: "업종 평균 수준", desc: "80% ~ 120%", active: ratio >= 0.8 && ratio <= 1.2 },
-                { label: "성장 가치 반영", desc: "120% 초과", active: ratio > 1.2 }
+                { label: "낮은 편", desc: "PER 10↓ & PBR 1.5↓", active: analysis.level === 'low' },
+                { label: "보통", desc: "PER 20↓ & PBR 3↓", active: analysis.level === 'mid' },
+                { label: "높은 편", desc: "그 외", active: analysis.level === 'high' }
             ];
         }
         if (type === 'risk') {
-            const beta = Number(data.beta) || 1;
+            if (analysis.score === null) {
+                return [{ label: "변동 데이터 대기", desc: "동기화 중", active: true }];
+            }
             return [
-                { label: "방어적 민감도", desc: "0.8 미만", active: beta < 0.8 },
-                { label: "시장 표준 민감도", desc: "0.8 ~ 1.2", active: beta >= 0.8 && beta <= 1.2 },
-                { label: "공격적 민감도", desc: "1.2 초과", active: beta > 1.2 }
+                { label: "잔잔", desc: "2% 미만", active: analysis.level === 'low' },
+                { label: "보통", desc: "2% ~ 5%", active: analysis.level === 'mid' },
+                { label: "큰 편", desc: "5% 이상", active: analysis.level === 'high' }
             ];
         }
         return [];
@@ -209,7 +442,7 @@ const CriteriaList = ({ type, data }) => {
     );
 };
 
-const IndicatorItem = ({ icon, label, tag, type, kisData, isExpanded, onToggle }) => (
+const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle }) => (
     <div className="border-b border-white/5 last:border-0 overflow-hidden transition-all duration-300 border-x-0">
         <button 
             onClick={onToggle}
@@ -230,7 +463,7 @@ const IndicatorItem = ({ icon, label, tag, type, kisData, isExpanded, onToggle }
             </div>
             
             <div className="flex items-center justify-end gap-3 min-[380px]:gap-6 w-full min-[380px]:w-auto">
-                <MetricGauge type={type} data={kisData} />
+                <MetricGauge type={type} analysis={analysis} />
                 <span className={`material-symbols-outlined text-white/20 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
                     expand_more
                 </span>
@@ -249,11 +482,11 @@ const IndicatorItem = ({ icon, label, tag, type, kisData, isExpanded, onToggle }
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4">
                     <div className="bg-black/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-2 shadow-inner">
                         <p className="text-white/60 text-[9px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Live Formula</p>
-                        <LiveFormula type={type} data={kisData} />
+                        <LiveFormula type={type} analysis={analysis} />
                     </div>
                     <div className="bg-black/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-3 shadow-inner">
                         <p className="text-white/60 text-[9px] font-black uppercase tracking-widest border-b border-white/10 pb-1 text-right">Judgment Criteria</p>
-                        <CriteriaList type={type} data={kisData} />
+                        <CriteriaList type={type} analysis={analysis} />
                     </div>
                 </div>
             </div>
@@ -263,19 +496,26 @@ const IndicatorItem = ({ icon, label, tag, type, kisData, isExpanded, onToggle }
 
 const MarketReality = ({ kisData }) => {
     const [expandedType, setExpandedType] = useState(null);
-
-    if (!kisData) return null;
+    const safeData = kisData || {};
+    const supplyState = getSupplyState(safeData);
+    const fundamentalState = getFundamentalState(safeData);
+    const valueState = getValueState(safeData);
+    const riskState = getRiskState(safeData);
+    const hasReliableData = [supplyState, fundamentalState, valueState, riskState].some((item) => item.hasData);
+    const realityStatus = String(safeData.status || (hasReliableData ? 'live' : 'unavailable'));
+    const statusLabel = realityStatus === 'live'
+        ? 'KIS 기준'
+        : (realityStatus === 'cached' ? '최근 기준값' : '동기화 중');
+    const statusTone = realityStatus === 'live'
+        ? 'text-neon-teal/70'
+        : (realityStatus === 'cached' ? 'text-white/55' : 'text-yellow-300/70');
+    const updatedAtText = formatUpdatedAt(safeData.updatedAt);
 
     const indicators = [
-        { type: 'supply', icon: 'electric_bolt', label: '수급 에너지', tag: kisData.supply_5d > 0 ? '기관/외인 유입세' : '개인 위주 관망' },
-        { type: 'fundamental', icon: 'fitness_center', label: '기업 기본 체력', tag: (kisData.op_margin >= 10 && kisData.debt_ratio <= 100) ? '재무 매우 안전' : '재무 상태 보통' },
-        { type: 'value', icon: 'analytics', label: '가치 평가', tag: (() => {
-            const ratio = Number(kisData.per) / Number(kisData.ind_area_per);
-            if (ratio < 0.8) return '업종대비 저평가';
-            if (ratio > 1.2) return '성장 가치 반영';
-            return '업종 평균 수준';
-        })() },
-        { type: 'risk', icon: 'emergency_home', label: '시장 위험성', tag: Number(kisData.beta) < 0.8 ? '방어적 민감도' : (Number(kisData.beta) > 1.2 ? '공격적 민감도' : '시장 표준 민감도') }
+        { type: 'supply', icon: 'electric_bolt', label: '수급 에너지', tag: supplyState.tag, analysis: supplyState },
+        { type: 'fundamental', icon: 'fitness_center', label: '기업 기본 체력', tag: fundamentalState.tag, analysis: fundamentalState },
+        { type: 'value', icon: 'analytics', label: '가치 평가', tag: valueState.tag, analysis: valueState },
+        { type: 'risk', icon: 'show_chart', label: '가격 흔들림', tag: riskState.tag, analysis: riskState }
     ];
 
     return (
@@ -291,11 +531,20 @@ const MarketReality = ({ kisData }) => {
                                 팩트 체크
                             </h3>
                         </div>
-                        <span className="text-[10px] font-black text-white/20 uppercase tracking-tighter">Verified by KIS</span>
+                        <span className={`text-[10px] font-black uppercase tracking-tighter ${statusTone}`}>{statusLabel}</span>
                     </div>
                     <p className="text-[11px] sm:text-[12px] text-white/50 font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed">
-                        수치가 대입된 라이브 수식으로 정확한 근거를 확인하세요.
+                        {realityStatus === 'live'
+                            ? '숫자를 먼저 보고, 태그는 참고용으로 읽을 수 있게 정리했습니다.'
+                            : (realityStatus === 'cached'
+                                ? '실시간 수집 지연으로 최근 기준값을 표시하고 있습니다.'
+                                : '실시간 수집 지연 시 최근 기준값 또는 대기 상태로 표시됩니다.')}
                     </p>
+                    {updatedAtText ? (
+                        <p className="text-[10px] font-bold text-white/45 px-1">
+                            기준 시각: {updatedAtText}
+                        </p>
+                    ) : null}
                 </div>
 
                 <div className="bg-black/20 rounded-2xl px-3 sm:px-4 border border-white/5">
@@ -303,7 +552,6 @@ const MarketReality = ({ kisData }) => {
                         <IndicatorItem 
                             key={ind.type} 
                             {...ind} 
-                            kisData={kisData}
                             isExpanded={expandedType === ind.type}
                             onToggle={() => setExpandedType(expandedType === ind.type ? null : ind.type)}
                         />
@@ -314,6 +562,11 @@ const MarketReality = ({ kisData }) => {
                     <p className="text-[11px] font-bold text-white/40 italic">
                         ※ 이 영역은 한국투자증권의 공개된 수치만을 기반으로 판별합니다.
                     </p>
+                    {realityStatus === 'cached' && updatedAtText ? (
+                        <p className="text-[10px] font-bold text-white/35 mt-1">
+                            최근 갱신 시각: {updatedAtText}
+                        </p>
+                    ) : null}
                 </div>
             </div>
         </div>

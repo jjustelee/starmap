@@ -25,12 +25,12 @@ const MIN_PRICE = 100;
 export async function loadCurrentPrice(symbol, hintPrice = 0) {
     // BACKEND_TODO(API): GET /api/v1/symbols/{symbol}/price -> { currentPrice, updatedAt }.
     const stock = await fetchStockInfo(String(symbol || ''));
-    const fromStock = Number(stock?.currentPrice || stock?.current_price || stock?.base_price || 0);
+    const fromStock = Number(stock?.currentPrice || stock?.current_price || 0);
     if (Number.isFinite(fromStock) && fromStock > 0) {
         return Math.max(MIN_PRICE, Math.round(fromStock));
     }
-    const safeHint = Number(hintPrice) > 0 ? Number(hintPrice) : 50000;
-    return Math.max(MIN_PRICE, Math.round(safeHint));
+    void hintPrice;
+    return 0;
 }
 
 /**
@@ -42,11 +42,11 @@ export async function loadPredictionSnapshot(symbol, window, options = {}) {
     // BACKEND_TODO(API): GET /api/v1/symbols/{symbol}/prediction-snapshot?window=... 응답 shape로 교체.
     const normalizedWindow = WINDOW_DAYS[window] ? window : '7d';
     const stock = await fetchStockInfo(String(symbol || ''));
-    const fromStock = Number(stock?.currentPrice || stock?.current_price || stock?.base_price || 0);
+    const fromStock = Number(stock?.currentPrice || stock?.current_price || 0);
     const fromOption = Number(options.currentPrice) || 0;
     const currentPrice = Math.max(
         MIN_PRICE,
-        Math.round(fromStock > 0 ? fromStock : (fromOption > 0 ? fromOption : 50000))
+        Math.round(fromStock > 0 ? fromStock : (fromOption > 0 ? fromOption : MIN_PRICE))
     );
 
     if (!stock?.id) {
@@ -235,12 +235,12 @@ function buildEmptySnapshot(window, currentPrice) {
         currentPrice,
         sampleSize: 0,
         stats: {
-            avg: currentPrice,
-            mode: currentPrice,
-            q1: currentPrice,
-            q3: currentPrice,
-            bullishRatio: 0.5,
-            bearishRatio: 0.5
+            avg: null,
+            mode: null,
+            q1: null,
+            q3: null,
+            bullishRatio: null,
+            bearishRatio: null
         },
         overlay: {
             type: 'dot',

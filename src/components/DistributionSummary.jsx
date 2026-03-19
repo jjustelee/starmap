@@ -25,18 +25,31 @@ const DistributionSummary = ({
     consensus = { min: 64090, max: 98020, avg: 79170, mode: 86710 }
 }) => {
     const isPioneer = vowCount < THRESHOLD;
+    const hasRangeData = Number(history?.low52) > 0
+        && Number(history?.high52) > 0
+        && Number(history?.current) > 0
+        && Number(history?.high52) >= Number(history?.low52);
 
     // [안전장치] 유효하지 않은 값 보정
+    const rawCurrent = Number(history?.current ?? consensus?.mode ?? 0);
+    const rawLow = Number(history?.low52 ?? history?.current ?? consensus?.min ?? rawCurrent);
+    const rawHigh = Number(history?.high52 ?? history?.current ?? consensus?.max ?? rawCurrent);
+    const normalizedLow = Number.isFinite(rawLow) ? rawLow : 0;
+    const normalizedHigh = Number.isFinite(rawHigh) ? Math.max(rawHigh, normalizedLow) : normalizedLow;
+    const normalizedCurrent = Number.isFinite(rawCurrent)
+        ? Math.min(Math.max(rawCurrent, normalizedLow), normalizedHigh || rawCurrent)
+        : normalizedLow;
     const safeHistory = {
-        low52: history?.low52 || 50000,
-        high52: history?.high52 || 100000,
-        current: history?.current || 75000
+        low52: normalizedLow,
+        high52: normalizedHigh,
+        current: normalizedCurrent
     };
+    const consensusBase = normalizedCurrent > 0 ? normalizedCurrent : normalizedLow;
     const safeConsensus = {
-        min: consensus?.min || 60000,
-        max: consensus?.max || 100000,
-        avg: consensus?.avg || 80000,
-        mode: consensus?.mode || 85000
+        min: Number(consensus?.min ?? consensusBase),
+        max: Number(consensus?.max ?? consensusBase),
+        avg: Number(consensus?.avg ?? consensusBase),
+        mode: Number(consensus?.mode ?? consensusBase)
     };
 
     // Helper to get percentage position along the 52-week horizontal line
@@ -61,6 +74,32 @@ const DistributionSummary = ({
     const formatPrice = (value) => Number(value || 0).toLocaleString();
 
     if (displayMode === 'rangeOnly') {
+        if (!hasRangeData) {
+            return (
+                <div className="w-full relative mt-4 mb-6 pointer-events-auto transition-all duration-700">
+                    <div className="bg-[#141419]/90 backdrop-blur-[40px] border border-white/10 rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 relative overflow-visible shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_20px_40px_-10px_rgba(0,0,0,0.8)]">
+                        <div className="space-y-3 sm:space-y-4">
+                            <div className="flex flex-row justify-between items-center gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="material-symbols-outlined text-neon-teal text-[24px]">timeline</span>
+                                    <h4 className="text-[17px] sm:text-[20px] font-black text-white tracking-[-0.02em] leading-none whitespace-nowrap">52주 가격 맥락</h4>
+                                </div>
+                                <span className="px-2 py-0.5 bg-neon-teal/10 border border-neon-teal/30 rounded text-[9px] font-black text-neon-teal uppercase tracking-widest whitespace-nowrap flex-shrink-0">Range Focus</span>
+                            </div>
+                            <p className="text-[11px] sm:text-[12px] text-white/45 font-medium leading-relaxed">
+                                현재 시세가 52주 저점/고점 대비 어디에 있는지 빠르게 확인합니다.
+                            </p>
+                        </div>
+
+                        <div className="bg-black/20 rounded-2xl border border-white/5 px-4 sm:px-5 py-6 sm:py-7 mt-6 sm:mt-8 text-center">
+                            <p className="text-[13px] sm:text-[14px] font-bold text-white/72">52주 가격 데이터 준비 중</p>
+                            <p className="mt-2 text-[11px] sm:text-[12px] text-white/42 font-medium">실제 저점·고점이 확인되면 이 카드에 바로 반영됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         const currentPos = getPos(safeHistory.current);
         const currentLayout = getMarkerLayout(currentPos);
         const lowPos = getPos(safeHistory.low52);

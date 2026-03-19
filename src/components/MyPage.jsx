@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchMyPredictions } from '../utils/mockData';
+import { fetchMyPredictions, fetchStockInfo } from '../utils/mockData';
 import { Target, LogOut, Star, TrendingUp, Clock, ChevronRight, Trash2 } from 'lucide-react';
 
 /**
@@ -22,6 +22,45 @@ const MyPage = ({ onBack, onStockClick }) => {
                 setIsLoadingPreds(true);
                 const data = await fetchMyPredictions(user.id);
                 setPredictions(data || []);
+
+                // 캐시값 먼저 노출 후, 화면에 표시되는 예언 종목 전체를 비동기 최신화
+                const targetSymbols = [...new Set((data || []).map((p) => p.stockSymbol).filter(Boolean))];
+                if (targetSymbols.length > 0) {
+                    const updates = await Promise.all(
+                        targetSymbols.map(async (symbol) => {
+                            try {
+                                const info = await fetchStockInfo(symbol);
+                                const price = Number(info?.currentPrice || 0);
+                                return price > 0
+                                    ? {
+                                        symbol,
+                                        currentPrice: price,
+                                        quoteStatusLabel: info?.quoteStatusLabel || '최근값'
+                                    }
+                                    : null;
+                            } catch (e) {
+                                return null;
+                            }
+                        })
+                    );
+                    const priceMap = updates.filter(Boolean).reduce((acc, item) => {
+                        acc[item.symbol] = item;
+                        return acc;
+                    }, {});
+                    if (Object.keys(priceMap).length > 0) {
+                        setPredictions((prev) => prev.map((pred) => {
+                            const nextInfo = priceMap[pred.stockSymbol];
+                            if (!nextInfo) return pred;
+                            return {
+                                ...pred,
+                                currentPrice: nextInfo.currentPrice,
+                                quoteStatusLabel: nextInfo.quoteStatusLabel,
+                                stock: pred.stock ? { ...pred.stock, currentPrice: nextInfo.currentPrice } : pred.stock
+                            };
+                        }));
+                    }
+                }
+
                 setIsLoadingPreds(false);
             };
             load();
@@ -62,7 +101,7 @@ const MyPage = ({ onBack, onStockClick }) => {
                         </h2>
                         <p className="text-[12px] sm:text-[13px] text-white/40 leading-6 sm:leading-relaxed max-w-xs mx-auto">
                             카카오로 시작하면 박제한 기록을 모아볼 수 있고,<br />
-                            적중 시 <span className="text-neon-teal font-bold">성지글 알림</span>을 받을 수 있습니다.
+                            내 예언 기록과 적중 흐름을 한곳에서 차분하게 확인할 수 있습니다.
                         </p>
                     </div>
 
@@ -88,7 +127,7 @@ const MyPage = ({ onBack, onStockClick }) => {
                     <div className="grid grid-cols-1 gap-2.5 sm:gap-3 max-w-sm mx-auto pt-3 sm:pt-4">
                         {[
                             { icon: <Star className="w-4 h-4" />, text: '내 예언 기록 관리' },
-                            { icon: <TrendingUp className="w-4 h-4" />, text: '적중률 추적 & 성지글 알림' },
+                            { icon: <TrendingUp className="w-4 h-4" />, text: '적중률 추적 & 성지 기록 확인' },
                             { icon: <Clock className="w-4 h-4" />, text: '예측 히스토리 타임라인' },
                         ].map((f, i) => (
                             <div key={i} className="flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 
@@ -192,8 +231,9 @@ const MyPage = ({ onBack, onStockClick }) => {
                 ) : (
                     <div className="relative ml-2.5 sm:ml-4 pl-5 sm:pl-8 border-l border-white/10 space-y-5 sm:space-y-8 pb-7 sm:pb-10">
                         {predictions.map((pred, idx) => {
-                            const date = new Date(pred.created_at);
-                            const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+                            const dateStr = formatDisplayDate(pred.created_at);
+                            const targetDateStr = formatDisplayDate(pred.target_date);
+                            const currentPriceValue = Number(pred.currentPrice || 0);
                             
                             // 상태별 테마 설정 (감정 기반)
                             let theme = {
@@ -272,7 +312,7 @@ const MyPage = ({ onBack, onStockClick }) => {
                                                 <div className="flex items-center gap-2.5 sm:gap-5 mt-1.5 sm:mt-2 min-w-0">
                                                     <div className="flex items-center gap-2 min-w-0">
                                                         <span className={`text-[12px] sm:text-[14px] font-black ${theme.color} opacity-30 uppercase tracking-tighter shrink-0`}>기한</span>
-                                                        <span className={`text-[13px] sm:text-[15px] font-black ${theme.color} truncate`}>{pred.target_date}</span>
+                                                        <span className={`text-[13px] sm:text-[15px] font-black ${theme.color} tracking-tight truncate`}>{targetDateStr}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -325,9 +365,14 @@ const MyPage = ({ onBack, onStockClick }) => {
                                         <div className="grid grid-cols-2 gap-px bg-white/5 border-[0.5px] border-white/10 rounded-2xl overflow-hidden mb-5 sm:mb-8 shadow-2xl">
                                             <div className="bg-black/40 p-3.5 sm:p-7 space-y-2 sm:space-y-3">
                                                 <p className={`text-[11px] sm:text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>현재가</p>
-                                                <p className={`text-[22px] sm:text-[28px] font-black font-brandEn ${theme.color} brightness-110 leading-none truncate`}>
-                                                    {Number(pred.currentPrice).toLocaleString()}<span className="text-[11px] sm:text-[16px] ml-1 opacity-20 font-brandKo">원</span>
-                                                </p>
+                                                {currentPriceValue > 0 ? (
+                                                    <p className={`text-[22px] sm:text-[28px] font-black font-brandEn ${theme.color} brightness-110 leading-none truncate`}>
+                                                        {currentPriceValue.toLocaleString()}<span className="text-[11px] sm:text-[16px] ml-1 opacity-20 font-brandKo">원</span>
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-[15px] sm:text-[18px] font-black text-white/50 leading-none">시세 동기화 중</p>
+                                                )}
+                                                <p className="text-[10px] font-black text-white/40 tracking-[0.14em] uppercase">{currentPriceValue > 0 ? (pred.quoteStatusLabel || '최근값') : '갱신중'}</p>
                                             </div>
                                             <div className={`bg-black/60 p-3.5 sm:p-7 space-y-2 sm:space-y-3 text-right`}>
                                                 <p className={`text-[11px] sm:text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>목표가</p>
@@ -368,5 +413,19 @@ const MyPage = ({ onBack, onStockClick }) => {
         </div>
     );
 };
+
+function formatDisplayDate(value) {
+    if (typeof value !== 'string') return '-';
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+        return `${isoMatch[1]}.${isoMatch[2]}.${isoMatch[3]}`;
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}.${m}.${d}`;
+}
 
 export default MyPage;

@@ -1,8 +1,10 @@
 import React from 'react';
 import { getMarketStatus } from '../utils/marketStatus';
 
-const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, onBack }) => {
+const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteStatusLabel, onBack }) => {
     const market = getMarketStatus();
+    const hasPrice = Number(basePrice) > 0;
+    const statusText = hasPrice ? (quoteStatusLabel || '최근값') : '갱신중';
 
     return (
         <header className="sticky top-4 z-50 mx-auto w-[calc(100%-2.5rem)] max-w-2xl transition-all duration-700 rounded-2xl crystal-glass px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 shadow-2xl">
@@ -27,9 +29,14 @@ const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, onBack }
                             {market.text}
                         </span>
                     )}
-                    <p className="font-brandEn text-[28px] sm:text-3xl font-black text-white leading-none tracking-tighter">{basePrice.toLocaleString()}</p>
+                    <p className="font-brandEn text-[28px] sm:text-3xl font-black text-white leading-none tracking-tighter">
+                        {hasPrice ? Number(basePrice).toLocaleString() : '시세 동기화 중'}
+                    </p>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-white/10 text-white/55 tracking-tighter">
+                        {statusText}
+                    </span>
                 </div>
-                {(priceChange !== undefined && priceChangeRate !== undefined) && (
+                {hasPrice && (priceChange !== undefined && priceChangeRate !== undefined) && (
                     <p className={`text-xs font-bold leading-none ${priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
                         {priceChange >= 0 ? '▲' : '▼'} {Math.abs(priceChange).toLocaleString()} ({priceChangeRate.toFixed(2)}%)
                     </p>

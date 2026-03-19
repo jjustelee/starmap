@@ -1,7 +1,45 @@
 import React from 'react';
-import { BadgeCheck, ChevronLeft, Share2, CornerDownRight, TrendingUp, Users, Calendar } from 'lucide-react';
+import { BadgeCheck, ChevronLeft, Share2, TrendingUp, Calendar, Target } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { fetchSacredPosts } from '../utils/mockData';
 
-export const SacredDetail = ({ post, onBack }) => {
+export const SacredDetail = ({ onBack }) => {
+    const { id } = useParams();
+    const [post, setPost] = React.useState(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        let active = true;
+        const load = async () => {
+            setIsLoading(true);
+            const result = await fetchSacredPosts('detail', { id });
+            if (!active) return;
+            setPost(result?.item || null);
+            setIsLoading(false);
+        };
+        load();
+        return () => {
+            active = false;
+        };
+    }, [id]);
+
+    if (isLoading) {
+        return <div className="py-16 text-center text-white/45">성지글을 불러오는 중...</div>;
+    }
+
+    if (!post) {
+        return (
+            <div className="py-16 text-center space-y-3">
+                <p className="text-white/60 font-bold">아직 이 성지 기록은 비어 있습니다</p>
+                <p className="text-sm text-white/35">적중한 예언이 쌓이면 여기서 상세 기록을 볼 수 있습니다</p>
+                <button onClick={onBack} className="inline-flex items-center gap-1 text-white/60 hover:text-white transition">
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="font-bold">목록으로</span>
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -19,25 +57,25 @@ export const SacredDetail = ({ post, onBack }) => {
             <div className="space-y-3 sm:space-y-4 text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-teal/10 border border-neon-teal/20 text-neon-teal text-xs font-black uppercase tracking-widest">
                     <BadgeCheck className="w-3 h-3" />
-                    Verified Holy Grail
+                    성지 입성 기록
                 </div>
                 <h2 className="text-[30px] sm:text-4xl font-black text-white tracking-tight leading-tight px-2 sm:px-4">
-                    {post.title}
+                    {post.stockName} {Number(post.targetPrice).toLocaleString()}원 적중
                 </h2>
-                <p className="text-white/40 font-bold uppercase tracking-widest text-xs">작성자 {post.author} • {post.hitDate} 적중</p>
+                <p className="text-white/40 font-bold uppercase tracking-widest text-xs">작성자 {post.authorNickname} • {formatSacredDate(post.hitDate)} 적중</p>
             </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 sm:pb-4">
                 <div className="crystal-glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-2">
-                    <Users className="w-5 h-5 text-neon-teal mb-3 sm:mb-4" />
-                    <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest">성지순례</p>
-                    <p className="text-2xl font-black text-white">{post.members.toLocaleString()}<span className="text-sm ml-1 text-white/20">명</span></p>
+                    <Target className="w-5 h-5 text-neon-teal mb-3 sm:mb-4" />
+                    <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest">목표가</p>
+                    <p className="text-2xl font-black text-white">{Number(post.targetPrice).toLocaleString()}<span className="text-sm ml-1 text-white/20">원</span></p>
                 </div>
                 <div className="crystal-glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-2">
                     <TrendingUp className="w-5 h-5 text-neon-pink mb-3 sm:mb-4" />
                     <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest">적중 난이도</p>
-                    <p className="text-2xl font-black text-white">전설급</p>
+                    <p className="text-2xl font-black text-white">{post.judgmentStatus === 'HIT_EXACT' ? '전설급' : '근접 적중'}</p>
                 </div>
             </div>
 
@@ -58,10 +96,10 @@ export const SacredDetail = ({ post, onBack }) => {
                             <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white/40" />
                         </div>
                         <div>
-                            <p className="text-xs font-black text-neon-teal uppercase tracking-widest">2026.03.01</p>
+                            <p className="text-xs font-black text-neon-teal uppercase tracking-widest">{formatSacredDate(post.createdAt)}</p>
                             <h4 className="text-[16px] sm:text-lg font-black text-white mt-1">목표가 박제 완료</h4>
                             <p className="text-[13px] sm:text-sm text-white/50 mt-1 leading-relaxed">
-                                작성자가 SK하이닉스 200,000원을 예측하며<br />
+                                작성자가 {post.stockName} {Number(post.targetPrice).toLocaleString()}원을 예측하며<br />
                                 최초 기록을 남겼습니다.
                             </p>
                         </div>
@@ -72,10 +110,10 @@ export const SacredDetail = ({ post, onBack }) => {
                             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-neon-pink" />
                         </div>
                         <div>
-                            <p className="text-xs font-black text-neon-pink uppercase tracking-widest">{post.hitDate}</p>
+                            <p className="text-xs font-black text-neon-pink uppercase tracking-widest">{formatSacredDate(post.hitDate)}</p>
                             <h4 className="text-lg sm:text-xl font-black text-white mt-1">목표가 도달 (성지 등극)</h4>
                             <p className="text-[13px] sm:text-sm text-white/50 mt-1 leading-relaxed">
-                                실제 가격이 목표가에 도달하여<br />
+                                실제 종가 {Number(post.currentOrHitPrice).toLocaleString()}원이 기준에 들어와<br />
                                 이 기록은 영속적인 **성지글**이 되었습니다.
                             </p>
                         </div>
@@ -84,13 +122,22 @@ export const SacredDetail = ({ post, onBack }) => {
             </div>
 
             {/* Action CTA */}
-            <button className="w-full rounded-2xl bg-white text-black py-4 sm:py-5 text-base sm:text-lg font-black flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition active:scale-95">
-                나도 성지순례 댓글 남기기
-            </button>
+            <div className="w-full rounded-2xl bg-white/5 border border-white/10 py-4 sm:py-5 text-center text-sm sm:text-base font-black text-white/60">
+                댓글 기능은 다음 업데이트에서 열립니다
+            </div>
 
             <p className="text-center text-[11px] font-bold text-white/20 uppercase tracking-[0.4em] pb-8">
-                THE LEGEND CONTINUES
+                성지는 계속 쌓입니다
             </p>
         </div>
     );
 };
+
+function formatSacredDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}.${m}.${d}`;
+}

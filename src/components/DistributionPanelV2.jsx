@@ -27,17 +27,18 @@ const DistributionPanelV2 = ({ selectedWindow, onWindowChange, snapshot, isLoadi
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const stats = snapshot?.stats;
     const sampleSize = snapshot?.sampleSize || 0;
-    const modePrice = formatPrice(stats?.mode);
-    const modePriceCompact = formatCompactPrice(stats?.mode);
-    const avgPrice = formatPrice(stats?.avg);
-    const spreadText = formatSpread(stats?.q1, stats?.q3);
-    const bullRatio = clampRatio(stats?.bullishRatio);
-    const bearRatio = clampRatio(stats?.bearishRatio);
-    const bull = toPct(bullRatio);
-    const bear = toPct(bearRatio);
+    const hasPredictionData = sampleSize > 0;
+    const modePrice = hasPredictionData ? formatPrice(stats?.mode) : '예언 대기';
+    const modePriceCompact = hasPredictionData ? formatCompactPrice(stats?.mode) : '첫 예언을 기다리는 중';
+    const avgPrice = hasPredictionData ? formatPrice(stats?.avg) : '데이터 대기';
+    const spreadText = hasPredictionData ? formatSpread(stats?.q1, stats?.q3) : '데이터 대기';
+    const bullRatio = hasPredictionData ? clampRatio(stats?.bullishRatio) : 0;
+    const bearRatio = hasPredictionData ? clampRatio(stats?.bearishRatio) : 0;
+    const bull = hasPredictionData ? toPct(bullRatio) : '-';
+    const bear = hasPredictionData ? toPct(bearRatio) : '-';
     const sentiment = getSentiment(stats?.bullishRatio);
-    const modeDelta = formatDeltaPct(snapshot?.currentPrice, stats?.mode);
-    const participantCount = formatParticipantCount(sampleSize);
+    const modeDelta = hasPredictionData ? formatDeltaPct(snapshot?.currentPrice, stats?.mode) : '-';
+    const participantCount = hasPredictionData ? formatParticipantCount(sampleSize) : '아직 0명';
 
     return (
         <section className="bg-white/[0.06] backdrop-blur-2xl rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 border border-white/10 shadow-[0_12px_24px_-6px_rgba(0,0,0,0.5)] relative overflow-hidden pointer-events-auto">
@@ -116,6 +117,9 @@ const DistributionPanelV2 = ({ selectedWindow, onWindowChange, snapshot, isLoadi
                                 <span className="h-full bg-neon-pink" style={{ width: `${bullRatio * 100}%` }} />
                                 <span className="h-full bg-neon-blue" style={{ width: `${bearRatio * 100}%` }} />
                             </div>
+                            {!hasPredictionData ? (
+                                <p className="mt-2 text-[11px] text-white/45 font-bold">아직 모인 예언이 없어 심리 집계는 대기 중입니다.</p>
+                            ) : null}
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
@@ -156,7 +160,21 @@ const MiniMetric = ({ icon, label, value, noWrap = false }) => (
 );
 
 function getSentiment(bullishRatio) {
+    if (bullishRatio === null || bullishRatio === undefined || bullishRatio === '') {
+        return {
+            label: '대기',
+            icon: 'schedule',
+            className: 'bg-white/10 border-white/20 text-white/65'
+        };
+    }
     const bull = Number(bullishRatio);
+    if (!Number.isFinite(bull)) {
+        return {
+            label: '대기',
+            icon: 'schedule',
+            className: 'bg-white/10 border-white/20 text-white/65'
+        };
+    }
     if (bull >= 0.57) {
         return {
             label: '상승',
@@ -195,6 +213,7 @@ function formatDeltaPct(base, target) {
 
 function getDeltaClass(deltaText) {
     if (typeof deltaText !== 'string') return 'text-white/70';
+    if (deltaText === '-') return 'text-white/60';
     if (deltaText.startsWith('+')) return 'text-neon-pink';
     if (deltaText.startsWith('-')) return 'text-neon-blue';
     return 'text-white/70';

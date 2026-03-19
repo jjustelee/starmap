@@ -222,7 +222,21 @@ const PredictionChartV2 = ({
 };
 
 function getSentiment(bullishRatio) {
+    if (bullishRatio === null || bullishRatio === undefined || bullishRatio === '') {
+        return {
+            label: '집계 대기',
+            icon: 'schedule',
+            className: 'bg-white/10 border border-white/20 text-white/75'
+        };
+    }
     const bull = Number(bullishRatio);
+    if (!Number.isFinite(bull)) {
+        return {
+            label: '집계 대기',
+            icon: 'schedule',
+            className: 'bg-white/10 border border-white/20 text-white/75'
+        };
+    }
     if (bull >= 0.57) {
         return {
             label: '상승 우세',

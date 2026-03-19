@@ -1,41 +1,70 @@
 import { supabase } from './supabaseClient';
 
 /**
- * [백엔드] 성지 인증 고유 번호(Sacred ID) 생성
- * 구조: [종목코드]-[유저해시]-[적중날짜]-[체크섬]
+ * [백엔드] 공개 현재가 API 호출 (price 전용)
+ * @param {string} symbol
  */
-export const generateSacredId = (symbol, userId, targetDate) => {
-    const s = symbol.substring(0, 6).toUpperCase();
-    const u = userId ? userId.substring(0, 4).toUpperCase() : 'ANON';
-    const d = targetDate.replace(/-/g, '').substring(2); // YYMMDD
-    
-    // 간단한 체크섬 생성 (보안성 강조용)
-    const combined = `${s}${u}${d}`;
-    let hash = 0;
-    for (let i = 0; i < combined.length; i++) {
-        hash = ((hash << 5) - hash) + combined.charCodeAt(i);
-        hash |= 0;
-    }
-    const checksum = Math.abs(hash % 100).toString().padStart(2, '0');
-    
-    return `${s}-${u}-${d}-${checksum}`;
-};
-
-/**
- * [백엔드] 한국투자증권 API 게이트웨이 호출 (Edge Function)
- * @param {string} symbol - 종목 코드 (예: '005930')
- * @param {string} type - 'price' | 'history'
- */
-export const callKisGateway = async (symbol, type = 'price') => {
-    const { data, error } = await supabase.functions.invoke('kis-gateway', {
-        body: { symbol, type }
+export const callQuotePublic = async (symbol) => {
+    const { data, error } = await supabase.functions.invoke('quote-public', {
+        body: { symbol }
     });
-
     if (error) {
-        console.error(`Error calling kis-gateway (${type}):`, error);
+        console.error('Error calling quote-public:', error);
         return null;
     }
     return data;
+};
+
+/**
+ * [백엔드] 상세 묶음 API 호출 (history/predictions/reality/dashboard)
+ * @param {string} symbol
+ */
+export const callStockDetailPublic = async (symbol) => {
+    const { data, error } = await supabase.functions.invoke('stock-detail-public', {
+        body: { symbol }
+    });
+    if (error) {
+        console.error('Error calling stock-detail-public:', error);
+        return null;
+    }
+    return data;
+};
+
+/**
+ * [백엔드] 성지글 읽기 API 호출
+ * @param {"home"|"list"|"detail"} mode
+ * @param {{ sort?: "recent"|"accuracy", id?: string }} options
+ */
+export const fetchSacredPosts = async (mode, options = {}) => {
+    const { data, error } = await supabase.functions.invoke('sacred-posts-public', {
+        body: {
+            mode,
+            sort: options.sort,
+            id: options.id
+        }
+    });
+    if (error) {
+        console.error('Error calling sacred-posts-public:', error);
+        return mode === 'detail' ? { item: null } : { items: [] };
+    }
+    return data || (mode === 'detail' ? { item: null } : { items: [] });
+};
+
+/**
+ * [백엔드] 홈 커뮤니티 피드 읽기 API 호출
+ * recentPredictions: 최근 7일 박제 기록
+ * hotStocks: 최근 7일 기준 많이 박제된 종목
+ */
+export const fetchCommunityHomeFeed = async () => {
+    const { data, error } = await supabase.functions.invoke('community-home-public');
+    if (error) {
+        console.error('Error calling community-home-public:', error);
+        return { recentPredictions: [], hotStocks: [] };
+    }
+    return {
+        recentPredictions: Array.isArray(data?.recentPredictions) ? data.recentPredictions : [],
+        hotStocks: Array.isArray(data?.hotStocks) ? data.hotStocks : []
+    };
 };
 
 // [참고] 전 종목 검색은 searchEngine.js의 로컬 필터링으로 대체됨
@@ -65,18 +94,18 @@ export const fetchStockInfo = async (symbol) => {
         console.log(`[fetchStockInfo] ${symbol} not found in stocks, checking stock_master...`);
         const { data: masterData } = await supabase
             .from('stock_master')
-            .select('name, market_type')
+            .select('name, market_type, std_price')
             .eq('code', symbol)
             .maybeSingle();
 
         if (masterData) {
-            // 임시 객체 생성 (나중에 KIS 가격 로드 후 DB에 INSERT 됨)
+            // 임시 객체 생성 (가격은 quote-public에서 처리)
             dbData = {
                 symbol: symbol,
                 name: masterData.name,
                 market_type: masterData.market_type,
-                base_price: 0,
-                current_price: 0
+                base_price: Number(masterData.std_price || 0),
+                current_price: null
             };
         } else {
             // stock_master에도 없으면 진짜 없는 종목
@@ -84,150 +113,119 @@ export const fetchStockInfo = async (symbol) => {
         }
     }
 
-    // 2. KIS API에서 실시간 시세 가져오기 (시도)
-    try {
-        const kisData = await callKisGateway(symbol, 'price');
-        if (kisData && kisData.output) {
-            const realPrice = Number(kisData.output.stck_prpr);
-            
-            // [백엔드] DB에 없던 종목이거나 가격이 0이면 INSERT 또는 UPDATE
-            if (realPrice > 0 && (!dbData.id || !dbData.base_price || Number(dbData.base_price) === 0)) {
-                const upsertData = {
-                    symbol: symbol,
-                    name: dbData.name,
-                    base_price: realPrice,
-                    current_price: realPrice,
-                    price_change: Number(kisData.output.prdy_vrss),
-                    price_change_rate: Number(kisData.output.prdy_ctrt),
-                    updated_at: new Date().toISOString(),
-                };
+    // 2. quote-public에서 현재가 조회 (SWR/TTL/부하제어는 서버에서 처리)
+    const quote = await callQuotePublic(symbol);
+    const quotePrice = Number(quote?.currentPrice || 0);
+    const fallbackPrice = Number(dbData.current_price || 0);
+    const resolvedPrice = quotePrice > 0 ? quotePrice : (fallbackPrice > 0 ? fallbackPrice : null);
+    const quoteStatus = quote?.status || (resolvedPrice ? 'cached' : 'unavailable');
+    const quoteLabel = quoteStatus === 'live'
+        ? '실시간'
+        : (quoteStatus === 'cached' ? '최근값' : (quoteStatus === 'syncing' ? '갱신중' : '갱신중'));
 
-                const { data: newData, error: upsertError } = await supabase
-                    .from('stocks')
-                    .upsert(upsertData, { onConflict: 'symbol' })
-                    .select()
-                    .single();
-
-                if (!upsertError && newData) {
-                    dbData = newData; // ID가 포함된 최신 데이터로 교체
-                } else {
-                    console.error('Error upserting stock to DB:', upsertError);
-                }
-            }
-
-            return {
-                ...dbData,
-                currentPrice: realPrice,
-                price_change: Number(kisData.output.prdy_vrss),
-                price_change_rate: Number(kisData.output.prdy_ctrt),
-                high: Number(kisData.output.stck_hgpr),
-                low: Number(kisData.output.stck_lwpr),
-            };
-        }
-    } catch (e) {
-        console.warn('Failed to fetch real-time price, falling back to base_price', e);
-    }
-
-    // 3. KIS 실패 시 DB 가격 사용 (0이면 stock_master에서 보완 시도)
-    const price = Number(dbData.current_price || dbData.base_price);
     return {
         ...dbData,
-        currentPrice: price > 0 ? price : 50000 // 극단적 fallback: 임시 기본가 (차트 렌더링 보장)
+        currentPrice: resolvedPrice,
+        price_change: Number(quote?.priceChange ?? dbData.price_change ?? 0),
+        price_change_rate: Number(quote?.priceChangeRate ?? dbData.price_change_rate ?? 0),
+        high: Number(quote?.priceHigh ?? dbData.price_high ?? 0),
+        low: Number(quote?.priceLow ?? dbData.price_low ?? 0),
+        quoteStatus,
+        quoteStatusLabel: quoteLabel,
+        quoteUpdatedAt: quote?.updatedAt || dbData.updated_at || null,
+        isStale: Boolean(quote?.isStale ?? quoteStatus !== 'live')
+    };
+};
+
+const toFiniteNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+};
+
+const toPositiveNumber = (value) => {
+    const n = toFiniteNumber(value);
+    return n !== null && n > 0 ? n : null;
+};
+
+const normalizeDetailRealityData = (stock, reality) => {
+    const base = reality || {
+        symbol: stock.symbol,
+        per: null,
+        pbr: null,
+        ind_area_per: null,
+        beta: null,
+        supply_5d: null,
+        op_margin: null,
+        debt_ratio: null,
+        status: 'unavailable',
+        source: 'detail_bundle_fallback',
+        updatedAt: null,
+        isStale: true,
+        errorCode: 'REALITY_EMPTY'
+    };
+
+    return {
+        ...base,
+        currentPrice: toPositiveNumber(stock?.currentPrice ?? reality?.currentPrice),
+        priceChangeRate: toFiniteNumber(stock?.price_change_rate ?? reality?.priceChangeRate),
+        priceHigh: toPositiveNumber(stock?.high ?? reality?.priceHigh),
+        priceLow: toPositiveNumber(stock?.low ?? reality?.priceLow),
+        updatedAt: base.updatedAt || stock?.quoteUpdatedAt || null
     };
 };
 
 /**
- * Fetch price history
- * [백엔드] KIS 차트 데이터(history)가 있으면 우선 사용, 없으면 DB 이력 사용
+ * Fetch stock detail bundle
+ * [백엔드] 상세 페이지가 소비하는 stock/history/predictions/reality/dashboard를 한 경계로 묶습니다.
+ * BACKEND_TODO(API): GET /api/v1/stocks/{symbol}/detail 로 대체될 프론트 조합 경계입니다.
  */
-export const fetchPriceHistory = async (stockId, symbol) => {
-    // 1. KIS 실시간 차트 데이터 시도
-    if (symbol) {
-        try {
-            const kisHistory = await callKisGateway(symbol, 'history');
-            if (kisHistory && kisHistory.output2) {
-                // KIS 데이터는 최근일이 앞이므로 뒤집어서 반환
-                return kisHistory.output2
-                    .map(day => Number(day.stck_clpr))
-                    .reverse();
-            }
-        } catch (e) {
-            console.warn('KIS history fetch failed, falling back to DB');
-        }
+export const fetchStockDetailBundle = async (symbol) => {
+    const stock = await fetchStockInfo(symbol);
+    if (!stock) {
+        return {
+            stock: null,
+            historyData: [],
+            starsData: [],
+            realityData: null,
+            dashboardData: null
+        };
     }
 
-    // 2. Fallback: DB 이력
-    if (!stockId) return []; // ID가 없으면 DB 조회 건너뜀
-
-    const { data, error } = await supabase
-        .from('price_history')
-        .select('price')
-        .eq('stock_id', stockId)
-        .order('recorded_at', { ascending: true });
-
-    if (error) return [];
-    return data.map(item => Number(item.price));
-};
-
-/**
- * [백엔드] 해당 종목의 모든 유저 예측치 (Chart Interaction 용)
- */
-export const fetchPredictions = async (stockId) => {
-    if (!stockId) return []; // ID가 없으면 빈 배열 반환 (새 종목 등)
-
-    const { data, error } = await supabase
-        .from('predictions')
-        .select('price_target, x_future_ratio, opacity')
-        .eq('stock_id', stockId);
-    
-    if (error) {
-        console.error('Error fetching predictions:', error);
-        return [];
+    const bundled = await callStockDetailPublic(stock.symbol);
+    if (bundled && typeof bundled === 'object') {
+        return {
+            stock,
+            historyData: Array.isArray(bundled.historyData) ? bundled.historyData : [],
+            starsData: Array.isArray(bundled.starsData) ? bundled.starsData : [],
+            realityData: normalizeDetailRealityData(stock, bundled.realityData),
+            dashboardData: bundled.dashboardData || null
+        };
     }
-    return data.map(item => ({
-        priceTarget: Number(item.price_target),
-        xFutureRatio: Number(item.x_future_ratio),
-        opacity: Number(item.opacity)
-    }));
-};
 
-/**
- * Fetch community dashboard data from Supabase DB Function
- * [백엔드] PIONEER/CONSENSUS 모드 자동 분기, 투표 통계, 52주 고저, 예측 분포 일괄 반환
- * @param {string} symbol - 종목 심볼 (예: '005930')
- */
-export const fetchCommunityDashboard = async (symbol) => {
-    const { data, error } = await supabase
-        .rpc('get_community_dashboard', { stock_symbol: symbol });
-    
-    if (error) {
-        console.error('Error fetching dashboard:', error);
-        return null;
-    }
-    return data;
-};
-
-/**
- * Fetch Market Reality data from KIS Gateway
- * [백엔드] KIS API 통합 분석 데이터를 가져옵니다.
- */
-export const fetchMarketReality = async (symbol) => {
-    const { data, error } = await supabase.functions.invoke('kis-gateway', {
-        body: { symbol, type: 'reality' }
-    });
-
-    if (error) {
-        console.error('Error fetching market reality:', error);
-        return null;
-    }
-    return data;
+    return {
+        stock,
+        historyData: [],
+        starsData: [],
+        realityData: normalizeDetailRealityData(stock, null),
+        dashboardData: null
+    };
 };
 
 /**
  * Submit a new prediction to Supabase
- * [백엔드] user_id가 있으면 로그인 유저의 기록, 없으면 익명 박제
+ * [백엔드] 로그인 유저 기준으로 박제합니다. user_id는 DB default(auth.uid())로 주입됩니다.
  */
-export const submitPrediction = async (stockId, priceTarget, xFutureRatio, opacity, userId = null, targetDate = '3개월') => {
+export const submitPrediction = async (stockId, priceTarget, xFutureRatio, opacity, userId = null, targetDate = toISODate(addDays(new Date(), 90))) => {
+    // 호출부 시그니처 호환을 위해 userId 파라미터는 유지하되, 저장은 DB 기본값(auth.uid())을 사용합니다.
+    void userId;
+    if (!isISODateString(targetDate)) {
+        throw new Error('예언 만기일은 날짜 형식으로만 저장할 수 있어요.');
+    }
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user?.id) {
+        throw new Error('로그인 세션이 만료되었어요. 다시 로그인 후 시도해 주세요.');
+    }
+
     const { data, error } = await supabase
         .from('predictions')
         .insert([{
@@ -235,7 +233,6 @@ export const submitPrediction = async (stockId, priceTarget, xFutureRatio, opaci
             price_target: priceTarget,
             x_future_ratio: xFutureRatio,
             opacity: opacity,
-            user_id: userId,
             target_date: targetDate
         }]);
 
@@ -253,7 +250,8 @@ export const submitPrediction = async (stockId, priceTarget, xFutureRatio, opaci
 export const fetchMyPredictions = async (userId) => {
     const mapRpcRows = (rows = []) => rows.map((row) => {
         const priceTarget = Number(row.price_target);
-        const currentPrice = Number(row.stock_current_price ?? row.stock_base_price ?? 0);
+        const currentPrice = row.stock_current_price == null ? null : Number(row.stock_current_price);
+        const quoteStatusLabel = Number.isFinite(currentPrice) && currentPrice > 0 ? '최근값' : '갱신중';
         const judgmentStatus = String(row.judgment_status || 'PENDING');
         const judgmentLabel = String(row.judgment_label || '진행중');
         const deviation = row.deviation_pct == null ? null : Number(row.deviation_pct);
@@ -265,6 +263,7 @@ export const fetchMyPredictions = async (userId) => {
             stockName: row.stock_name || '알 수 없음',
             stockSymbol: row.stock_symbol,
             currentPrice: Number.isFinite(currentPrice) ? currentPrice : 0,
+            quoteStatusLabel,
             judgmentStatus,
             judgmentLabel,
             isHit: judgmentStatus === 'HIT_EXACT' || judgmentStatus === 'HIT_NEAR',
@@ -274,7 +273,8 @@ export const fetchMyPredictions = async (userId) => {
                 id: row.stock_id,
                 name: row.stock_name || '알 수 없음',
                 symbol: row.stock_symbol,
-                currentPrice: Number.isFinite(currentPrice) ? currentPrice : 0
+                currentPrice: Number.isFinite(currentPrice) ? currentPrice : 0,
+                quoteStatusLabel
             } : null
         };
     });
@@ -367,12 +367,14 @@ export const fetchMyPredictions = async (userId) => {
         created_at: item.created_at,
         stockName: item.stocks?.name || '알 수 없음',
         stockSymbol: item.stocks?.symbol,
-        currentPrice: item.stocks?.current_price ? Number(item.stocks.current_price) : (item.stocks?.base_price ? Number(item.stocks.base_price) : 0),
+        currentPrice: item.stocks?.current_price ? Number(item.stocks.current_price) : 0,
+        quoteStatusLabel: item.stocks?.current_price ? '최근값' : '갱신중',
         stock: item.stocks ? {
             id: item.stocks.id,
             name: item.stocks.name,
             symbol: item.stocks.symbol,
-            currentPrice: item.stocks.current_price ? Number(item.stocks.current_price) : Number(item.stocks.base_price)
+            currentPrice: item.stocks.current_price ? Number(item.stocks.current_price) : 0,
+            quoteStatusLabel: item.stocks.current_price ? '최근값' : '갱신중'
         } : null
     }));
 };
@@ -394,31 +396,17 @@ export const deletePrediction = async (predictionId) => {
     return true;
 };
 
-// --- Legacy Dummy Generators (Falling back if needed) ---
-/**
- * Generate dummy history data (Line Chart Points)
- */
-export const generateDummyHistory = (basePrice) => {
-    const points = [];
-    for (let i = 0; i < 30; i++) {
-        const progress = i / 29;
-        const target = basePrice * 0.8 + (basePrice * 0.2 * progress);
-        const noise = (Math.random() - 0.5) * (basePrice * 0.05);
-        points.push(i === 29 ? basePrice : target + noise);
-    }
-    return points;
-};
+function isISODateString(value) {
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
 
-/**
- * Generate dummy star data (Future Hit Targets)
- */
-export const generateDummyStars = (basePrice) => {
-    const stars = [];
-    for (let i = 0; i < 50; i++) {
-        const xFutureRatio = Math.pow(Math.random(), 1.5);
-        const priceTarget = basePrice * (0.85 + (Math.random() * 0.3));
-        const opacity = 0.30 + (Math.random() * 0.25);
-        stars.push({ xFutureRatio, priceTarget, opacity });
-    }
-    return stars;
-};
+function addDays(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function toISODate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}

@@ -26,11 +26,13 @@ import {
  * - stock: object
  * - onBack: () => void
  * - onRecord: (price: number) => void
+ * - openComposerSignal?: number
+ * - onComposerVisibilityChange?: (visible: boolean) => void
  */
-const StockDetailV2 = ({ stock, onBack, onRecord }) => {
+const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComposerVisibilityChange }) => {
     const { stockInfo, basePrice, dashboardData, realityData } = useChartContext();
     const symbol = stockInfo?.symbol || stock?.symbol || '000000';
-    const initialPrice = Number(stockInfo?.currentPrice || basePrice || 50000);
+    const initialPrice = Number(stockInfo?.currentPrice || basePrice || 0);
     const initialDate = useMemo(() => toISODate(addDays(new Date(), 90)), []);
 
     const [windowKey, setWindowKey] = useState('7d');
@@ -118,19 +120,21 @@ const StockDetailV2 = ({ stock, onBack, onRecord }) => {
         // BACKEND_TODO(SUPABASE): distribution_history(low52/high52/current)는 dashboardData 대신 API payload 사용.
         // BACKEND_TODO(KIS): currentPrice는 서버 갱신 시각(updatedAt)과 함께 내려서 stale 판별.
         if (snapshot) return snapshot;
+        const consensus = dashboardData?.distribution?.consensus;
         return {
             sampleSize: 0,
             stats: {
-                avg: dashboardData?.distribution?.consensus?.avg || currentPrice,
-                mode: dashboardData?.distribution?.consensus?.mode || currentPrice,
-                q1: dashboardData?.distribution?.consensus?.min || Math.round(currentPrice * 0.9),
-                q3: dashboardData?.distribution?.consensus?.max || Math.round(currentPrice * 1.1),
-                bullishRatio: 0.5,
-                bearishRatio: 0.5
+                avg: pickPositiveNumber(consensus?.avg),
+                mode: pickPositiveNumber(consensus?.mode),
+                q1: pickPositiveNumber(consensus?.min),
+                q3: pickPositiveNumber(consensus?.max),
+                bullishRatio: null,
+                bearishRatio: null
             },
             overlay: {
                 type: 'dot',
                 dots: [],
+                cells: [],
                 xDomain: { min: 0, max: 1095 },
                 yDomain: {
                     min: Math.round(currentPrice * 0.8),
@@ -155,20 +159,20 @@ const StockDetailV2 = ({ stock, onBack, onRecord }) => {
                 basePrice={currentPrice}
                 priceChange={stockInfo?.price_change}
                 priceChangeRate={stockInfo?.price_change_rate}
+                quoteStatusLabel={stockInfo?.quoteStatusLabel}
                 onBack={onBack}
             />
 
-            <main className="w-full mt-6 relative z-40 pb-28 sm:pb-32">
+            <main className="w-full mt-6 relative z-40 pb-24 sm:pb-28">
                 <div className="mx-auto max-w-2xl px-5 space-y-6 sm:space-y-8">
                     <MarketReality kisData={realityData} />
 
                     <DistributionSummary
                         displayMode="rangeOnly"
                         history={{
-                            low52: dashboardData?.distribution?.history?.low52 || Math.round(currentPrice * 0.65),
-                            high52: dashboardData?.distribution?.history?.high52 || Math.round(currentPrice * 1.5),
-                            // BACKEND_TODO(API): 상세 헤더/52주 카드 currentPrice를 동일 응답의 canonical currentPrice로 통일.
-                            current: Math.round(currentPrice)
+                            low52: pickPositiveNumber(dashboardData?.distribution?.history?.low52),
+                            high52: pickPositiveNumber(dashboardData?.distribution?.history?.high52),
+                            current: pickPositiveNumber(dashboardData?.distribution?.history?.current)
                         }}
                     />
 
@@ -197,10 +201,20 @@ const StockDetailV2 = ({ stock, onBack, onRecord }) => {
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 errorMessage={errorMessage}
+                forceOpenSignal={openComposerSignal}
+                onVisibilityChange={onComposerVisibilityChange}
             />
         </>
     );
 };
+
+function pickPositiveNumber(...values) {
+    for (const value of values) {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+    return null;
+}
 
 function addDays(date, days) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);

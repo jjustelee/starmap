@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './utils/supabaseClient'
 import { 
-    ChevronRight, TrendingUp, TrendingDown, Search, X, Star, Bell, Home, Compass, 
+    ChevronRight, TrendingUp, TrendingDown, Search, X, Star, Bell, Home, 
     Edit3, User, MessageCircle, BarChart2, Pencil, BadgeCheck, Award, BookOpen, Settings, Target
 } from 'lucide-react';
-import { fetchStockInfo, fetchPriceHistory } from './utils/mockData';
+import { fetchCommunityHomeFeed, fetchSacredPosts, fetchStockInfo } from './utils/mockData';
 import { searchStocksLocal } from './utils/searchEngine';
 import { StockDetail } from './components/StockDetail';
 import { RecordSuccess } from './components/RecordSuccess'
@@ -16,13 +16,6 @@ import NicknameSetupSheet from './components/NicknameSetupSheet'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 // [백엔드] 종목 리스트는 Supabase에서 동적으로 로드됩니다.
-
-const SACRED_POSTS = [
-    { id: 1, title: 'SK하이닉스 20만 적중', author: '별지기A', date: '2026.03.01', hitDate: '2026.03.07', members: 8400, color: 'neon-teal' },
-    { id: 2, title: '삼성전자 8만 돌파 적중', author: '달빛지도사', date: '2026.03.02', hitDate: '2026.03.06', members: 6210, color: 'neon-pink' },
-    { id: 3, title: '비트코인 1억 고지 적중', author: '코인도사', date: '2026.02.25', hitDate: '2026.03.05', members: 12500, color: 'neon-teal' },
-    { id: 4, title: '에코프로 반등 성공 적중', author: '배터리왕', date: '2026.03.01', hitDate: '2026.03.08', members: 4300, color: 'neon-pink' },
-];
 
 const HeaderProfileButton = () => {
     const { isLoggedIn, isLoading: authLoading, profile } = useAuth();
@@ -52,16 +45,22 @@ function App() {
     const location = useLocation();
     const [stars, setStars] = useState([]);
     const [selectedStock, setSelectedStock] = useState(null);
-    const [selectedSacredPost, setSelectedSacredPost] = useState(null);
     const [lastTargetPrice, setLastTargetPrice] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
     const [popularStocks, setPopularStocks] = useState([]);
+    const [sacredHomePosts, setSacredHomePosts] = useState([]);
+    const [communityHomeFeed, setCommunityHomeFeed] = useState({ recentPredictions: [], hotStocks: [] });
     const [searchResults, setSearchResults] = useState([]);
     const [stocksLoading, setStocksLoading] = useState(true);
     const [isSearching, setIsSearching] = useState(false);
     const [visibleCount, setVisibleCount] = useState(20); // 무한 스크롤: 현재 보여줄 개수
     const [allStockMaster, setAllStockMaster] = useState([]); // [백엔드] 전 종목 캐싱용
     const observerTarget = useRef(null); // 무한 스크롤 감지용 타겟
+    const searchInputRef = useRef(null);
+    const searchQuoteInFlightRef = useRef(new Set());
+    const searchQuoteCacheRef = useRef({});
+    const [openComposerSignal, setOpenComposerSignal] = useState(0);
+    const [isDetailComposerVisible, setIsDetailComposerVisible] = useState(false);
 
     // 현재 경로를 기반으로 view 상태 유도 (UI 조건부 렌더링용)
     const getViewFromPath = () => {
@@ -75,6 +74,19 @@ function App() {
         return 'home';
     };
     const view = getViewFromPath();
+
+    useEffect(() => {
+        if (view !== 'home') return;
+        if (location.state?.intent !== 'focus-search') return;
+
+        const frame = window.requestAnimationFrame(() => {
+            searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            searchInputRef.current?.focus();
+        });
+
+        navigate(location.pathname, { replace: true, state: null });
+        return () => window.cancelAnimationFrame(frame);
+    }, [view, location.pathname, location.state, navigate]);
 
     // [백엔드] stock_master 전체 로드 (앱 시작 시 1회)
     useEffect(() => {
@@ -117,6 +129,25 @@ function App() {
         loadStockMaster();
     }, []);
 
+    useEffect(() => {
+        const loadSacredHomePosts = async () => {
+            const result = await fetchSacredPosts('home');
+            setSacredHomePosts(Array.isArray(result?.items) ? result.items : []);
+        };
+        loadSacredHomePosts();
+    }, []);
+
+    useEffect(() => {
+        const loadCommunityHomeFeed = async () => {
+            const result = await fetchCommunityHomeFeed();
+            setCommunityHomeFeed({
+                recentPredictions: Array.isArray(result?.recentPredictions) ? result.recentPredictions : [],
+                hotStocks: Array.isArray(result?.hotStocks) ? result.hotStocks : []
+            });
+        };
+        loadCommunityHomeFeed();
+    }, []);
+
     // [백엔드] 데이터 기반 인기 종목 로드 (박제 기록이 많은 순) 및 실시간 가격 동기화 (Level 1)
     useEffect(() => {
         const loadPopularStocks = async () => {
@@ -140,9 +171,10 @@ function App() {
                         id: s.id,
                         name: s.name,
                         symbol: s.symbol,
-                        currentPrice: Number(s.current_price || s.base_price),
+                        currentPrice: Number(s.current_price || 0),
                         priceChange: Number(s.price_change || 0),
                         priceChangeRate: Number(s.price_change_rate || 0),
+                        quoteStatusLabel: Number(s.current_price || 0) > 0 ? '최근값' : '갱신중',
                         predictionCount: s.predictions ? s.predictions.length : 0
                     }))
                     .sort((a, b) => b.predictionCount - a.predictionCount)
@@ -151,11 +183,11 @@ function App() {
                     // 1단계: 먼저 DB 데이터를 표시
                     setPopularStocks(sorted);
 
-                    // 2단계: 상위 5개 종목에 대해 실시간 가격 업데이트 (Level 1 클라이언트 동기화)
-                    const top5 = sorted.slice(0, 5);
+                    // 2단계: 상위 종목에 대해 현재가 동기화 (quote-public 기반, TTL 60초 캐시 우선)
+                    const topSymbols = sorted.slice(0, 10);
                     
                     // 병렬로 API 호출
-                    const syncPromises = top5.map(async (stock) => {
+                    const syncPromises = topSymbols.map(async (stock) => {
                         try {
                             const info = await fetchStockInfo(stock.symbol);
                             if (info && Number(info.currentPrice) > 0) {
@@ -163,7 +195,8 @@ function App() {
                                     ...stock,
                                     currentPrice: Number(info.currentPrice),
                                     priceChange: Number(info.price_change || 0),
-                                    priceChangeRate: Number(info.price_change_rate || 0)
+                                    priceChangeRate: Number(info.price_change_rate || 0),
+                                    quoteStatusLabel: info.quoteStatusLabel || stock.quoteStatusLabel
                                 };
                             }
                         } catch (err) {
@@ -209,15 +242,19 @@ function App() {
             const localResults = searchStocksLocal(allStockMaster, searchQuery);
             
             // 검색 결과를 기존 UI 형식에 맞게 변환
-            const formatted = localResults.map(s => ({
+            const formatted = localResults.map(s => {
+                const cachedQuote = searchQuoteCacheRef.current[s.code];
+                return {
                 symbol: s.code,
                 name: s.name,
                 market: s.market_type,
-                currentPrice: Number(s.current_price || 0),
-                priceChange: Number(s.price_change || 0),
-                priceChangeRate: Number(s.price_change_rate || 0),
+                currentPrice: Number(cachedQuote?.currentPrice ?? s.current_price ?? 0),
+                priceChange: Number(cachedQuote?.priceChange ?? s.price_change ?? 0),
+                priceChangeRate: Number(cachedQuote?.priceChangeRate ?? s.price_change_rate ?? 0),
+                quoteStatusLabel: cachedQuote?.quoteStatusLabel || (Number(s.current_price || 0) > 0 ? '최근값' : '갱신중'),
                 isFromDb: false
-            }));
+                };
+            });
 
             setSearchResults(formatted);
             setVisibleCount(20); // 검색어 변경 시 개수 초기화
@@ -245,6 +282,39 @@ function App() {
         return () => observer.disconnect();
     }, [searchResults, visibleCount]);
 
+    // [백엔드] 검색 결과 현재가 동기화: 화면에 보이는 항목부터 quote-public 기반으로 보강
+    useEffect(() => {
+        if (!searchResults.length) return;
+        const visibleItems = searchResults.slice(0, visibleCount);
+        visibleItems.forEach((stock) => {
+            if (Number(stock.currentPrice || 0) > 0) return;
+            if (searchQuoteInFlightRef.current.has(stock.symbol)) return;
+            searchQuoteInFlightRef.current.add(stock.symbol);
+
+            fetchStockInfo(stock.symbol)
+                .then((info) => {
+                    const price = Number(info?.currentPrice || 0);
+                    if (price <= 0) return;
+                    const nextQuote = {
+                        currentPrice: price,
+                        priceChange: Number(info?.price_change || 0),
+                        priceChangeRate: Number(info?.price_change_rate || 0),
+                        quoteStatusLabel: info?.quoteStatusLabel || '최근값'
+                    };
+                    searchQuoteCacheRef.current[stock.symbol] = nextQuote;
+                    setSearchResults((prev) => prev.map((item) => (
+                        item.symbol === stock.symbol ? { ...item, ...nextQuote } : item
+                    )));
+                })
+                .catch((err) => {
+                    console.warn(`Failed to sync search quote for ${stock.symbol}:`, err);
+                })
+                .finally(() => {
+                    searchQuoteInFlightRef.current.delete(stock.symbol);
+                });
+        });
+    }, [searchResults, visibleCount]);
+
     // [백엔드 Level 3] Supabase Realtime 구독: stocks 테이블 변경 시 즉시 UI 반영
     useEffect(() => {
         const channel = supabase
@@ -262,7 +332,8 @@ function App() {
                     const next = [...prev];
                     next[idx] = {
                         ...next[idx],
-                        currentPrice: Number(updatedStock.current_price || updatedStock.base_price)
+                        currentPrice: Number(updatedStock.current_price || 0),
+                        quoteStatusLabel: Number(updatedStock.current_price || 0) > 0 ? '최근값' : '갱신중'
                     };
                     return next;
                 });
@@ -296,6 +367,24 @@ function App() {
         // [보안] 클라이언트에서의 stocks 테이블 INSERT 로직은 서버로 이관되었습니다.
         // 하지만 UI 전반(RecordSuccess 등)에서 현재 선택된 종목 정보를 참조하므로 상태는 유지합니다.
         setSelectedStock(stock);
+        fetchStockInfo(stock.symbol)
+            .then((info) => {
+                const price = Number(info?.currentPrice || 0);
+                if (price <= 0) return;
+                setSelectedStock((prev) => {
+                    if (!prev || prev.symbol !== stock.symbol) return prev;
+                    return {
+                        ...prev,
+                        currentPrice: price,
+                        priceChange: Number(info?.price_change || prev.priceChange || 0),
+                        priceChangeRate: Number(info?.price_change_rate || prev.priceChangeRate || 0),
+                        quoteStatusLabel: info?.quoteStatusLabel || prev.quoteStatusLabel || '최근값'
+                    };
+                });
+            })
+            .catch(() => {
+                // 선택 후 상세 화면에서 재시도되므로 클릭 흐름을 막지 않습니다.
+            });
         navigate(`/stock/${stock.symbol}`);
         window.scrollTo(0, 0);
     };
@@ -307,9 +396,40 @@ function App() {
     };
 
     const handleSacredSelect = (post) => {
-        setSelectedSacredPost(post);
         navigate(`/sacred/${post.id}`);
         window.scrollTo(0, 0);
+    };
+
+    const handleCommunityPredictionClick = (item) => {
+        if (item?.promotionStatus === 'sacred' && item?.sacredPostId) {
+            handleSacredSelect({ id: item.sacredPostId });
+            return;
+        }
+        handleStockClick({ symbol: item.stockSymbol, name: item.stockName });
+    };
+
+    const navigateHome = () => {
+        setSearchQuery('');
+        setSearchResults([]);
+        setVisibleCount(20);
+        navigate('/');
+        window.scrollTo(0, 0);
+    };
+
+    const navigateToSearch = () => {
+        setSearchQuery('');
+        setSearchResults([]);
+        setVisibleCount(20);
+        navigate('/', { state: { intent: 'focus-search' } });
+        window.scrollTo(0, 0);
+    };
+
+    const handlePrimaryCta = () => {
+        if (view === 'detail') {
+            setOpenComposerSignal((prev) => prev + 1);
+            return;
+        }
+        navigateToSearch();
     };
 
     const changeView = (newView) => {
@@ -318,6 +438,10 @@ function App() {
             'sacred': '/sacred',
             'mypage': '/mypage'
         };
+        if (newView === 'home') {
+            navigateHome();
+            return;
+        }
         navigate(pathMap[newView] || '/');
         window.scrollTo(0, 0);
     };
@@ -403,7 +527,7 @@ function App() {
                                         </h2>
                                         <p className="mx-auto max-w-md text-[13px] sm:text-sm leading-5 sm:leading-6 text-white/60 md:text-base">
                                             맞추면 당신의 기록은 성지글이 되고,<br className="hidden sm:block" />
-                                            적중하면 성지순례 댓글이 붙습니다
+                                            적중하면 성지글 아카이브로 올라갑니다
                                         </p>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto">
@@ -429,7 +553,8 @@ function App() {
                                     <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-neon-teal/30 to-neon-pink/30 opacity-20 blur transition duration-700 group-hover:opacity-90"></div>
                                     <div className="relative crystal-glass flex items-center rounded-2xl border-white/15 px-4 sm:px-5">
                                         <Search className="mr-3 text-white/35 w-5 h-5" />
-                                        <input
+                                                <input
+                                            ref={searchInputRef}
                                             aria-label="종목 검색"
                                             className="w-full bg-transparent py-4 sm:py-5 text-[15px] sm:text-base font-semibold text-white placeholder:text-white/35 focus:outline-none"
                                             placeholder="종목명을 검색해 목표가를 확인하세요"
@@ -560,8 +685,11 @@ function App() {
                                             <div>
                                                 <p className="text-sm font-bold text-white/40 mb-1">{popularStocks[0].name}</p>
                                                 <p className="text-[28px] sm:text-3xl font-black text-white">
-                                                    {popularStocks[0].currentPrice.toLocaleString()} 
+                                                    {popularStocks[0].currentPrice > 0 ? popularStocks[0].currentPrice.toLocaleString() : '시세 동기화 중'}
                                                     <span className="text-sm font-medium opacity-30 ml-2">KRW</span>
+                                                </p>
+                                                <p className="text-[10px] font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
+                                                    {popularStocks[0].currentPrice > 0 ? (popularStocks[0].quoteStatusLabel || '최근값') : '갱신중'}
                                                 </p>
                                                 <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
                                                     {popularStocks[0].priceChange >= 0 ? '▲' : '▼'} {Math.abs(popularStocks[0].priceChange).toLocaleString()} ({popularStocks[0].priceChangeRate.toFixed(2)}%)
@@ -585,6 +713,81 @@ function App() {
                                 </section>
                             )}
 
+                            {!searchQuery && (
+                                <section className="space-y-5 sm:space-y-6">
+                                    <div className="flex items-end justify-between px-1">
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">홈 커뮤니티</p>
+                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white">방금 박제된 예언</h3>
+                                            <p className="mt-2 text-sm font-bold text-white/40">지금 올라온 예언이 맞으면 바로 성지글로 올라갑니다</p>
+                                        </div>
+                                        <span className="text-sm font-bold text-white/40">최근 7일 기준</span>
+                                    </div>
+
+                                    {communityHomeFeed.hotStocks.length > 0 ? (
+                                        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                                            {communityHomeFeed.hotStocks.map((stock) => (
+                                                <button
+                                                    key={stock.stockSymbol}
+                                                    onClick={() => handleStockClick({ symbol: stock.stockSymbol, name: stock.stockName })}
+                                                    type="button"
+                                                    className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-neon-teal/40 hover:bg-white/10"
+                                                >
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-teal/70">요즘 각 보는 종목</p>
+                                                    <p className="mt-1 text-sm font-black text-white">{stock.stockName}</p>
+                                                    <p className="mt-1 text-[11px] font-bold text-white/45">{stock.predictionCount}건 찍힘</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-center">
+                                            <p className="text-white/55 font-bold">아직 분위기 타는 종목이 없습니다</p>
+                                            <p className="mt-1 text-sm text-white/35">예언이 쌓이면 여기서 바로 뜨기 시작합니다</p>
+                                        </div>
+                                    )}
+
+                                    {communityHomeFeed.recentPredictions.length > 0 ? (
+                                        <div className="grid gap-3">
+                                            {communityHomeFeed.recentPredictions.map((item) => (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => handleCommunityPredictionClick(item)}
+                                                    type="button"
+                                                    className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-left transition hover:border-neon-pink/30 hover:bg-white/10"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-pink/75">방금 박제</p>
+                                                                <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getPromotionStatusClasses(item.promotionStatus)}`}>
+                                                                    {item.promotionLabel}
+                                                                </span>
+                                                            </div>
+                                                            <h4 className="mt-1 truncate text-lg font-black text-white">{item.stockName}</h4>
+                                                            <p className="mt-1 text-sm font-bold text-white/55">
+                                                                {item.authorNickname} · {formatRelativeTime(item.createdAt)}
+                                                            </p>
+                                                        </div>
+                                                        <div className="shrink-0 text-right">
+                                                            <p className="text-base font-black text-white">{Number(item.targetPrice || 0).toLocaleString()}원</p>
+                                                            <p className="mt-1 text-[11px] font-bold text-white/40">기한 {formatSacredDate(item.targetDate)}</p>
+                                                            <p className={`mt-2 text-[11px] font-black ${item.promotionStatus === 'sacred' ? 'text-neon-pink' : 'text-neon-teal'}`}>
+                                                                {item.promotionStatus === 'sacred' ? '성지글 보러 →' : '예언 보러 →'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
+                                            <p className="text-white/60 font-bold">아직 방금 올라온 예언이 없습니다</p>
+                                            <p className="mt-2 text-sm text-white/35">첫 박제가 올라오면 여기서 바로 흐름이 잡힙니다</p>
+                                        </div>
+                                    )}
+                                </section>
+                            )}
+
                             {/* Sacred Posts Section - Hide when searching */}
                             {!searchQuery && (
                                 <section className="space-y-5 sm:space-y-6">
@@ -592,41 +795,47 @@ function App() {
                                         <div>
                                             <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">최근 성지글</p>
                                             <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
+                                            <p className="mt-2 text-sm font-bold text-white/40">이미 맞은 예언만 따로 모아둔 성지 아카이브입니다</p>
                                         </div>
                                         <button onClick={() => navigate('/sacred')} className="text-sm font-bold text-neon-pink hover:text-white transition">더 보기 →</button>
                                     </div>
 
                                 <div className="space-y-4">
-                                    {SACRED_POSTS.slice(0, 2).map((post) => (
+                                    {sacredHomePosts.length > 0 ? sacredHomePosts.map((post) => (
                                         <article
                                             key={post.id}
                                             onClick={() => handleSacredSelect(post)}
-                                            className={`group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border ${post.color === 'neon-pink' ? 'border-neon-pink/25 shadow-glowPink' : 'border-neon-teal/25 shadow-glowTeal'} bg-white/5 p-4 sm:p-6 crystal-glass hover:scale-[1.01] transition-all cursor-pointer`}
+                                            className={`group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border ${post.judgmentStatus === 'HIT_EXACT' ? 'border-neon-pink/25 shadow-glowPink' : 'border-neon-teal/25 shadow-glowTeal'} bg-white/5 p-4 sm:p-6 crystal-glass hover:scale-[1.01] transition-all cursor-pointer`}
                                         >
                                             <div className="relative">
                                                 <div className="mb-5 flex items-start justify-between gap-4">
                                                     <div className="flex items-center gap-3">
-                                                        {post.color === 'neon-teal' ? (
-                                                            <BadgeCheck className="w-8 h-8 sm:w-10 sm:h-10 text-neon-teal" />
-                                                        ) : (
+                                                        {post.judgmentStatus === 'HIT_EXACT' ? (
                                                             <Award className="w-8 h-8 sm:w-10 sm:h-10 text-neon-pink" />
+                                                        ) : (
+                                                            <BadgeCheck className="w-8 h-8 sm:w-10 sm:h-10 text-neon-teal" />
                                                         )}
                                                         <div>
-                                                            <p className={`text-xs font-black tracking-[0.18em] uppercase ${post.color === 'neon-pink' ? 'text-neon-pink' : 'text-neon-teal'}`}>성지글</p>
-                                                            <p className="text-[11px] font-bold text-white/35">성지순례 {post.members.toLocaleString()}명</p>
+                                                            <p className={`text-xs font-black tracking-[0.18em] uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>성지글</p>
+                                                            <p className="text-[11px] font-bold text-white/35">작성자 {post.authorNickname}</p>
                                                         </div>
                                                     </div>
                                                     <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white/60">적중 완료</span>
                                                 </div>
-                                                <h4 className={`text-xl sm:text-2xl font-black tracking-tight text-white group-hover:${post.color === 'neon-pink' ? 'text-neon-pink' : 'text-neon-teal'} transition-colors`}>
-                                                    {post.title}
+                                                <h4 className={`text-xl sm:text-2xl font-black tracking-tight text-white ${post.judgmentStatus === 'HIT_EXACT' ? 'group-hover:text-neon-pink' : 'group-hover:text-neon-teal'} transition-colors`}>
+                                                    {post.stockName} {Number(post.targetPrice).toLocaleString()}원 적중
                                                 </h4>
                                                 <p className="mt-2 text-xs font-medium text-white/50">
-                                                    작성자 {post.author} • 기록일 {post.date} • 적중일 {post.hitDate}
+                                                    작성자 {post.authorNickname} • 기록일 {formatSacredDate(post.createdAt)} • 적중일 {formatSacredDate(post.hitDate)}
                                                 </p>
                                             </div>
                                         </article>
-                                    ))}
+                                    )) : (
+                                        <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
+                                            <p className="text-white/60 font-bold">아직 오늘 뜬 성지글이 없습니다</p>
+                                            <p className="mt-2 text-sm text-white/35">첫 적중 기록이 올라오면 여기서 바로 보입니다</p>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
                             )}
@@ -637,24 +846,26 @@ function App() {
                             stock={selectedStock}
                             onBack={() => navigate('/')}
                             onRecord={(price) => handleRecordComplete(price)}
+                            openComposerSignal={openComposerSignal}
+                            onComposerVisibilityChange={setIsDetailComposerVisible}
                         />
                     } />
                     <Route path="/success" element={
                         <RecordSuccess
                             stock={selectedStock}
                             targetPrice={lastTargetPrice}
-                            onHome={() => navigate('/')}
+                            onHome={navigateHome}
+                            onViewMyPredictions={() => navigate('/mypage')}
+                            onViewStock={() => selectedStock?.symbol && navigate(`/stock/${selectedStock.symbol}`)}
                         />
                     } />
                     <Route path="/sacred" element={
                         <SacredList
-                            posts={SACRED_POSTS}
                             onSelect={(post) => handleSacredSelect(post)}
                         />
                     } />
                     <Route path="/sacred/:id" element={
                         <SacredDetail
-                            post={selectedSacredPost}
                             onBack={() => navigate('/sacred')}
                         />
                     } />
@@ -668,32 +879,39 @@ function App() {
             </main>
 
             {/* Bottom Nav */}
-            {view !== 'detail' && view !== 'success' && (
+            {view !== 'success' && !(view === 'detail' && isDetailComposerVisible) && (
                 <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 w-[94%] sm:w-[92%] max-w-md -translate-x-1/2">
                     <nav className="crystal-glass rounded-[1.5rem] sm:rounded-[2rem] border-white/10 px-2.5 sm:px-3 py-2 sm:py-2.5 shadow-glass">
                         <ul className="grid grid-cols-5 items-end">
                             <li className="flex justify-center">
                                 <button
                                     onClick={() => changeView('home')}
-                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'home' || view === 'detail' || view === 'success' ? 'text-neon-teal' : 'text-white/45'}`}
+                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'home' ? 'text-neon-teal' : 'text-white/45'}`}
                                 >
                                     <Home className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-black tracking-[0.12em]">홈</span>
                                 </button>
                             </li>
                             <li className="flex justify-center">
-                                <button className="flex w-full flex-col items-center gap-1 rounded-2xl py-2 text-white/45 transition hover:text-white active:scale-95">
-                                    <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    <span className="text-[10px] font-bold tracking-[0.12em]">탐색</span>
+                                <button
+                                    onClick={navigateToSearch}
+                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition hover:text-white active:scale-95 ${(view === 'home' && searchQuery.trim()) ? 'text-neon-teal' : 'text-white/45'}`}
+                                >
+                                    <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+                                    <span className="text-[10px] font-bold tracking-[0.12em]">검색</span>
                                 </button>
                             </li>
                             <li className="relative flex justify-center">
                                 <button
-                                    onClick={() => changeView('home')}
+                                    onClick={handlePrimaryCta}
+                                    aria-label="예언하기"
                                     className="group relative -mt-7 sm:-mt-8 flex h-14 w-14 sm:h-16 sm:w-16 flex-col items-center justify-center rounded-full bg-gradient-to-tr from-neon-teal via-neon-pink to-purple-600 text-white shadow-lg transition active:scale-95"
                                 >
                                     <div className="absolute -inset-2 rounded-full bg-neon-pink/20 opacity-60 blur-xl"></div>
-                                    <Pencil className="w-7 h-7 sm:w-8 sm:h-8 relative" />
+                                    <div className="relative flex flex-col items-center leading-none">
+                                        <Pencil className="w-6 h-6 sm:w-7 sm:h-7" />
+                                        <span className="mt-0.5 text-[8px] sm:text-[9px] font-black">예언하기</span>
+                                    </div>
                                 </button>
                             </li>
                             <li className="flex justify-center">
@@ -711,7 +929,7 @@ function App() {
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'mypage' ? 'text-neon-teal' : 'text-white/45'}`}
                                 >
                                     <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    <span className="text-[10px] font-bold tracking-[0.12em]">마이</span>
+                                    <span className="text-[10px] font-bold tracking-[0.12em]">내 기록</span>
                                 </button>
                             </li>
                         </ul>
@@ -720,6 +938,37 @@ function App() {
             )}
         </div>
     );
+}
+
+function formatSacredDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}.${m}.${d}`;
+}
+
+function formatRelativeTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '방금 전';
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.max(0, Math.floor(diffMs / 60000));
+    if (diffMin < 1) return '방금 전';
+    if (diffMin < 60) return `${diffMin}분 전`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour}시간 전`;
+    return `${Math.floor(diffHour / 24)}일 전`;
+}
+
+function getPromotionStatusClasses(status) {
+    if (status === 'sacred') {
+        return 'border-neon-pink/30 bg-neon-pink/10 text-neon-pink';
+    }
+    if (status === 'judging') {
+        return 'border-white/15 bg-white/5 text-white/70';
+    }
+    return 'border-neon-teal/30 bg-neon-teal/10 text-neon-teal';
 }
 
 export default App;
