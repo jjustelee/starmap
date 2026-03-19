@@ -159,7 +159,7 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                 basePrice={currentPrice}
                 priceChange={stockInfo?.price_change}
                 priceChangeRate={stockInfo?.price_change_rate}
-                quoteStatusLabel={stockInfo?.quoteStatusLabel}
+                quoteUpdatedAt={stockInfo?.quoteUpdatedAt}
                 onBack={onBack}
             />
 

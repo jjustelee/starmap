@@ -1,11 +1,28 @@
 import React from 'react';
 import { getMarketStatus } from '../utils/marketStatus';
 
-const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteStatusLabel, onBack }) => {
+const formatQuoteAge = (value) => {
+    if (!value) return null;
+    const updatedAtMs = new Date(value).getTime();
+    if (!Number.isFinite(updatedAtMs)) return null;
+
+    const diffMs = Date.now() - updatedAtMs;
+    if (diffMs < 0) return '1분 전';
+
+    const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+    if (diffMinutes < 60) return `${diffMinutes}분 전`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}시간 전`;
+
+    return null;
+};
+
+const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpdatedAt, onBack }) => {
     const market = getMarketStatus();
     const hasPrice = Number(basePrice) > 0;
-    const statusText = hasPrice ? (quoteStatusLabel || '최근값') : '갱신중';
-    const shouldShowQuoteStatus = statusText !== '실시간' || market.isOpen;
+    const statusText = hasPrice ? (formatQuoteAge(quoteUpdatedAt) || '갱신중') : '갱신중';
+    const shouldShowQuoteStatus = market.isOpen;
 
     return (
         <header className="sticky top-4 z-50 mx-auto w-[calc(100%-2.5rem)] max-w-2xl transition-all duration-700 rounded-2xl crystal-glass px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-3 sm:gap-5 shadow-2xl">
