@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { fetchStockDetailBundle } from '../utils/mockData';
+import { fetchStockDetailBundle, fetchStockInfo } from '../utils/mockData';
 
 const ChartContext = createContext(null);
 
@@ -13,6 +13,7 @@ export const useChartContext = () => {
 
 export const ChartProvider = ({ children, symbol = '005930' }) => {
     const [isLoading, setIsLoading] = useState(true);
+    const [isDetailLoading, setIsDetailLoading] = useState(true);
     const [stockInfo, setStockInfo] = useState(null);
     const [historyData, setHistoryData] = useState([]);
     const [starsData, setStarsData] = useState([]);
@@ -51,36 +52,48 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
     useEffect(() => {
         const loadInitialData = async () => {
             setIsLoading(true);
+            setIsDetailLoading(true);
+            setStockInfo(null);
+            setHistoryData([]);
+            setStarsData([]);
+            setRealityData(null);
+            setDashboardData(null);
+
+            const stock = await fetchStockInfo(symbol);
+            if (!stock) {
+                setIsLoading(false);
+                setIsDetailLoading(false);
+                return;
+            }
+
+            setStockInfo(stock);
+
+            const realPriceRaw = Number(stock.currentPrice || 0);
+            const realPrice = Number.isFinite(realPriceRaw) && realPriceRaw > 0 ? realPriceRaw : 0;
+            const iMin = Math.max(0, Math.round(realPrice * 0.75));
+            const iMax = Math.round(realPrice * 1.25);
+
+            const s = stateRef.current;
+            s.currentPriceValue = realPrice;
+            s.currentPriceMin = iMin;
+            s.currentPriceMax = iMax;
+            s.axisPriceMin = iMin;
+            s.axisPriceMax = iMax;
+
+            setIsLoading(false);
+
             const {
-                stock,
                 historyData: history,
                 starsData: stars,
                 realityData: reality,
                 dashboardData: dashboard
-            } = await fetchStockDetailBundle(symbol);
-            if (stock) {
-                setStockInfo(stock);
+            } = await fetchStockDetailBundle(symbol, stock);
 
-                // [백엔드] 히스토리 데이터가 없으면 더미를 만들지 않고 빈 상태로 유지합니다.
-                const realPriceRaw = Number(stock.currentPrice || 0);
-                const realPrice = Number.isFinite(realPriceRaw) && realPriceRaw > 0 ? realPriceRaw : 0;
-                setHistoryData(history);
-                setStarsData(stars);
-                setRealityData(reality);
-                setDashboardData(dashboard);
-
-                // Update mutable state with real-time price
-                const iMin = Math.max(0, Math.round(realPrice * 0.75));
-                const iMax = Math.round(realPrice * 1.25);
-
-                const s = stateRef.current;
-                s.currentPriceValue = realPrice;
-                s.currentPriceMin = iMin;
-                s.currentPriceMax = iMax;
-                s.axisPriceMin = iMin;
-                s.axisPriceMax = iMax;
-            }
-            setIsLoading(false);
+            setHistoryData(history);
+            setStarsData(stars);
+            setRealityData(reality);
+            setDashboardData(dashboard);
+            setIsDetailLoading(false);
         };
         loadInitialData();
     }, [symbol]);
@@ -88,6 +101,7 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
     const value = {
         stateRef,
         isLoading,
+        isDetailLoading,
         stockInfo,
         historyData,
         starsData,

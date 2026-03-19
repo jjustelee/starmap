@@ -13,7 +13,7 @@ import { ChartProvider, useChartContext } from '../context/ChartContext';
 export const StockDetailContent = (props) => {
     const { isLoading, stockInfo } = useChartContext();
 
-    if (isLoading) {
+    if (isLoading && !stockInfo) {
         return (
             <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
                 <div className="w-16 h-16 border-4 border-white/10 border-t-neon-pink rounded-full animate-spin mb-6"></div>

@@ -2,11 +2,13 @@ import React from 'react';
 import { BadgeCheck, ChevronLeft, Share2, TrendingUp, Calendar, Target } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { fetchSacredPosts } from '../utils/mockData';
+import { shareContent } from '../utils/shareContent';
 
 export const SacredDetail = ({ onBack }) => {
     const { id } = useParams();
     const [post, setPost] = React.useState(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [shareFeedback, setShareFeedback] = React.useState('');
 
     React.useEffect(() => {
         let active = true;
@@ -16,12 +18,39 @@ export const SacredDetail = ({ onBack }) => {
             if (!active) return;
             setPost(result?.item || null);
             setIsLoading(false);
+            setShareFeedback('');
         };
         load();
         return () => {
             active = false;
         };
     }, [id]);
+
+    const handleShare = async () => {
+        const sacredUrl = typeof window === 'undefined'
+            ? `/sacred/${id}`
+            : `${window.location.origin}/sacred/${id}`;
+
+        const result = await shareContent({
+            title: `${post.stockName} 성지 입성`,
+            text: `${post.stockName} ${Number(post.targetPrice).toLocaleString()}원 예언이 ${post.judgmentStatus === 'HIT_EXACT' ? '전설급' : '근접 적중'}으로 맞아버렸습니다. 성지 기록 보러 오세요.`,
+            url: sacredUrl
+        });
+
+        if (result === 'shared') {
+            setShareFeedback('공유창을 열었습니다');
+            return;
+        }
+        if (result === 'copied') {
+            setShareFeedback('링크를 복사했습니다');
+            return;
+        }
+        if (result === 'unsupported') {
+            setShareFeedback('이 기기에서는 공유를 지원하지 않습니다');
+            return;
+        }
+        setShareFeedback('공유에 실패했습니다');
+    };
 
     if (isLoading) {
         return <div className="py-16 text-center text-white/45">성지글을 불러오는 중...</div>;
@@ -48,10 +77,18 @@ export const SacredDetail = ({ onBack }) => {
                     <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                     <span className="font-bold">목록으로</span>
                 </button>
-                <button className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/80 transition hover:bg-white/10">
+                <button
+                    onClick={handleShare}
+                    className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/80 transition hover:bg-white/10"
+                >
                     <Share2 className="w-5 h-5" />
                 </button>
             </div>
+            {shareFeedback ? (
+                <p className="text-right -mt-3 text-[12px] font-bold text-white/45">
+                    {shareFeedback}
+                </p>
+            ) : null}
 
             {/* Hero Title */}
             <div className="space-y-3 sm:space-y-4 text-center">

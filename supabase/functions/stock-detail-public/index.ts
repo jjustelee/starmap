@@ -3,8 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-service-key",
 };
+const REALITY_TTL_MS = 24 * 60 * 60 * 1000;
 
 const toNumber = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return null;
@@ -13,6 +14,51 @@ const toNumber = (value: unknown): number | null => {
 };
 
 const normalizeSymbol = (value: unknown): string => String(value ?? "").trim().toUpperCase();
+
+const hasMeaningfulRealityCore = (row: Record<string, unknown> | null) => {
+  if (!row) return false;
+  const coreValues = [
+    toNumber(row.per),
+    toNumber(row.pbr),
+    toNumber(row.supply_5d),
+    toNumber(row.roe),
+    toNumber(row.debt_ratio),
+  ];
+  return coreValues.some((value) => value !== null && value !== 0);
+};
+
+const isRealityCacheStale = (row: Record<string, unknown> | null) => {
+  if (!row?.updated_at) return true;
+  const updatedAtMs = new Date(String(row.updated_at)).getTime();
+  if (!Number.isFinite(updatedAtMs)) return true;
+  return (Date.now() - updatedAtMs) > REALITY_TTL_MS;
+};
+
+const invokeProtectedKisGateway = async (body: Record<string, unknown>) => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const internalServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const response = await fetch(`${supabaseUrl}/functions/v1/kis-gateway`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-service-key": internalServiceKey,
+    },
+    body: JSON.stringify(body),
+  });
+
+  let data: Record<string, unknown> | null = null;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    data,
+  };
+};
 
 const emptyReality = (symbol: string) => ({
   symbol,
@@ -70,7 +116,7 @@ serve(async (req) => {
       .maybeSingle();
 
     const [historyResult, realityResult, dashboardResult, predictionsResult] = await Promise.all([
-      supabase.functions.invoke("kis-gateway", { body: { symbol, type: "history" } }),
+      invokeProtectedKisGateway({ symbol, type: "history" }),
       supabase
         .from("market_reality_cache")
         .select("symbol, per, pbr, ind_area_per, beta, supply_5d, op_margin, debt_ratio, roe, eps, bps, current_price, price_change_rate, price_high, price_low, status, source, error_code, updated_at")
@@ -101,29 +147,99 @@ serve(async (req) => {
       : [];
 
     const realityRow = realityResult.data as Record<string, unknown> | null;
-    const currentPrice = toNumber(stock?.current_price) ?? toNumber(realityRow?.current_price) ?? null;
-    const realityData = realityRow
+    const hasRealityCacheCore = hasMeaningfulRealityCore(realityRow);
+    const shouldSyncRefreshReality = !realityRow || !realityRow.status || !hasRealityCacheCore;
+    const shouldBackgroundRefreshReality = !shouldSyncRefreshReality && isRealityCacheStale(realityRow);
+    const realityRefreshResult = shouldSyncRefreshReality
+      ? await invokeProtectedKisGateway({ symbol, type: "reality" })
+      : null;
+
+    let realitySourceRow = realityRow;
+    let realityRefreshStatus = "skipped";
+
+    if (realityRefreshResult) {
+      realityRefreshStatus = realityRefreshResult.ok ? "ok" : `http_${realityRefreshResult.status}`;
+      const refreshedReality = realityRefreshResult.data as Record<string, unknown> | null;
+      if (refreshedReality && String(refreshedReality.status || "") === "live") {
+        realitySourceRow = refreshedReality;
+      } else {
+        const { data: latestRealityRow } = await supabase
+          .from("market_reality_cache")
+          .select("symbol, per, pbr, ind_area_per, beta, supply_5d, op_margin, debt_ratio, roe, eps, bps, current_price, price_change_rate, price_high, price_low, status, source, error_code, updated_at")
+          .eq("symbol", symbol)
+          .maybeSingle();
+        if (latestRealityRow) {
+          realitySourceRow = latestRealityRow as Record<string, unknown>;
+        }
+      }
+    }
+
+    if (shouldBackgroundRefreshReality) {
+      const backgroundRefresh = invokeProtectedKisGateway({ symbol, type: "reality" })
+        .then((result) => {
+          console.log(JSON.stringify({
+            symbol,
+            reality_cache_hit: true,
+            reality_refresh_attempted: true,
+            reality_refresh_mode: "background",
+            reality_refresh_status: result.ok ? "ok" : `http_${result.status}`,
+          }));
+        })
+        .catch((error) => {
+          console.log(JSON.stringify({
+            symbol,
+            reality_cache_hit: true,
+            reality_refresh_attempted: true,
+            reality_refresh_mode: "background",
+            reality_refresh_status: "failed",
+            reality_refresh_error: error instanceof Error ? error.message : String(error),
+          }));
+        });
+
+      const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (promise: Promise<unknown>) => void } }).EdgeRuntime;
+      runtime?.waitUntil?.(backgroundRefresh);
+      void backgroundRefresh;
+    }
+
+    console.log(JSON.stringify({
+      symbol,
+      reality_cache_hit: hasRealityCacheCore,
+      reality_refresh_attempted: shouldSyncRefreshReality || shouldBackgroundRefreshReality,
+      reality_refresh_mode: shouldSyncRefreshReality ? "blocking" : (shouldBackgroundRefreshReality ? "background" : "none"),
+      reality_refresh_status: realityRefreshStatus,
+    }));
+
+    const currentPrice = toNumber(stock?.current_price) ?? toNumber(realitySourceRow?.current_price) ?? null;
+    const responseRealityStatus = shouldBackgroundRefreshReality
+      ? "cached"
+      : String(realitySourceRow?.status || "unavailable");
+
+    const realityData = realitySourceRow
       ? {
           symbol,
-          per: toNumber(realityRow.per),
-          pbr: toNumber(realityRow.pbr),
-          ind_area_per: toNumber(realityRow.ind_area_per),
-          beta: toNumber(realityRow.beta),
-          supply_5d: toNumber(realityRow.supply_5d),
-          op_margin: toNumber(realityRow.op_margin),
-          debt_ratio: toNumber(realityRow.debt_ratio),
-          roe: toNumber(realityRow.roe),
-          eps: toNumber(realityRow.eps),
-          bps: toNumber(realityRow.bps),
+          per: toNumber(realitySourceRow.per),
+          pbr: toNumber(realitySourceRow.pbr),
+          ind_area_per: toNumber(realitySourceRow.ind_area_per),
+          beta: toNumber(realitySourceRow.beta),
+          supply_5d: toNumber(realitySourceRow.supply_5d),
+          op_margin: toNumber(realitySourceRow.op_margin),
+          debt_ratio: toNumber(realitySourceRow.debt_ratio),
+          roe: toNumber(realitySourceRow.roe),
+          eps: toNumber(realitySourceRow.eps),
+          bps: toNumber(realitySourceRow.bps),
           currentPrice,
-          priceChangeRate: toNumber(realityRow.price_change_rate),
-          priceHigh: toNumber(realityRow.price_high),
-          priceLow: toNumber(realityRow.price_low),
-          status: String(realityRow.status || "unavailable"),
-          source: String(realityRow.source || "detail_endpoint_cache"),
-          updatedAt: realityRow.updated_at ? String(realityRow.updated_at) : null,
-          isStale: String(realityRow.status || "unavailable") !== "live",
-          errorCode: realityRow.error_code ? String(realityRow.error_code) : undefined,
+          priceChangeRate: toNumber(realitySourceRow.price_change_rate),
+          priceHigh: toNumber(realitySourceRow.price_high),
+          priceLow: toNumber(realitySourceRow.price_low),
+          status: responseRealityStatus,
+          source: String(realitySourceRow.source || "detail_endpoint_cache"),
+          updatedAt: realitySourceRow.updated_at ? String(realitySourceRow.updated_at) : null,
+          isStale: shouldBackgroundRefreshReality || responseRealityStatus !== "live",
+          errorCode: realitySourceRow.error_code
+            ? String(realitySourceRow.error_code)
+            : (!hasMeaningfulRealityCore(realitySourceRow) && realityRefreshResult && !realityRefreshResult.ok
+              ? `REALITY_REFRESH_${realityRefreshResult.status}`
+              : undefined),
         }
       : emptyReality(symbol);
 

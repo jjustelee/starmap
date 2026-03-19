@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, lazy, useState, useEffect, useRef } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './utils/supabaseClient'
 import { 
@@ -6,16 +6,25 @@ import {
     Edit3, User, MessageCircle, BarChart2, Pencil, BadgeCheck, Award, BookOpen, Settings, Target
 } from 'lucide-react';
 import { fetchCommunityHomeFeed, fetchSacredPosts, fetchStockInfo } from './utils/mockData';
+import { fetchUserPredictionReactions, togglePredictionReaction } from './utils/predictionReactions';
 import { searchStocksLocal } from './utils/searchEngine';
-import { StockDetail } from './components/StockDetail';
-import { RecordSuccess } from './components/RecordSuccess'
-import { SacredList } from './components/SacredList'
-import { SacredDetail } from './components/SacredDetail'
-import MyPage from './components/MyPage'
+const StockDetail = lazy(() => import('./components/StockDetail').then((module) => ({ default: module.StockDetail })));
+const RecordSuccess = lazy(() => import('./components/RecordSuccess').then((module) => ({ default: module.RecordSuccess })));
+const SacredList = lazy(() => import('./components/SacredList').then((module) => ({ default: module.SacredList })));
+const SacredDetail = lazy(() => import('./components/SacredDetail').then((module) => ({ default: module.SacredDetail })));
+const MyPage = lazy(() => import('./components/MyPage'));
 import NicknameSetupSheet from './components/NicknameSetupSheet'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 // [백엔드] 종목 리스트는 Supabase에서 동적으로 로드됩니다.
+
+const PREDICTION_REACTION_OPTIONS = [
+    { key: 'same_view', label: '나도 비슷하게 봄' },
+    { key: 'can_go_higher', label: '조금 더 갈 듯' },
+    { key: 'seems_high', label: '조금 높게 본 듯' },
+    { key: 'seems_low', label: '조금 낮게 본 듯' },
+    { key: 'want_reason', label: '근거가 궁금함' }
+];
 
 const HeaderProfileButton = () => {
     const { isLoggedIn, isLoading: authLoading, profile } = useAuth();
@@ -40,6 +49,13 @@ const HeaderProfileButton = () => {
     );
 };
 
+const RouteLoadingScreen = () => (
+    <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
+        <div className="w-12 h-12 border-4 border-white/10 border-t-neon-teal rounded-full animate-spin mb-5"></div>
+        <p className="text-sm font-bold text-white/50">페이지를 불러오는 중...</p>
+    </div>
+);
+
 function App() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -61,6 +77,9 @@ function App() {
     const searchQuoteCacheRef = useRef({});
     const [openComposerSignal, setOpenComposerSignal] = useState(0);
     const [isDetailComposerVisible, setIsDetailComposerVisible] = useState(false);
+    const [predictionReactionSelections, setPredictionReactionSelections] = useState({});
+    const [reactionBusyPredictionId, setReactionBusyPredictionId] = useState('');
+    const [predictionReactionFeedback, setPredictionReactionFeedback] = useState({});
 
     // 현재 경로를 기반으로 view 상태 유도 (UI 조건부 렌더링용)
     const getViewFromPath = () => {
@@ -137,15 +156,17 @@ function App() {
         loadSacredHomePosts();
     }, []);
 
+    const refreshCommunityHomeFeed = async () => {
+        const result = await fetchCommunityHomeFeed();
+        setCommunityHomeFeed({
+            recentPredictions: Array.isArray(result?.recentPredictions) ? result.recentPredictions : [],
+            hotStocks: Array.isArray(result?.hotStocks) ? result.hotStocks : []
+        });
+        return result;
+    };
+
     useEffect(() => {
-        const loadCommunityHomeFeed = async () => {
-            const result = await fetchCommunityHomeFeed();
-            setCommunityHomeFeed({
-                recentPredictions: Array.isArray(result?.recentPredictions) ? result.recentPredictions : [],
-                hotStocks: Array.isArray(result?.hotStocks) ? result.hotStocks : []
-            });
-        };
-        loadCommunityHomeFeed();
+        refreshCommunityHomeFeed();
     }, []);
 
     // [백엔드] 데이터 기반 인기 종목 로드 (박제 기록이 많은 순) 및 실시간 가격 동기화 (Level 1)
@@ -408,6 +429,92 @@ function App() {
         handleStockClick({ symbol: item.stockSymbol, name: item.stockName });
     };
 
+    const applyOptimisticReactionCounts = (predictionId, currentReactionKey, nextReactionKey) => {
+        setCommunityHomeFeed((prev) => ({
+            ...prev,
+            recentPredictions: prev.recentPredictions.map((item) => {
+                if (item.id !== predictionId) return item;
+
+                const nextCounts = {
+                    same_view: Number(item.reactionCounts?.same_view || 0),
+                    can_go_higher: Number(item.reactionCounts?.can_go_higher || 0),
+                    seems_high: Number(item.reactionCounts?.seems_high || 0),
+                    seems_low: Number(item.reactionCounts?.seems_low || 0),
+                    want_reason: Number(item.reactionCounts?.want_reason || 0)
+                };
+
+                if (currentReactionKey && nextCounts[currentReactionKey] > 0) {
+                    nextCounts[currentReactionKey] -= 1;
+                }
+                if (nextReactionKey) {
+                    nextCounts[nextReactionKey] += 1;
+                }
+
+                return {
+                    ...item,
+                    reactionCounts: nextCounts,
+                    totalReactionCount: Object.values(nextCounts).reduce((sum, count) => sum + Number(count || 0), 0)
+                };
+            })
+        }));
+    };
+
+    const handlePredictionReactionClick = async (event, item, reactionKey) => {
+        event.stopPropagation();
+        if (!item?.id || !reactionKey) return;
+
+        if (!isLoggedIn) {
+            setPredictionReactionFeedback((prev) => ({
+                ...prev,
+                [item.id]: '반응은 로그인 후 남길 수 있어요'
+            }));
+            await signInWithKakao();
+            return;
+        }
+
+        if (!user?.id || reactionBusyPredictionId === item.id) return;
+
+        setReactionBusyPredictionId(item.id);
+        const currentReactionKey = predictionReactionSelections[item.id] || null;
+        const nextReactionKey = currentReactionKey === reactionKey ? null : reactionKey;
+
+        setPredictionReactionSelections((prev) => ({
+            ...prev,
+            [item.id]: nextReactionKey
+        }));
+        applyOptimisticReactionCounts(item.id, currentReactionKey, nextReactionKey);
+        setPredictionReactionFeedback((prev) => ({
+            ...prev,
+            [item.id]: nextReactionKey ? '반응 남겼어요' : '반응을 취소했어요'
+        }));
+
+        const didSucceed = await togglePredictionReaction({
+            predictionId: item.id,
+            userId: user.id,
+            reactionKey,
+            currentReactionKey
+        });
+
+        if (didSucceed) {
+            const nextFeed = await refreshCommunityHomeFeed();
+            const predictionIds = (nextFeed?.recentPredictions || []).map((prediction) => prediction.id).filter(Boolean);
+            const nextSelections = await fetchUserPredictionReactions(predictionIds, user.id);
+            setPredictionReactionSelections(nextSelections);
+        } else {
+            setPredictionReactionSelections((prev) => ({
+                ...prev,
+                [item.id]: currentReactionKey
+            }));
+            applyOptimisticReactionCounts(item.id, nextReactionKey, currentReactionKey);
+            setPredictionReactionFeedback((prev) => ({
+                ...prev,
+                [item.id]: '반응 저장에 실패했어요'
+            }));
+        }
+
+        setReactionBusyPredictionId('');
+    };
+
     const navigateHome = () => {
         setSearchQuery('');
         setSearchResults([]);
@@ -446,7 +553,7 @@ function App() {
         window.scrollTo(0, 0);
     };
 
-    const { isLoggedIn, isLoading: authLoading, profile } = useAuth();
+    const { isLoggedIn, isLoading: authLoading, profile, user, signInWithKakao } = useAuth();
     
     // 온보딩(닉네임 설정) 노출 여부: 로그인 상태이며 온보딩 미완료인 경우
     const showOnboarding = Boolean(isLoggedIn && profile && !profile.isOnboarded);
@@ -749,13 +856,15 @@ function App() {
                                     {communityHomeFeed.recentPredictions.length > 0 ? (
                                         <div className="grid gap-3">
                                             {communityHomeFeed.recentPredictions.map((item) => (
-                                                <button
+                                                <div
                                                     key={item.id}
-                                                    onClick={() => handleCommunityPredictionClick(item)}
-                                                    type="button"
-                                                    className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-left transition hover:border-neon-pink/30 hover:bg-white/10"
+                                                    className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-left"
                                                 >
-                                                    <div className="flex items-start justify-between gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCommunityPredictionClick(item)}
+                                                        className="flex w-full items-start justify-between gap-3 rounded-[1rem] text-left transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-neon-pink/40"
+                                                    >
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-2">
                                                                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-pink/75">방금 박제</p>
@@ -775,8 +884,33 @@ function App() {
                                                                 {item.promotionStatus === 'sacred' ? '성지글 보러 →' : '예언 보러 →'}
                                                             </p>
                                                         </div>
+                                                    </button>
+                                                    <div className="mt-4 flex flex-wrap gap-2">
+                                                        {PREDICTION_REACTION_OPTIONS.map((option) => {
+                                                            const isSelected = predictionReactionSelections[item.id] === option.key;
+                                                            const reactionCount = Number(item.reactionCounts?.[option.key] || 0);
+                                                            return (
+                                                                <button
+                                                                    key={option.key}
+                                                                    type="button"
+                                                                    onClick={(event) => handlePredictionReactionClick(event, item, option.key)}
+                                                                    disabled={reactionBusyPredictionId === item.id}
+                                                                    className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${isSelected
+                                                                        ? 'border-neon-pink/40 bg-neon-pink/15 text-neon-pink'
+                                                                        : 'border-white/10 bg-white/5 text-white/60 hover:border-neon-teal/30 hover:text-white'
+                                                                    } ${reactionBusyPredictionId === item.id ? 'opacity-60' : ''}`}
+                                                                >
+                                                                    {option.label}{reactionCount > 0 ? ` ${reactionCount}` : ''}
+                                                                </button>
+                                                            );
+                                                        })}
                                                     </div>
-                                                </button>
+                                                    {predictionReactionFeedback[item.id] ? (
+                                                        <p className="mt-2 text-[11px] font-bold text-white/45">
+                                                            {predictionReactionFeedback[item.id]}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
                                             ))}
                                         </div>
                                     ) : (
@@ -842,38 +976,48 @@ function App() {
                         </div>
                     } />
                     <Route path="/stock/:symbol" element={
-                        <StockDetail
-                            stock={selectedStock}
-                            onBack={() => navigate('/')}
-                            onRecord={(price) => handleRecordComplete(price)}
-                            openComposerSignal={openComposerSignal}
-                            onComposerVisibilityChange={setIsDetailComposerVisible}
-                        />
+                        <Suspense fallback={<RouteLoadingScreen />}>
+                            <StockDetail
+                                stock={selectedStock}
+                                onBack={() => navigate('/')}
+                                onRecord={(price) => handleRecordComplete(price)}
+                                openComposerSignal={openComposerSignal}
+                                onComposerVisibilityChange={setIsDetailComposerVisible}
+                            />
+                        </Suspense>
                     } />
                     <Route path="/success" element={
-                        <RecordSuccess
-                            stock={selectedStock}
-                            targetPrice={lastTargetPrice}
-                            onHome={navigateHome}
-                            onViewMyPredictions={() => navigate('/mypage')}
-                            onViewStock={() => selectedStock?.symbol && navigate(`/stock/${selectedStock.symbol}`)}
-                        />
+                        <Suspense fallback={<RouteLoadingScreen />}>
+                            <RecordSuccess
+                                stock={selectedStock}
+                                targetPrice={lastTargetPrice}
+                                onHome={navigateHome}
+                                onViewMyPredictions={() => navigate('/mypage')}
+                                onViewStock={() => selectedStock?.symbol && navigate(`/stock/${selectedStock.symbol}`)}
+                            />
+                        </Suspense>
                     } />
                     <Route path="/sacred" element={
-                        <SacredList
-                            onSelect={(post) => handleSacredSelect(post)}
-                        />
+                        <Suspense fallback={<RouteLoadingScreen />}>
+                            <SacredList
+                                onSelect={(post) => handleSacredSelect(post)}
+                            />
+                        </Suspense>
                     } />
                     <Route path="/sacred/:id" element={
-                        <SacredDetail
-                            onBack={() => navigate('/sacred')}
-                        />
+                        <Suspense fallback={<RouteLoadingScreen />}>
+                            <SacredDetail
+                                onBack={() => navigate('/sacred')}
+                            />
+                        </Suspense>
                     } />
                     <Route path="/mypage" element={
-                        <MyPage 
-                            onBack={() => navigate('/')}
-                            onStockClick={(stock) => handleStockClick(stock)}
-                        />
+                        <Suspense fallback={<RouteLoadingScreen />}>
+                            <MyPage 
+                                onBack={() => navigate('/')}
+                                onStockClick={(stock) => handleStockClick(stock)}
+                            />
+                        </Suspense>
                     } />
                 </Routes>
             </main>

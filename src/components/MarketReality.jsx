@@ -8,6 +8,11 @@ const toNum = (value) => {
     return Number.isFinite(n) ? n : null;
 };
 
+const toNonZeroNum = (value) => {
+    const n = toNum(value);
+    return n === 0 ? null : n;
+};
+
 const formatUpdatedAt = (value) => {
     if (!value) return null;
     const d = new Date(value);
@@ -54,10 +59,10 @@ const getSupplyState = (data) => {
 };
 
 const getFundamentalState = (data) => {
-    const roe = toNum(data.roe);
-    const debt = toNum(data.debt_ratio);
-    const eps = toNum(data.eps);
-    const bps = toNum(data.bps);
+    const roe = toNonZeroNum(data.roe);
+    const debt = toNonZeroNum(data.debt_ratio);
+    const eps = toNonZeroNum(data.eps);
+    const bps = toNonZeroNum(data.bps);
 
     if (roe === null && debt === null) {
         return { hasData: false, tag: '재무 데이터 대기', roe: null, debt: null, eps, bps, level: 'pending' };
@@ -96,10 +101,10 @@ const getFundamentalState = (data) => {
 };
 
 const getValueState = (data) => {
-    const per = toNum(data.per);
-    const pbr = toNum(data.pbr);
-    const eps = toNum(data.eps);
-    const bps = toNum(data.bps);
+    const per = toNonZeroNum(data.per);
+    const pbr = toNonZeroNum(data.pbr);
+    const eps = toNonZeroNum(data.eps);
+    const bps = toNonZeroNum(data.bps);
 
     if (per === null && pbr === null) {
         return { hasData: false, tag: '밸류 데이터 대기', per: null, pbr: null, eps, bps, level: 'pending', mode: 'none' };
@@ -141,10 +146,10 @@ const getValueState = (data) => {
 };
 
 const getRiskState = (data) => {
-    const currentPrice = toNum(data.currentPrice);
+    const currentPrice = toNonZeroNum(data.currentPrice);
     const priceChangeRate = toNum(data.priceChangeRate);
-    const priceHigh = toNum(data.priceHigh);
-    const priceLow = toNum(data.priceLow);
+    const priceHigh = toNonZeroNum(data.priceHigh);
+    const priceLow = toNonZeroNum(data.priceLow);
     const intradaySwing = currentPrice && priceHigh !== null && priceLow !== null
         ? ((priceHigh - priceLow) / currentPrice) * 100
         : null;
@@ -232,12 +237,12 @@ const MetricGauge = ({ type, analysis }) => {
         const energyRaw = analysis.supply ?? 0;
         const energy = Math.min(10, Math.max(0, (energyRaw / 1000000) + 5));
         return (
-            <div className="flex flex-col items-end gap-1.5 min-w-[76px] min-[380px]:min-w-[100px]">
-                <div className="flex gap-0.5 h-1 w-full justify-end">
+            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1.5">
+                <div className="grid h-1 w-full grid-cols-10 gap-0.5">
                     {[...Array(10)].map((_, i) => (
                         <div 
                             key={i} 
-                            className={`w-2 rounded-full transition-all duration-700 ${i < energy ? 'bg-neon-teal shadow-[0_0_8px_#22d3ee]' : 'bg-white/10'}`}
+                            className={`rounded-full transition-all duration-700 ${i < energy ? 'bg-neon-teal shadow-[0_0_8px_#22d3ee]' : 'bg-white/10'}`}
                         />
                     ))}
                 </div>
@@ -252,7 +257,7 @@ const MetricGauge = ({ type, analysis }) => {
             ? 'w-full bg-neon-teal shadow-[0_0_8px_#22d3ee]'
             : (analysis.level === 'mid' ? 'w-3/5 bg-yellow-400' : 'w-1/4 bg-neon-pink');
         return (
-            <div className="flex flex-col items-end gap-1.5 min-w-[76px] min-[380px]:min-w-[100px]">
+            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1.5">
                 <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
                     <div 
                         className={`absolute left-0 top-0 h-full transition-all duration-1000 ${fillClass}`}
@@ -268,7 +273,7 @@ const MetricGauge = ({ type, analysis }) => {
     if (type === 'value') {
         const pos = analysis.level === 'low' ? 18 : (analysis.level === 'mid' ? 50 : 82);
         return (
-            <div className="flex flex-col items-end gap-1.5 min-w-[76px] min-[380px]:min-w-[100px]">
+            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1.5">
                 <div className="w-full h-1 bg-white/10 rounded-full relative">
                     <div className="absolute left-1/2 top-0 w-0.5 h-full bg-white/30 z-0"></div>
                     <div 
@@ -277,7 +282,7 @@ const MetricGauge = ({ type, analysis }) => {
                     />
                 </div>
                 <span className="text-[10px] font-black text-white/80">
-                    {analysis.per !== null ? `PER ${formatRatio(analysis.per, 'x')}` : `PBR ${formatRatio(analysis.pbr, 'x')}`}
+                    {analysis.per !== null ? `PER ${formatRatio(analysis.per, '배')}` : `PBR ${formatRatio(analysis.pbr, '배')}`}
                 </span>
             </div>
         );
@@ -286,7 +291,7 @@ const MetricGauge = ({ type, analysis }) => {
         const score = Math.min(10, Math.max(0, analysis.score ?? 0));
         const pos = Math.min(90, Math.max(10, (score / 10) * 100));
         return (
-            <div className="flex flex-col items-end gap-1 min-w-[76px] min-[380px]:min-w-[100px]">
+            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1">
                 <div className="w-full h-1 bg-gradient-to-r from-blue-400 via-neon-teal to-red-400 rounded-full relative">
                     <div 
                         className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-white rounded-full shadow-lg z-10 transition-all duration-1000"
@@ -346,7 +351,7 @@ const LiveFormula = ({ type, analysis }) => {
         }
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1 text-white/90">
-                <p className="text-white/60 font-medium">PER {formatRatio(analysis.per, 'x')} / PBR {formatRatio(analysis.pbr, 'x')}</p>
+                <p className="text-white/60 font-medium">PER {formatRatio(analysis.per, '배')} / PBR {formatRatio(analysis.pbr, '배')}</p>
                 {(analysis.eps !== null || analysis.bps !== null) ? (
                     <p className="text-white/50 font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
                 ) : null}

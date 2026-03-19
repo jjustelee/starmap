@@ -38,10 +38,10 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
 
     const handleShare = async () => {
         const result = await shareContent({
-            title: `${stock.name} 예언 박제 완료`,
+            title: `${stock.name} 예언 박제`,
             text: latestPrice > 0
-                ? `${stock.name} 목표가 ${targetPrice.toLocaleString()}원으로 예언을 남겼어요. 지금 현재가는 ${latestPrice.toLocaleString()}원입니다.`
-                : `${stock.name} 목표가 ${targetPrice.toLocaleString()}원으로 예언을 남겼어요.`,
+                ? `${stock.name} ${targetPrice.toLocaleString()}원 각으로 박제했습니다. 지금 현재가는 ${latestPrice.toLocaleString()}원입니다. 맞으면 성지 갑니다.`
+                : `${stock.name} ${targetPrice.toLocaleString()}원 각으로 박제했습니다. 맞으면 성지 갑니다.`,
             url: stockUrl
         });
 

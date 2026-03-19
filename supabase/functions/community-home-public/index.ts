@@ -6,6 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const PREDICTION_REACTION_KEYS = [
+  "same_view",
+  "can_go_higher",
+  "seems_high",
+  "seems_low",
+  "want_reason",
+] as const;
+
 const toNumber = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
@@ -47,6 +55,10 @@ const judgePrediction = (hitPrice: number | null, targetPrice: number | null, ta
   return null;
 };
 
+const createEmptyReactionCounts = () => Object.fromEntries(
+  PREDICTION_REACTION_KEYS.map((key) => [key, 0])
+);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -72,8 +84,10 @@ serve(async (req) => {
 
     const rows = Array.isArray(data) ? data : [];
     const userIds = [...new Set(rows.map((row: any) => row.user_id).filter(Boolean))];
+    const predictionIds = [...new Set(rows.map((row: any) => row.id).filter(Boolean))];
     const profileMap: Record<string, { nickname: string }> = {};
     const closePriceMap: Record<string, number> = {};
+    const reactionCountsMap: Record<string, Record<string, number>> = {};
 
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
@@ -85,6 +99,23 @@ serve(async (req) => {
         profileMap[String(profile.id)] = {
           nickname: String(profile.nickname || "별지기"),
         };
+      });
+    }
+
+    if (predictionIds.length > 0) {
+      const { data: reactionRows } = await supabase
+        .from("prediction_reactions")
+        .select("prediction_id, reaction_key")
+        .in("prediction_id", predictionIds);
+
+      (reactionRows || []).forEach((reactionRow: any) => {
+        const predictionId = String(reactionRow.prediction_id || "");
+        const reactionKey = String(reactionRow.reaction_key || "");
+        if (!predictionId || !PREDICTION_REACTION_KEYS.includes(reactionKey as any)) return;
+        if (!reactionCountsMap[predictionId]) {
+          reactionCountsMap[predictionId] = createEmptyReactionCounts();
+        }
+        reactionCountsMap[predictionId][reactionKey] += 1;
       });
     }
 
@@ -122,6 +153,7 @@ serve(async (req) => {
         const stock = (row.stocks || {}) as Record<string, unknown>;
         const authorId = String(row.user_id || "");
         const stockId = String(stock.id || "");
+        const predictionId = String(row.id || "");
         const targetDate = String(row.target_date || "");
         const hitPrice = toNumber(closePriceMap[`${stockId}:${targetDate}`]);
         const targetPrice = toNumber(row.price_target);
@@ -132,8 +164,10 @@ serve(async (req) => {
         const promotionLabel = judged
           ? "성지 입성"
           : (promotionStatus === "judging" ? "종가 체크 중" : "성지각");
+        const reactionCounts = reactionCountsMap[predictionId] || createEmptyReactionCounts();
+        const totalReactionCount = Object.values(reactionCounts).reduce((sum, count) => sum + Number(count || 0), 0);
         return {
-          id: String(row.id || ""),
+          id: predictionId,
           stockSymbol: String(stock.symbol || ""),
           stockName: String(stock.name || "알 수 없음"),
           authorNickname: profileMap[authorId]?.nickname || "별지기",
@@ -142,7 +176,9 @@ serve(async (req) => {
           createdAt: String(row.created_at || ""),
           promotionStatus,
           promotionLabel,
-          sacredPostId: judged ? String(row.id || "") : null,
+          sacredPostId: judged ? predictionId : null,
+          reactionCounts,
+          totalReactionCount,
         };
       })
       .filter((item) => item.id && item.stockSymbol);
