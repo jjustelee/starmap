@@ -237,7 +237,7 @@ const MetricGauge = ({ type, analysis }) => {
         const energyRaw = analysis.supply ?? 0;
         const energy = Math.min(10, Math.max(0, (energyRaw / 1000000) + 5));
         return (
-            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1.5">
+            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1.5">
                 <div className="grid h-1 w-full grid-cols-10 gap-0.5">
                     {[...Array(10)].map((_, i) => (
                         <div 
@@ -257,7 +257,7 @@ const MetricGauge = ({ type, analysis }) => {
             ? 'w-full bg-neon-teal shadow-[0_0_8px_#22d3ee]'
             : (analysis.level === 'mid' ? 'w-3/5 bg-yellow-400' : 'w-1/4 bg-neon-pink');
         return (
-            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1.5">
+            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1.5">
                 <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
                     <div 
                         className={`absolute left-0 top-0 h-full transition-all duration-1000 ${fillClass}`}
@@ -273,7 +273,7 @@ const MetricGauge = ({ type, analysis }) => {
     if (type === 'value') {
         const pos = analysis.level === 'low' ? 18 : (analysis.level === 'mid' ? 50 : 82);
         return (
-            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1.5">
+            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1.5">
                 <div className="w-full h-1 bg-white/10 rounded-full relative">
                     <div className="absolute left-1/2 top-0 w-0.5 h-full bg-white/30 z-0"></div>
                     <div 
@@ -291,7 +291,7 @@ const MetricGauge = ({ type, analysis }) => {
         const score = Math.min(10, Math.max(0, analysis.score ?? 0));
         const pos = Math.min(90, Math.max(10, (score / 10) * 100));
         return (
-            <div className="flex w-[132px] min-[380px]:w-[156px] flex-col items-end gap-1">
+            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1">
                 <div className="w-full h-1 bg-gradient-to-r from-blue-400 via-neon-teal to-red-400 rounded-full relative">
                     <div 
                         className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-white rounded-full shadow-lg z-10 transition-all duration-1000"

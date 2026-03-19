@@ -380,6 +380,35 @@ export const fetchMyPredictions = async (userId) => {
 };
 
 /**
+ * Fetch notifications for current user
+ * [백엔드] 읽기 시점에 최신 중요 이벤트를 동기화한 뒤 최근 알림을 반환합니다.
+ */
+export const fetchMyNotifications = async () => {
+    const { data, error } = await supabase.rpc('get_my_notifications');
+    if (error) {
+        console.error('Error fetching my notifications:', error);
+        return [];
+    }
+    return Array.isArray(data) ? data : [];
+};
+
+/**
+ * Mark notification as read
+ */
+export const markNotificationRead = async (notificationId) => {
+    const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+    if (error) {
+        console.error('Error marking notification as read:', error);
+        return false;
+    }
+    return true;
+};
+
+/**
  * Delete a specific prediction from Supabase
  * [백엔드] 전역 반영: DB에서 삭제하므로 차트 등 모든 곳에서 즉시 사라집니다.
  */

@@ -62,7 +62,8 @@ const judgePrediction = (currentPrice: number | null, targetPrice: number | null
 const buildSacredItem = (
   row: Record<string, unknown>,
   profileMap: Record<string, { nickname: string; avatar_url: string | null }>,
-  closePriceMap: Record<string, number>
+  closePriceMap: Record<string, number>,
+  reactionMap: Record<string, Record<string, number>>
 ) => {
   const stock = (row.stocks || {}) as Record<string, unknown>;
   const stockId = String(stock.id || "");
@@ -90,6 +91,8 @@ const buildSacredItem = (
     judgmentStatus: judged.judgmentStatus,
     judgmentLabel: judged.judgmentLabel,
     deviationPct: judged.deviationPct,
+    reactionCounts: reactionMap[String(row.id)] || {},
+    totalReactionCount: Object.values(reactionMap[String(row.id)] || {}).reduce((sum, count) => sum + count, 0),
     timeline: [
       {
         type: "created",
@@ -144,6 +147,7 @@ serve(async (req) => {
     const userIds = [...new Set(rows.map((row: any) => row.user_id).filter(Boolean))];
     const profileMap: Record<string, { nickname: string; avatar_url: string | null }> = {};
     const closePriceMap: Record<string, number> = {};
+    const reactionMap: Record<string, Record<string, number>> = {};
 
     const maturedRows = rows.filter((row: any) => isMatured(row.target_date) && isISODateString(row.target_date));
     const stockIds = [...new Set(maturedRows.map((row: any) => row.stocks?.id).filter(Boolean))];
@@ -187,8 +191,26 @@ serve(async (req) => {
       });
     }
 
+    if (rows.length > 0) {
+      const predictionIds = rows.map((row: any) => String(row.id)).filter(Boolean);
+      const { data: reactionRows } = await supabase
+        .from("sacred_reactions")
+        .select("prediction_id, reaction_key")
+        .in("prediction_id", predictionIds);
+
+      (reactionRows || []).forEach((reactionRow: any) => {
+        const predictionId = String(reactionRow.prediction_id || "");
+        const reactionKey = String(reactionRow.reaction_key || "");
+        if (!predictionId || !reactionKey) return;
+        if (!reactionMap[predictionId]) {
+          reactionMap[predictionId] = {};
+        }
+        reactionMap[predictionId][reactionKey] = Number(reactionMap[predictionId][reactionKey] || 0) + 1;
+      });
+    }
+
     const items = rows
-      .map((row: any) => buildSacredItem(row, profileMap, closePriceMap))
+      .map((row: any) => buildSacredItem(row, profileMap, closePriceMap, reactionMap))
       .filter(Boolean) as any[];
 
     if (mode === "detail") {

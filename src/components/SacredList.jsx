@@ -10,13 +10,24 @@ export const SacredList = ({ onSelect }) => {
     React.useEffect(() => {
         let active = true;
         const load = async () => {
-            setIsLoading(true);
-            const result = await fetchSacredPosts('list', {
-                sort: filter === 'recent' ? 'recent' : 'accuracy'
-            });
-            if (!active) return;
-            setPosts(Array.isArray(result?.items) ? result.items : []);
-            setIsLoading(false);
+            if (active) {
+                setIsLoading(true);
+            }
+            try {
+                const result = await fetchSacredPosts('list', {
+                    sort: filter === 'recent' ? 'recent' : 'accuracy'
+                });
+                if (!active) return;
+                setPosts(Array.isArray(result?.items) ? result.items : []);
+            } catch (error) {
+                if (!active) return;
+                console.error('Failed to load sacred posts:', error);
+                setPosts([]);
+            } finally {
+                if (active) {
+                    setIsLoading(false);
+                }
+            }
         };
         load();
         return () => {

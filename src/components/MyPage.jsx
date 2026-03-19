@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchMyPredictions, fetchStockInfo } from '../utils/mockData';
-import { Target, LogOut, Star, TrendingUp, Clock, ChevronRight, Trash2 } from 'lucide-react';
+import { fetchMyNotifications, fetchMyPredictions, fetchStockInfo, markNotificationRead } from '../utils/mockData';
+import { Target, LogOut, Star, TrendingUp, Clock, ChevronRight, Trash2, Bell } from 'lucide-react';
 
 /**
  * MyPage Component
  * [UX] 비로그인: 카카오 로그인 유도 / 로그인: 내 예언 기록 관리
  * 전체 톤앤매너(누아르/글래스모피즘)를 유지합니다.
  */
-const MyPage = ({ onBack, onStockClick }) => {
+const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
     const { user, isLoggedIn, isLoading, profile, signInWithKakao, signOut } = useAuth();
     const [predictions, setPredictions] = useState([]);
+    const [notifications, setNotifications] = useState([]);
     const [isLoadingPreds, setIsLoadingPreds] = useState(false);
+    const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
     const [isGuideExpanded, setIsGuideExpanded] = useState(false);
 
@@ -64,6 +66,18 @@ const MyPage = ({ onBack, onStockClick }) => {
                 setIsLoadingPreds(false);
             };
             load();
+        }
+    }, [isLoggedIn, user]);
+
+    useEffect(() => {
+        if (isLoggedIn && user) {
+            const loadNotifications = async () => {
+                setIsLoadingNotifications(true);
+                const data = await fetchMyNotifications();
+                setNotifications(data || []);
+                setIsLoadingNotifications(false);
+            };
+            loadNotifications();
         }
     }, [isLoggedIn, user]);
 
@@ -186,6 +200,60 @@ const MyPage = ({ onBack, onStockClick }) => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Notifications */}
+            <div className="rounded-[1.35rem] sm:rounded-[1.75rem] border border-white/10 bg-white/5 p-4 sm:p-5 mb-5 sm:mb-6 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-9 w-9 rounded-full bg-neon-teal/10 border border-neon-teal/15 flex items-center justify-center shrink-0">
+                            <Bell className="w-4 h-4 text-neon-teal" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[12px] sm:text-[13px] font-black text-neon-teal/70 uppercase tracking-[0.18em]">새 소식</p>
+                            <p className="text-[11px] sm:text-[12px] text-white/40">기한 도래와 적중 흐름만 먼저 모아 보여줍니다</p>
+                        </div>
+                    </div>
+                    <span className="text-[11px] sm:text-[12px] font-bold text-neon-teal/40 shrink-0">
+                        새 알림 {notifications.filter(item => !item.is_read).length}개
+                    </span>
+                </div>
+
+                {isLoadingNotifications ? (
+                    <div className="py-4 text-center text-[12px] font-bold text-white/35">새 소식을 불러오는 중...</div>
+                ) : notifications.length === 0 ? (
+                    <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-4 text-center">
+                        <p className="text-[12px] sm:text-[13px] font-bold text-white/35">아직 새 소식이 없습니다</p>
+                        <p className="text-[11px] sm:text-[12px] text-white/20 mt-1">기한 도래, 근접 적중, 성지 입성 소식이 여기에 쌓입니다</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {notifications.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={async () => {
+                                    setNotifications((prev) => prev.map((notif) => notif.id === item.id ? { ...notif, is_read: true } : notif));
+                                    await markNotificationRead(item.id);
+                                    if (item.target_path) {
+                                        onNavigatePath?.(item.target_path);
+                                    }
+                                }}
+                                className={`w-full rounded-2xl border px-4 py-3 text-left transition ${item.is_read ? 'border-white/5 bg-black/15' : 'border-neon-teal/15 bg-neon-teal/5'}`}
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className={`text-[12px] sm:text-[13px] font-black ${item.is_read ? 'text-white/70' : 'text-white'}`}>{item.title}</p>
+                                        <p className="text-[11px] sm:text-[12px] text-white/35 mt-1.5 leading-relaxed">{item.body}</p>
+                                    </div>
+                                    {!item.is_read ? (
+                                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-neon-teal shadow-[0_0_10px_rgba(34,211,238,0.5)] shrink-0"></span>
+                                    ) : null}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* My Predictions */}

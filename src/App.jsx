@@ -19,11 +19,11 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 // [백엔드] 종목 리스트는 Supabase에서 동적으로 로드됩니다.
 
 const PREDICTION_REACTION_OPTIONS = [
-    { key: 'same_view', label: '나도 비슷하게 봄' },
+    { key: 'same_view', label: '나도 이 각 봄' },
     { key: 'can_go_higher', label: '조금 더 갈 듯' },
     { key: 'seems_high', label: '조금 높게 본 듯' },
     { key: 'seems_low', label: '조금 낮게 본 듯' },
-    { key: 'want_reason', label: '근거가 궁금함' }
+    { key: 'want_reason', label: '근거 궁금함' }
 ];
 
 const HeaderProfileButton = () => {
@@ -508,7 +508,7 @@ function App() {
             applyOptimisticReactionCounts(item.id, nextReactionKey, currentReactionKey);
             setPredictionReactionFeedback((prev) => ({
                 ...prev,
-                [item.id]: '반응 저장에 실패했어요'
+                [item.id]: '반응 저장이 잠시 꼬였어요'
             }));
         }
 
@@ -826,7 +826,7 @@ function App() {
                                         <div>
                                             <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">홈 커뮤니티</p>
                                             <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white">방금 박제된 예언</h3>
-                                            <p className="mt-2 text-sm font-bold text-white/40">지금 올라온 예언이 맞으면 바로 성지글로 올라갑니다</p>
+                                            <p className="mt-2 text-sm font-bold text-white/40">지금 올라온 예언에 짧게 반응을 남기고, 맞으면 성지글로 이어집니다</p>
                                         </div>
                                         <span className="text-sm font-bold text-white/40">최근 7일 기준</span>
                                     </div>
@@ -885,7 +885,7 @@ function App() {
                                                             </p>
                                                         </div>
                                                     </button>
-                                                    <div className="mt-4 flex flex-wrap gap-2">
+                                                    <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
                                                         {PREDICTION_REACTION_OPTIONS.map((option) => {
                                                             const isSelected = predictionReactionSelections[item.id] === option.key;
                                                             const reactionCount = Number(item.reactionCounts?.[option.key] || 0);
@@ -895,7 +895,7 @@ function App() {
                                                                     type="button"
                                                                     onClick={(event) => handlePredictionReactionClick(event, item, option.key)}
                                                                     disabled={reactionBusyPredictionId === item.id}
-                                                                    className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${isSelected
+                                                                    className={`rounded-full border px-2.5 sm:px-3 py-1.5 text-[11px] font-bold transition ${isSelected
                                                                         ? 'border-neon-pink/40 bg-neon-pink/15 text-neon-pink'
                                                                         : 'border-white/10 bg-white/5 text-white/60 hover:border-neon-teal/30 hover:text-white'
                                                                     } ${reactionBusyPredictionId === item.id ? 'opacity-60' : ''}`}
@@ -1016,6 +1016,7 @@ function App() {
                             <MyPage 
                                 onBack={() => navigate('/')}
                                 onStockClick={(stock) => handleStockClick(stock)}
+                                onNavigatePath={(path) => navigate(path)}
                             />
                         </Suspense>
                     } />
