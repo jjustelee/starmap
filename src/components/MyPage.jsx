@@ -86,7 +86,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <div className="w-8 h-8 border-4 border-neon-teal/20 border-t-neon-teal rounded-full animate-spin"></div>
-                <p className="text-white/20 text-[13px] font-bold">오성(五星)을 연결하는 중...</p>
+                <p className="text-white/20 text-[13px] font-bold">불러오는 중</p>
             </div>
         );
     }
@@ -220,11 +220,11 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                 </div>
 
                 {isLoadingNotifications ? (
-                    <div className="py-4 text-center text-[12px] font-bold text-white/35">새 소식을 불러오는 중...</div>
+                    <div className="py-4 text-center text-[12px] font-bold text-white/35">새 소식 불러오는 중</div>
                 ) : notifications.length === 0 ? (
                     <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-4 text-center">
                         <p className="text-[12px] sm:text-[13px] font-bold text-white/35">아직 새 소식이 없습니다</p>
-                        <p className="text-[11px] sm:text-[12px] text-white/20 mt-1">기한 도래, 근접 적중, 성지 입성 소식이 여기에 쌓입니다</p>
+                        <p className="text-[11px] sm:text-[12px] text-white/20 mt-1">기한 도래와 적중 소식이 여기에 뜹니다</p>
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -264,9 +264,8 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
-                    <p className="text-[11px] sm:text-[12px] font-black text-neon-teal/70 tracking-wider uppercase">판정 룰 치트키</p>
-                    <p className="text-[11px] sm:text-[12px] text-white/60">기한일 종가 기준으로 판정합니다.</p>
-                    <p className="text-[11px] sm:text-[12px] text-white/60"><span className="text-joy-gold font-bold">1%</span> 적중 · <span className="text-joy-gold/90 font-bold">3%</span> 근접 · <span className="text-hope-green font-bold">5%</span> 아슬아슬 · <span className="text-sad-blue font-bold">5%+</span> 빗나감</p>
+                    <p className="text-[11px] sm:text-[12px] font-black text-neon-teal/70 tracking-wider uppercase">판정 룰</p>
+                    <p className="text-[11px] sm:text-[12px] text-white/60">기한일 종가 기준 · <span className="text-joy-gold font-bold">1%</span> 적중 · <span className="text-joy-gold/90 font-bold">3%</span> 근접</p>
                     <button
                         type="button"
                         onClick={() => setIsGuideExpanded(prev => !prev)}
@@ -278,8 +277,8 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                         <div className="mt-1.5 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 space-y-1.5">
                             <p className="text-[11px] sm:text-[12px] text-white/70">1. 기한일 종가로 최종 판정합니다.</p>
                             <p className="text-[11px] sm:text-[12px] text-white/70">2. 오차율 = `|실제 종가 - 예언가| / 예언가 × 100`</p>
-                            <p className="text-[11px] sm:text-[12px] text-white/70">3. 근접 적중은 적중 그룹으로 집계됩니다.</p>
-                            <p className="text-[11px] sm:text-[12px] text-white/70">4. 기한 전에는 진행중으로 표시됩니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-white/70">3. 5% 이내면 아슬아슬, 그 밖은 빗나감으로 봅니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-white/70">4. 근접 적중은 적중 그룹으로 집계되고, 기한 전에는 진행중으로 표시됩니다.</p>
                             <p className="text-[11px] sm:text-[12px] text-white/50">시장 휴장/데이터 지연 시 실제 반영 시점이 늦어질 수 있습니다.</p>
                         </div>
                     )}
@@ -288,13 +287,20 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                 {isLoadingPreds ? (
                     <div className="flex items-center justify-center gap-3 py-12">
                         <div className="w-5 h-5 border-2 border-white/10 border-t-neon-teal rounded-full animate-spin"></div>
-                        <span className="text-white/30 text-sm font-bold">기록을 불러오는 중...</span>
+                        <span className="text-white/30 text-sm font-bold">기록 불러오는 중</span>
                     </div>
                 ) : predictions.length === 0 ? (
                     <div className="text-center py-12 space-y-3">
                         <div className="text-4xl opacity-30">🔮</div>
-                        <p className="text-[14px] font-bold text-white/25">아직 박제한 예언이 없습니다</p>
-                        <p className="text-[12px] text-white/15">종목 상세에서 목표가를 조준해보세요</p>
+                        <p className="text-[14px] font-bold text-white/25">아직 예언이 없습니다</p>
+                        <p className="text-[12px] text-white/15">종목 상세에서 예언을 남겨보세요</p>
+                        <button
+                            type="button"
+                            onClick={() => onBack?.()}
+                            className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-neon-teal/25 bg-neon-teal/10 px-4 py-2 text-[13px] font-black text-neon-teal transition hover:bg-neon-teal/15"
+                        >
+                            종목 찾으러 가기
+                        </button>
                     </div>
                 ) : (
                     <div className="relative ml-2.5 sm:ml-4 pl-5 sm:pl-8 border-l border-white/10 space-y-5 sm:space-y-8 pb-7 sm:pb-10">
@@ -455,7 +461,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                             onClick={() => pred.stock && onStockClick?.(pred.stock)}
                                             className={`w-full flex items-center justify-between py-3.5 sm:py-4 px-5 sm:px-8 rounded-2xl text-[13px] sm:text-[14px] font-black ${theme.color} bg-white/5 hover:bg-white/10 border-[0.5px] ${theme.border} transition-all duration-300 group/btn shadow-lg`}
                                         >
-                                            <span className="tracking-tight">성지 분석 리포트 확인</span>
+                                            <span className="tracking-tight">이 종목 다시 보기</span>
                                             <ChevronRight className={`w-6 h-6 group-hover:translate-x-1.5 transition-transform`} />
                                         </button>
                                     </div>

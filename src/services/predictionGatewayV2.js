@@ -41,6 +41,8 @@ export async function loadCurrentPrice(symbol, hintPrice = 0) {
 export async function loadPredictionSnapshot(symbol, window, options = {}) {
     // BACKEND_TODO(API): GET /api/v1/symbols/{symbol}/prediction-snapshot?window=... 응답 shape로 교체.
     const normalizedWindow = WINDOW_DAYS[window] ? window : '7d';
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUserId = authData?.user?.id || null;
     const stock = await fetchStockInfo(String(symbol || ''));
     const fromStock = Number(stock?.currentPrice || stock?.current_price || 0);
     const fromOption = Number(options.currentPrice) || 0;
@@ -55,7 +57,7 @@ export async function loadPredictionSnapshot(symbol, window, options = {}) {
 
     let query = supabase
         .from('predictions')
-        .select('id, price_target, target_date, x_future_ratio, created_at')
+        .select('id, user_id, price_target, target_date, x_future_ratio, created_at')
         .eq('stock_id', stock.id);
 
     if (normalizedWindow !== 'all') {
@@ -72,7 +74,7 @@ export async function loadPredictionSnapshot(symbol, window, options = {}) {
         return buildEmptySnapshot(normalizedWindow, currentPrice);
     }
 
-    const dots = buildDotsFromPredictions(data || []);
+    const dots = buildDotsFromPredictions(data || [], currentUserId);
     if (!dots.length) {
         return buildEmptySnapshot(normalizedWindow, currentPrice);
     }
@@ -200,7 +202,7 @@ export function validatePredictionDraft(draft) {
     return { ok: true };
 }
 
-function buildDotsFromPredictions(rows) {
+function buildDotsFromPredictions(rows, currentUserId = null) {
     return rows
         .map((row) => {
             const price = Number(row.price_target);
@@ -222,7 +224,9 @@ function buildDotsFromPredictions(rows) {
                 id: String(row.id),
                 xDays,
                 price: Math.max(MIN_PRICE, Math.round(price)),
-                weight: 1
+                weight: 1,
+                createdAt: String(row.created_at || ''),
+                isMine: Boolean(currentUserId && String(row.user_id || '') === String(currentUserId))
             };
         })
         .filter(Boolean);

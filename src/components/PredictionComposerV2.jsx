@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 const RANGE_PROFILES = {
     L1: { key: 'L1', label: '기본각', minPct: -10, maxPct: 10, snapPoints: [-10, -5, 0, 5, 10] },
     L2: { key: 'L2', label: '확장각', minPct: -30, maxPct: 30, snapPoints: [-30, -20, -10, 0, 10, 20, 30] },
-    L3: { key: 'L3', label: '풀가동', minPct: -50, maxPct: 100, snapPoints: [-50, -30, -10, 0, 10, 30, 50, 75, 100] }
+    L3: { key: 'L3', label: '풀가동', minPct: -99, maxPct: 200, snapPoints: [-99, -75, -50, -30, -10, 0, 10, 30, 50, 75, 100, 150, 200] }
 };
 
 const RANGE_ORDER = ['L1', 'L2', 'L3'];
@@ -23,21 +23,25 @@ const PERIOD_PRESETS = [
     { label: '1년', days: 365 }
 ];
 
+const QUICK_PRICE_STEPS = [-10, -5, 0, 5, 10];
+
 /**
  * I/O Contract
  * props:
  * - currentPrice: number
  * - draft: { symbol, targetPrice, targetDate, window, source, rangeLevel }
+ * - communityHint?: { sampleSize, anchorPrice, bullishRatio }
  * - onChange: (partialDraft) => void
  * - onSubmit: () => Promise<void> | void
  * - isSubmitting: boolean
  * - errorMessage: string
  * - onVisibilityChange?: (visible: boolean) => void
  */
-const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmitting, errorMessage, forceOpenSignal = 0, onVisibilityChange }) => {
+const PredictionComposerV2 = ({ currentPrice, draft, communityHint, onChange, onSubmit, isSubmitting, errorMessage, forceOpenSignal = 0, onVisibilityChange }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [sheetMaxHeight, setSheetMaxHeight] = useState(460);
     const [showManualPrice, setShowManualPrice] = useState(false);
+    const [manualPriceInput, setManualPriceInput] = useState('');
     const [showManualDate, setShowManualDate] = useState(false);
     const [rangeLevel, setRangeLevel] = useState(draft?.rangeLevel || 'L1');
     const [pricePct, setPricePct] = useState(0);
@@ -52,6 +56,10 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
     const priceFill = toFillPercent(pricePct, profile.minPct, profile.maxPct);
     const periodFill = toFillPercent(periodIdx, 0, PERIOD_PRESETS.length - 1);
     const toneClass = delta >= 0 ? 'text-neon-pink' : 'text-neon-blue';
+    const deltaText = formatDeltaDisplay(delta);
+    const deltaToneClass = Math.abs(delta) < 0.05 ? 'text-white/55' : toneClass;
+    const communitySummary = getCommunitySummary(communityHint, currentPrice);
+    const compactCommunitySummary = getCompactCommunitySummary(communityHint);
 
     useEffect(() => {
         const updateHeight = () => {
@@ -110,6 +118,11 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
         }
     }, [isExpanded]);
 
+    useEffect(() => {
+        if (!showManualPrice) return;
+        setManualPriceInput(String(Number(draft?.targetPrice || 0)));
+    }, [showManualPrice, draft?.targetPrice]);
+
     const commitPriceFromPercent = (nextPct, levelKey, source = 'slider') => {
         const level = RANGE_PROFILES[levelKey] || RANGE_PROFILES.L1;
         const snappedPct = snapPercent(nextPct, level.snapPoints, 1.1);
@@ -123,7 +136,7 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
         });
     };
 
-    const handlePriceSlider = (value) => {
+    const applyPercent = (value, source = 'slider') => {
         let nextPct = Number(value);
         let nextLevel = rangeLevel;
         const currentLevelIndex = RANGE_ORDER.indexOf(rangeLevel);
@@ -138,7 +151,19 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
         }
 
         setPricePct(nextPct);
-        commitPriceFromPercent(nextPct, nextLevel, 'slider');
+        commitPriceFromPercent(nextPct, nextLevel, source);
+    };
+
+    const handlePriceSlider = (value) => {
+        applyPercent(value, 'slider');
+    };
+
+    const handleQuickPricePick = (stepPct) => {
+        if (stepPct === 0) {
+            applyPercent(0, 'quick-pick-reset');
+            return;
+        }
+        applyPercent(pricePct + stepPct, 'quick-pick');
     };
 
     const handlePeriodSlider = (idx) => {
@@ -147,6 +172,21 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
         onChange({
             targetDate: toISODate(addDays(new Date(), PERIOD_PRESETS[safeIdx].days)),
             source: 'slider'
+        });
+    };
+
+    const commitManualPrice = () => {
+        const parsed = Number(manualPriceInput || 0);
+        if (!Number.isFinite(parsed) || parsed <= 0) {
+            setManualPriceInput(String(Number(draft?.targetPrice || 0)));
+            return;
+        }
+        const snapped = Math.max(100, snapToTick(parsed));
+        setManualPriceInput(String(snapped));
+        onChange({
+            targetPrice: snapped,
+            source: 'manual',
+            rangeLevel
         });
     };
 
@@ -170,21 +210,16 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
                                 onClick={() => setIsExpanded(false)}
                                 className="w-full min-h-11 px-3 sm:px-4 py-3 flex items-center justify-between gap-2 border-b border-white/10 bg-black/20"
                             >
-                                <div className="text-left">
-                                    <p className="text-[13px] sm:text-[14px] text-white/70 font-bold">예언 요약</p>
-                                    <p className="mt-1.5 text-[14px] sm:text-[15px] font-bold leading-snug">
-                                        <span className="text-white/70">예상가 </span>
+                                <div className="min-w-0 text-left">
+                                    <p className="text-[14px] sm:text-[15px] font-bold leading-snug truncate">
                                         <span className="text-white">{Number(draft?.targetPrice || 0).toLocaleString()}원</span>
                                         <span className="text-white/35"> · </span>
-                                        <span className={`${toneClass}`}>{delta >= 0 ? '+' : ''}{delta.toFixed(2)}%</span>
+                                        <span className={deltaToneClass}>{deltaText}</span>
                                         <span className="text-white/35"> · </span>
-                                        <span className="text-white/85">{dday}</span>
+                                        <span className="text-white/70">{dday}</span>
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 bg-white/10 border border-white/20 rounded text-[11px] font-bold text-white/85 uppercase">{profile.label}</span>
-                                    <span className="material-symbols-outlined text-white/60 transition-transform rotate-180">expand_more</span>
-                                </div>
+                                <span className="material-symbols-outlined text-white/60 transition-transform rotate-180 shrink-0">expand_more</span>
                             </button>
                         ) : (
                             <button
@@ -193,10 +228,18 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
                                 onClick={() => setIsExpanded(true)}
                                 className="w-full min-h-12 px-3 sm:px-4 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-neon-teal to-neon-pink text-white font-bold text-[16px]"
                             >
-                                <span>예언 박제하러 가기</span>
+                                <span>이 종목 예언 남기기</span>
                                 <span className="material-symbols-outlined text-[18px]">expand_more</span>
                             </button>
                         )}
+
+                        {!isExpanded ? (
+                            <div className="px-3 sm:px-4 py-2 border-t border-white/10 bg-black/15">
+                                <p className="text-[12px] sm:text-[13px] font-bold text-white/70">
+                                    30초 예언
+                                </p>
+                            </div>
+                        ) : null}
 
                         {errorMessage ? (
                             <div className="px-3 sm:px-4 pt-2 pb-1">
@@ -247,7 +290,7 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
                                             <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                                 <p className="text-[13px] text-white/70 font-bold inline-flex items-center gap-1.5">
                                                     <span className="material-symbols-outlined text-[15px]">paid</span>
-                                                    예언 종가 조준
+                                                    현재가 기준 증감
                                                 </p>
                                                 <div className="flex items-center gap-2 self-end sm:self-auto">
                                                     <span className="text-[12px] text-white/60 font-bold">
@@ -260,6 +303,37 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
                                                     >
                                                         {showManualPrice ? '슬라이더로' : '직접 입력'}
                                                     </button>
+                                                </div>
+                                            </div>
+                                            <div className="mb-3 grid grid-cols-5 gap-2">
+                                                {QUICK_PRICE_STEPS.map((step) => {
+                                                    const isActive = Math.abs(pricePct - step) < 0.2;
+                                                    const label = step === 0 ? '현재가' : `${step > 0 ? '+' : ''}${step}%`;
+                                                    return (
+                                                        <button
+                                                            key={step}
+                                                            type="button"
+                                                            onClick={() => handleQuickPricePick(step)}
+                                                            className={`min-h-11 rounded-xl border text-[12px] font-bold transition ${
+                                                                isActive
+                                                                    ? 'border-neon-pink/45 bg-neon-pink/15 text-neon-pink'
+                                                                    : 'border-white/10 bg-white/5 text-white/80'
+                                                            }`}
+                                                        >
+                                                            {label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                                                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/35">목표가</p>
+                                                <div className="mt-1 flex items-end justify-between gap-3">
+                                                    <p className="text-[22px] sm:text-[24px] font-black text-white">
+                                                        {Number(draft?.targetPrice || 0).toLocaleString()}원
+                                                    </p>
+                                                    <p className={`text-[14px] sm:text-[15px] font-black ${deltaToneClass}`}>
+                                                        {deltaText}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <input
@@ -284,12 +358,14 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
                                             {showManualPrice ? (
                                                 <input
                                                     type="number"
-                                                    value={Number(draft?.targetPrice || 0)}
-                                                    onChange={(e) => onChange({
-                                                        targetPrice: Math.max(100, snapToTick(Number(e.target.value || 0))),
-                                                        source: 'manual',
-                                                        rangeLevel
-                                                    })}
+                                                    value={manualPriceInput}
+                                                    onChange={(e) => setManualPriceInput(e.target.value)}
+                                                    onBlur={commitManualPrice}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.currentTarget.blur();
+                                                        }
+                                                    }}
                                                     className="mt-2 w-full min-h-11 rounded-xl border border-white/15 bg-black/30 px-3 text-[16px] font-bold text-white outline-none"
                                                     inputMode="numeric"
                                                 />
@@ -357,6 +433,7 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
                                     >
                                         {isSubmitting ? '박제 중...' : '예언 박제하기'}
                                     </button>
+                                    <p className="mt-2 px-1 text-[12px] sm:text-[13px] text-white/60">30초 예언 · 적중 시 성지글</p>
                                 </div>
                             </div>
                         </div>
@@ -369,11 +446,11 @@ const PredictionComposerV2 = ({ currentPrice, draft, onChange, onSubmit, isSubmi
 
 function snapToTick(value) {
     const price = Number(value) || 0;
-    if (price < 1000) return Math.round(price);
+    if (price < 2000) return Math.round(price);
     if (price < 5000) return Math.round(price / 5) * 5;
-    if (price < 10000) return Math.round(price / 10) * 10;
+    if (price < 20000) return Math.round(price / 10) * 10;
     if (price < 50000) return Math.round(price / 50) * 50;
-    if (price < 100000) return Math.round(price / 100) * 100;
+    if (price < 200000) return Math.round(price / 100) * 100;
     if (price < 500000) return Math.round(price / 500) * 500;
     return Math.round(price / 1000) * 1000;
 }
@@ -437,6 +514,12 @@ function getDDay(isoDate) {
     return `D-${diff}`;
 }
 
+function formatDeltaDisplay(value) {
+    const delta = Number(value) || 0;
+    if (Math.abs(delta) < 0.05) return '현재가 기준';
+    return `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}%`;
+}
+
 function addDays(date, days) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
@@ -450,6 +533,42 @@ function toISODate(date) {
 
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, Number(value)));
+}
+
+function getCommunitySummary(communityHint, currentPrice) {
+    const sampleSize = Number(communityHint?.sampleSize) || 0;
+    const anchorPrice = Number(communityHint?.anchorPrice);
+    const bullishRatio = Number(communityHint?.bullishRatio);
+    const hasAnchorPrice = Number.isFinite(anchorPrice) && anchorPrice > 0;
+    const hasCurrentPrice = Number(currentPrice) > 0;
+
+    if (sampleSize <= 0) return '아직 첫 예언 전입니다.';
+
+    if (hasCurrentPrice && hasAnchorPrice) {
+        const deltaPct = ((anchorPrice - currentPrice) / currentPrice) * 100;
+        const deltaText = Math.abs(deltaPct) >= 10
+            ? Math.round(Math.abs(deltaPct))
+            : Math.abs(deltaPct).toFixed(1);
+
+        if (Number.isFinite(bullishRatio)) {
+            if (bullishRatio >= 55) {
+                return `현재 예언 ${sampleSize}건, 대표 목표가는 현재가보다 ${deltaText}% 높은 쪽입니다.`;
+            }
+            if (bullishRatio <= 45) {
+                return `현재 예언 ${sampleSize}건, 대표 목표가는 현재가보다 ${deltaText}% 낮은 쪽입니다.`;
+            }
+        }
+
+        return `현재 예언 ${sampleSize}건, 대표 목표가는 ${Math.round(anchorPrice).toLocaleString()}원 근처예요.`;
+    }
+
+    return `현재 예언 ${sampleSize}건이 먼저 쌓이고 있어요.`;
+}
+
+function getCompactCommunitySummary(communityHint) {
+    const sampleSize = Number(communityHint?.sampleSize) || 0;
+    if (sampleSize <= 0) return '아직 첫 예언 전입니다.';
+    return `현재 예언 ${sampleSize}건`;
 }
 
 export default PredictionComposerV2;

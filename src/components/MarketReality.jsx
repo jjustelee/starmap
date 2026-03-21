@@ -17,7 +17,7 @@ const formatUpdatedAt = (value) => {
     if (!value) return null;
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return null;
-    return `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 };
 
 const formatRatio = (value, suffix = '%') => {
@@ -53,7 +53,7 @@ const getSupplyState = (data) => {
     }
     return {
         hasData: true,
-        tag: supply > 0 ? '유입세' : '관망/이탈',
+        tag: supply > 0 ? '유입세' : '이탈세',
         supply
     };
 };
@@ -111,13 +111,13 @@ const getValueState = (data) => {
     }
 
     let level = 'high';
-    let tag = '높은 편';
+    let tag = '비싼 편';
     let mode = 'both';
 
     if (per !== null && pbr !== null) {
         if (per <= 10 && pbr <= 1.5) {
             level = 'low';
-            tag = '낮은 편';
+            tag = '저렴한 편';
         } else if (per <= 20 && pbr <= 3) {
             level = 'mid';
             tag = '보통';
@@ -126,7 +126,7 @@ const getValueState = (data) => {
         mode = 'per';
         if (per <= 10) {
             level = 'low';
-            tag = '낮은 편';
+            tag = '저렴한 편';
         } else if (per <= 20) {
             level = 'mid';
             tag = '보통';
@@ -135,7 +135,7 @@ const getValueState = (data) => {
         mode = 'pbr';
         if (pbr <= 1) {
             level = 'low';
-            tag = '낮은 편';
+            tag = '저렴한 편';
         } else if (pbr <= 3) {
             level = 'mid';
             tag = '보통';
@@ -209,7 +209,7 @@ const INDICATOR_METADATA = {
     },
     value: {
         title: "가치 평가 해석 가이드",
-        description: "PER와 PBR로 현재 가격 부담이 낮은 편인지, 보통인지, 높은 편인지 참고합니다.",
+        description: "PER와 PBR로 현재 가격이 저렴한 편인지, 보통인지, 비싼 편인지 참고합니다.",
         formulaLabel: "PER + PBR 참고",
     },
     risk: {
@@ -264,8 +264,7 @@ const MetricGauge = ({ type, analysis }) => {
                     />
                 </div>
                 <div className="flex gap-2">
-                    <span className="text-[10px] font-black text-white/50">ROE {formatRatio(analysis.roe)}</span>
-                    <span className="text-[10px] font-black text-white/50">부채 {formatRatio(analysis.debt)}</span>
+                    <span className="text-[10px] font-black text-white/50">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</span>
                 </div>
             </div>
         );
@@ -323,14 +322,14 @@ const LiveFormula = ({ type, analysis }) => {
         if (analysis.roe === null && analysis.debt === null) {
             return (
                 <div className="text-[11px] font-mono leading-tight space-y-1">
-                    <p className="text-white/60 font-medium">ROE / 부채비율</p>
+                    <p className="text-white/60 font-medium">ROE · 부채비율</p>
                     <p className="text-neon-teal font-bold">동기화 중</p>
                 </div>
             );
         }
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1">
-                <p className="text-white/60 font-medium">ROE({formatRatio(analysis.roe)}) & 부채({formatRatio(analysis.debt)})</p>
+                <p className="text-white/60 font-medium">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</p>
                 {(analysis.eps !== null || analysis.bps !== null) ? (
                     <p className="text-white/50 font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
                 ) : null}
@@ -380,11 +379,11 @@ const CriteriaList = ({ type, analysis }) => {
             if (analysis.supply === null) {
                 return [{ label: "수급 데이터 대기", desc: "동기화 중", active: true }];
             }
-            return [
-                { label: "외인/기관 유입세", desc: "0 초과", active: analysis.supply > 0 },
-                { label: "관망/이탈", desc: "0 이하", active: analysis.supply <= 0 }
-            ];
-        }
+                return [
+                    { label: "외인/기관 유입세", desc: "0 초과", active: analysis.supply > 0 },
+                    { label: "이탈세", desc: "0 이하", active: analysis.supply <= 0 }
+                ];
+            }
         if (type === 'fundamental') {
             if (analysis.roe === null && analysis.debt === null) {
                 return [{ label: "재무 데이터 대기", desc: "동기화 중", active: true }];
@@ -401,22 +400,22 @@ const CriteriaList = ({ type, analysis }) => {
             }
             if (analysis.mode === 'per') {
                 return [
-                    { label: "낮은 편", desc: "PER 10 이하", active: analysis.level === 'low' },
+                    { label: "저렴한 편", desc: "PER 10 이하", active: analysis.level === 'low' },
                     { label: "보통", desc: "PER 20 이하", active: analysis.level === 'mid' },
-                    { label: "높은 편", desc: "PER 20 초과", active: analysis.level === 'high' }
+                    { label: "비싼 편", desc: "PER 20 초과", active: analysis.level === 'high' }
                 ];
             }
             if (analysis.mode === 'pbr') {
                 return [
-                    { label: "낮은 편", desc: "PBR 1 이하", active: analysis.level === 'low' },
+                    { label: "저렴한 편", desc: "PBR 1 이하", active: analysis.level === 'low' },
                     { label: "보통", desc: "PBR 3 이하", active: analysis.level === 'mid' },
-                    { label: "높은 편", desc: "PBR 3 초과", active: analysis.level === 'high' }
+                    { label: "비싼 편", desc: "PBR 3 초과", active: analysis.level === 'high' }
                 ];
             }
             return [
-                { label: "낮은 편", desc: "PER 10↓ & PBR 1.5↓", active: analysis.level === 'low' },
+                { label: "저렴한 편", desc: "PER 10↓ & PBR 1.5↓", active: analysis.level === 'low' },
                 { label: "보통", desc: "PER 20↓ & PBR 3↓", active: analysis.level === 'mid' },
-                { label: "높은 편", desc: "그 외", active: analysis.level === 'high' }
+                { label: "비싼 편", desc: "그 외", active: analysis.level === 'high' }
             ];
         }
         if (type === 'risk') {
@@ -451,14 +450,14 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
     <div className="border-b border-white/5 last:border-0 overflow-hidden transition-all duration-300 border-x-0">
         <button 
             onClick={onToggle}
-            className="w-full flex flex-col min-[380px]:flex-row items-start min-[380px]:items-center justify-between py-4 min-[380px]:py-5 hover:bg-white/[0.02] transition-colors group px-1 gap-3 min-[380px]:gap-0"
+            className="w-full flex flex-col min-[340px]:flex-row items-start min-[340px]:items-center justify-between py-4 min-[380px]:py-5 hover:bg-white/[0.02] transition-colors group px-1 gap-3 min-[340px]:gap-0"
         >
-            <div className="flex items-center gap-2.5 min-[380px]:gap-3 w-full min-w-0">
+            <div className="flex items-center gap-2.5 min-[380px]:gap-3 w-full min-w-0 min-[340px]:flex-1">
                 <span className="material-symbols-outlined text-white/30 group-hover:text-neon-teal transition-colors text-[20px]">
                     {icon}
                 </span>
-                <div className="text-left">
-                    <p className="text-[13px] sm:text-[14px] font-bold text-white/80">{label}</p>
+                <div className="text-left min-w-0">
+                    <p className="text-[13px] sm:text-[14px] font-bold text-white/80 break-keep">{label}</p>
                     <div className="mt-1">
                         <span className="text-[11px] sm:text-[12px] font-black text-neon-teal bg-neon-teal/10 px-2 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)]">
                             {tag}
@@ -467,7 +466,7 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
                 </div>
             </div>
             
-            <div className="flex items-center justify-end gap-3 min-[380px]:gap-6 w-full min-[380px]:w-auto">
+            <div className="flex items-center justify-end gap-3 min-[380px]:gap-6 w-full min-[340px]:w-auto shrink-0">
                 <MetricGauge type={type} analysis={analysis} />
                 <span className={`material-symbols-outlined text-white/20 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
                     expand_more
@@ -510,7 +509,7 @@ const MarketReality = ({ kisData }) => {
     const realityStatus = String(safeData.status || (hasReliableData ? 'live' : 'unavailable'));
     const statusLabel = realityStatus === 'live'
         ? 'KIS 기준'
-        : (realityStatus === 'cached' ? '최근 기준값' : '동기화 중');
+        : (realityStatus === 'cached' ? '최근 기준' : '동기화 중');
     const statusTone = realityStatus === 'live'
         ? 'text-neon-teal/70'
         : (realityStatus === 'cached' ? 'text-white/55' : 'text-yellow-300/70');
@@ -540,14 +539,14 @@ const MarketReality = ({ kisData }) => {
                     </div>
                     <p className="text-[11px] sm:text-[12px] text-white/50 font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed">
                         {realityStatus === 'live'
-                            ? '숫자를 먼저 보고, 태그는 참고용으로 읽을 수 있게 정리했습니다.'
+                            ? '숫자를 먼저 보고, 태그는 참고만 하세요.'
                             : (realityStatus === 'cached'
-                                ? '실시간 수집 지연으로 최근 기준값을 표시하고 있습니다.'
-                                : '실시간 수집 지연 시 최근 기준값 또는 대기 상태로 표시됩니다.')}
+                                ? '실시간 지연으로 최근 기준을 보여줍니다.'
+                                : '실시간 지연 시 최근 기준 또는 대기 상태로 보입니다.')}
                     </p>
                     {updatedAtText ? (
                         <p className="text-[10px] font-bold text-white/45 px-1">
-                            기준 시각: {updatedAtText}
+                            기준일: {updatedAtText}
                         </p>
                     ) : null}
                 </div>

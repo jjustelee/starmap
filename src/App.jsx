@@ -52,7 +52,7 @@ const HeaderProfileButton = () => {
 const RouteLoadingScreen = () => (
     <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
         <div className="w-12 h-12 border-4 border-white/10 border-t-neon-teal rounded-full animate-spin mb-5"></div>
-        <p className="text-sm font-bold text-white/50">페이지를 불러오는 중...</p>
+        <p className="text-sm font-bold text-white/50">페이지 불러오는 중</p>
     </div>
 );
 
@@ -73,6 +73,7 @@ function App() {
     const [allStockMaster, setAllStockMaster] = useState([]); // [백엔드] 전 종목 캐싱용
     const observerTarget = useRef(null); // 무한 스크롤 감지용 타겟
     const searchInputRef = useRef(null);
+    const searchSectionRef = useRef(null);
     const searchQuoteInFlightRef = useRef(new Set());
     const searchQuoteCacheRef = useRef({});
     const [openComposerSignal, setOpenComposerSignal] = useState(0);
@@ -80,6 +81,7 @@ function App() {
     const [predictionReactionSelections, setPredictionReactionSelections] = useState({});
     const [reactionBusyPredictionId, setReactionBusyPredictionId] = useState('');
     const [predictionReactionFeedback, setPredictionReactionFeedback] = useState({});
+    const [expandedPredictionReactions, setExpandedPredictionReactions] = useState({});
 
     // 현재 경로를 기반으로 view 상태 유도 (UI 조건부 렌더링용)
     const getViewFromPath = () => {
@@ -101,6 +103,18 @@ function App() {
         const frame = window.requestAnimationFrame(() => {
             searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             searchInputRef.current?.focus();
+        });
+
+        navigate(location.pathname, { replace: true, state: null });
+        return () => window.cancelAnimationFrame(frame);
+    }, [view, location.pathname, location.state, navigate]);
+
+    useEffect(() => {
+        if (view !== 'detail') return;
+        if (location.state?.intent !== 'open-prediction') return;
+
+        const frame = window.requestAnimationFrame(() => {
+            setOpenComposerSignal((prev) => prev + 1);
         });
 
         navigate(location.pathname, { replace: true, state: null });
@@ -527,8 +541,25 @@ function App() {
         setSearchQuery('');
         setSearchResults([]);
         setVisibleCount(20);
+        if (view === 'home') {
+            window.scrollTo(0, 0);
+            window.requestAnimationFrame(() => {
+                searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                searchInputRef.current?.focus();
+            });
+            return;
+        }
         navigate('/', { state: { intent: 'focus-search' } });
         window.scrollTo(0, 0);
+    };
+
+    const navigateToDiscovery = () => {
+        setSearchQuery('');
+        setSearchResults([]);
+        setVisibleCount(20);
+        window.requestAnimationFrame(() => {
+            searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
     };
 
     const handlePrimaryCta = () => {
@@ -627,35 +658,34 @@ function App() {
                                     <div className="space-y-3 sm:space-y-4">
                                         <p className="text-[11px] font-bold tracking-[0.32em] text-white/40 uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
                                         <h2 className="text-[30px] sm:text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
-                                            사람들이 많이 적는<br /> 목표가를 확인하고<br />
+                                            사람들이 보는<br /> 목표가를 확인하고<br />
                                             <span className="bg-gradient-to-r from-neon-teal to-neon-pink bg-clip-text text-transparent">
-                                                내 목표가를 기록하세요
+                                                내 예언 남기기
                                             </span>
                                         </h2>
                                         <p className="mx-auto max-w-md text-[13px] sm:text-sm leading-5 sm:leading-6 text-white/60 md:text-base">
-                                            맞추면 당신의 기록은 성지글이 되고,<br className="hidden sm:block" />
-                                            적중하면 성지글 아카이브로 올라갑니다
+                                            적중 시 성지글
                                         </p>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto">
                                         <button
-                                            onClick={() => popularStocks.length > 0 && handleStockClick(popularStocks[0])}
+                                            onClick={navigateToDiscovery}
                                             className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-extrabold text-white shadow-glowPink transition hover:scale-[1.01] active:scale-95"
                                         >
-                                            목표가 기록하기
+                                            목표가 보러가기
                                         </button>
                                         <button
                                             onClick={() => navigate('/sacred')}
                                             className="rounded-2xl border border-white/12 bg-white/5 px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-bold text-white/85 transition hover:bg-white/10 active:scale-95"
                                         >
-                                            오늘 뜨는 성지글 보기
+                                            최근 성지글 보기
                                         </button>
                                     </div>
                                 </section>
                             )}
 
                             {/* Search & Popular */}
-                            <section className="space-y-5 sm:space-y-6">
+                            <section ref={searchSectionRef} className="space-y-5 sm:space-y-6">
                                 <div className="relative group">
                                     <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-neon-teal/30 to-neon-pink/30 opacity-20 blur transition duration-700 group-hover:opacity-90"></div>
                                     <div className="relative crystal-glass flex items-center rounded-2xl border-white/15 px-4 sm:px-5">
@@ -676,7 +706,6 @@ function App() {
                                         )}
                                     </div>
                                 </div>
-
                                 <div className="space-y-4">
                                     {searchQuery ? (
                                         <div className="space-y-2">
@@ -687,7 +716,7 @@ function App() {
                                                 {isSearching ? (
                                                     <div className="py-12 text-center crystal-glass rounded-2xl border-white/5 bg-white/5 space-y-3">
                                                         <div className="inline-block w-6 h-6 border-2 border-white/10 border-t-neon-teal rounded-full animate-spin"></div>
-                                                        <p className="text-white/30 text-xs font-bold font-brandEn tracking-widest uppercase">Searching...</p>
+                                                        <p className="text-white/30 text-xs font-bold font-brandEn tracking-widest uppercase">검색 중</p>
                                                     </div>
                                                 ) : searchResults.length > 0 ? (
                                                     <>
@@ -741,7 +770,7 @@ function App() {
                                                     </>
                                                 ) : (
                                                     <div className="py-12 text-center crystal-glass rounded-2xl border-white/5 bg-white/5">
-                                                        <p className="text-white/30 font-bold mb-1">검색 결과가 없습니다</p>
+                                                        <p className="text-white/30 font-bold mb-1">검색 결과 없음</p>
                                                         <p className="text-[11px] text-white/20">종목명이나 코드를 다시 확인해 주세요</p>
                                                     </div>
                                                 )}
@@ -764,7 +793,7 @@ function App() {
                                                 {stocksLoading && (
                                                     <div className="flex items-center gap-2 px-4 py-2 text-white/30 text-sm">
                                                         <div className="w-3 h-3 border border-white/20 border-t-neon-teal rounded-full animate-spin"></div>
-                                                        로딩 중...
+                                                        불러오는 중
                                                     </div>
                                                 )}
                                             </div>
@@ -773,60 +802,12 @@ function App() {
                                 </div>
                             </section>
 
-                            {/* Featured Distribution - Hide when searching */}
-                            {!searchQuery && popularStocks.length > 0 && (
-                                <section
-                                    className="crystal-glass relative overflow-hidden rounded-[1.75rem] sm:rounded-[2.25rem] p-5 sm:p-7 md:p-8 cursor-pointer group"
-                                    onClick={() => handleStockClick(popularStocks[0])}
-                                >
-                                    <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-neon-teal/10 blur-3xl"></div>
-                                    <div className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
-                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase leading-none">지금 뜨는 종목</h3>
-                                        </div>
-                                        <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
-                                    </div>
-                                    <div className="rounded-[1.5rem] sm:rounded-[1.75rem] glass-soft p-4 sm:p-5 border border-white/5">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <p className="text-sm font-bold text-white/40 mb-1">{popularStocks[0].name}</p>
-                                                <p className="text-[28px] sm:text-3xl font-black text-white">
-                                                    {popularStocks[0].currentPrice > 0 ? popularStocks[0].currentPrice.toLocaleString() : '시세 동기화 중'}
-                                                    <span className="text-sm font-medium opacity-30 ml-2">KRW</span>
-                                                </p>
-                                                <p className="text-[10px] font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
-                                                    {popularStocks[0].currentPrice > 0 ? (popularStocks[0].quoteStatusLabel || '최근값') : '갱신중'}
-                                                </p>
-                                                <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
-                                                    {popularStocks[0].priceChange >= 0 ? '▲' : '▼'} {Math.abs(popularStocks[0].priceChange).toLocaleString()} ({popularStocks[0].priceChangeRate.toFixed(2)}%)
-                                                </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[11px] font-black text-neon-pink uppercase tracking-widest">기록 수</p>
-                                                <p className="text-xl font-black text-white">{popularStocks[0].predictionCount.toLocaleString()}건</p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center text-xs font-bold text-white/50">
-                                                <span>실시간 데이터 기반 랭킹</span>
-                                                <span>TOP PICK</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                <div className="h-full w-full bg-gradient-to-r from-neon-teal to-neon-pink animate-pulse"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            )}
-
                             {!searchQuery && (
-                                <section className="space-y-5 sm:space-y-6">
+                                <section className="space-y-4 sm:space-y-5">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
                                             <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">홈 커뮤니티</p>
                                             <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white">방금 박제된 예언</h3>
-                                            <p className="mt-2 text-sm font-bold text-white/40">지금 올라온 예언에 짧게 반응을 남기고, 맞으면 성지글로 이어집니다</p>
                                         </div>
                                         <span className="text-sm font-bold text-white/40">최근 7일 기준</span>
                                     </div>
@@ -840,26 +821,47 @@ function App() {
                                                     type="button"
                                                     className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-neon-teal/40 hover:bg-white/10"
                                                 >
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-teal/70">요즘 각 보는 종목</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-teal/70">최근 7일 많이 찍힘</p>
                                                     <p className="mt-1 text-sm font-black text-white">{stock.stockName}</p>
                                                     <p className="mt-1 text-[11px] font-bold text-white/45">{stock.predictionCount}건 찍힘</p>
+                                                    <p className="mt-2 text-[11px] font-black text-neon-teal">목표가 보기 →</p>
                                                 </button>
                                             ))}
                                         </div>
                                     ) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-center">
-                                            <p className="text-white/55 font-bold">아직 분위기 타는 종목이 없습니다</p>
-                                            <p className="mt-1 text-sm text-white/35">예언이 쌓이면 여기서 바로 뜨기 시작합니다</p>
+                                            <p className="text-white/55 font-bold">아직 뜨는 종목이 없습니다</p>
+                                            <p className="mt-1 text-sm text-white/35">예언이 쌓이면 여기에 뜹니다</p>
                                         </div>
                                     )}
 
                                     {communityHomeFeed.recentPredictions.length > 0 ? (
-                                        <div className="grid gap-3">
-                                            {communityHomeFeed.recentPredictions.map((item) => (
+                                        <div className="grid gap-2.5">
+                                            {communityHomeFeed.recentPredictions.slice(0, 4).map((item) => (
                                                 <div
                                                     key={item.id}
                                                     className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-left"
                                                 >
+                                                    {(() => {
+                                                        const isExpanded = !!expandedPredictionReactions[item.id];
+                                                        const selectedKey = predictionReactionSelections[item.id];
+                                                        const rankedOptions = [...PREDICTION_REACTION_OPTIONS].sort((a, b) => {
+                                                            const countDiff = Number(item.reactionCounts?.[b.key] || 0) - Number(item.reactionCounts?.[a.key] || 0);
+                                                            if (countDiff !== 0) return countDiff;
+                                                            return PREDICTION_REACTION_OPTIONS.findIndex((option) => option.key === a.key) - PREDICTION_REACTION_OPTIONS.findIndex((option) => option.key === b.key);
+                                                        });
+                                                        let compactOptions = rankedOptions.slice(0, 3);
+                                                        if (selectedKey && !compactOptions.some((option) => option.key === selectedKey)) {
+                                                            const selectedOption = PREDICTION_REACTION_OPTIONS.find((option) => option.key === selectedKey);
+                                                            if (selectedOption) {
+                                                                compactOptions = [...compactOptions.slice(0, 2), selectedOption];
+                                                            }
+                                                        }
+                                                        const visibleOptions = isExpanded ? PREDICTION_REACTION_OPTIONS : compactOptions;
+                                                        const hiddenCount = Math.max(0, PREDICTION_REACTION_OPTIONS.length - visibleOptions.length);
+
+                                                        return (
+                                                            <>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCommunityPredictionClick(item)}
@@ -879,14 +881,14 @@ function App() {
                                                         </div>
                                                         <div className="shrink-0 text-right">
                                                             <p className="text-base font-black text-white">{Number(item.targetPrice || 0).toLocaleString()}원</p>
-                                                            <p className="mt-1 text-[11px] font-bold text-white/40">기한 {formatSacredDate(item.targetDate)}</p>
+                                                            <p className="mt-1 text-[10px] font-bold text-white/25">~ {formatSacredDate(item.targetDate)}</p>
                                                             <p className={`mt-2 text-[11px] font-black ${item.promotionStatus === 'sacred' ? 'text-neon-pink' : 'text-neon-teal'}`}>
-                                                                {item.promotionStatus === 'sacred' ? '성지글 보러 →' : '예언 보러 →'}
+                                                                {item.promotionStatus === 'sacred' ? '성지글 보러 →' : '예언 남기기 →'}
                                                             </p>
                                                         </div>
                                                     </button>
                                                     <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
-                                                        {PREDICTION_REACTION_OPTIONS.map((option) => {
+                                                        {visibleOptions.map((option) => {
                                                             const isSelected = predictionReactionSelections[item.id] === option.key;
                                                             const reactionCount = Number(item.reactionCounts?.[option.key] || 0);
                                                             return (
@@ -904,37 +906,97 @@ function App() {
                                                                 </button>
                                                             );
                                                         })}
+                                                        {hiddenCount > 0 ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setExpandedPredictionReactions((prev) => ({
+                                                                    ...prev,
+                                                                    [item.id]: true
+                                                                }))}
+                                                                className="rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-[11px] font-bold text-white/50 transition hover:border-white/20 hover:text-white/75"
+                                                            >
+                                                                반응 더 보기
+                                                            </button>
+                                                        ) : null}
                                                     </div>
                                                     {predictionReactionFeedback[item.id] ? (
                                                         <p className="mt-2 text-[11px] font-bold text-white/45">
                                                             {predictionReactionFeedback[item.id]}
                                                         </p>
                                                     ) : null}
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
-                                            <p className="text-white/60 font-bold">아직 방금 올라온 예언이 없습니다</p>
-                                            <p className="mt-2 text-sm text-white/35">첫 박제가 올라오면 여기서 바로 흐름이 잡힙니다</p>
+                                            <p className="text-white/60 font-bold">아직 새 예언이 없습니다</p>
+                                            <p className="mt-2 text-sm text-white/35">첫 예언이 올라오면 여기에 뜹니다</p>
                                         </div>
                                     )}
                                 </section>
                             )}
 
+                            {/* Featured Distribution - Hide when searching */}
+                            {!searchQuery && popularStocks.length > 0 && (
+                                <section
+                                    className="crystal-glass relative overflow-hidden rounded-[1.75rem] sm:rounded-[2.25rem] p-5 sm:p-7 md:p-8 cursor-pointer group"
+                                    onClick={() => handleStockClick(popularStocks[0])}
+                                >
+                                    <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-neon-teal/10 blur-3xl"></div>
+                                    <div className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
+                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase leading-none">지금 뜨는 종목</h3>
+                                        </div>
+                                        <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
+                                    </div>
+                                    <div className="rounded-[1.5rem] sm:rounded-[1.75rem] glass-soft p-4 sm:p-5 border border-white/5">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <p className="text-sm font-bold text-white/55">{popularStocks[0].name}</p>
+                                                <p className="text-[28px] sm:text-3xl font-black text-white">
+                                                    {popularStocks[0].currentPrice > 0 ? popularStocks[0].currentPrice.toLocaleString() : '시세 동기화 중'}
+                                                </p>
+                                                <p className="text-[10px] font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
+                                                    {popularStocks[0].currentPrice > 0 ? (popularStocks[0].quoteStatusLabel || '최근값') : '갱신중'}
+                                                </p>
+                                                <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
+                                                    {popularStocks[0].priceChange >= 0 ? '▲' : '▼'} {Math.abs(popularStocks[0].priceChange).toLocaleString()} ({popularStocks[0].priceChangeRate.toFixed(2)}%)
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[11px] font-black text-neon-pink uppercase tracking-widest">기록 수</p>
+                                                <p className="text-xl font-black text-white">{popularStocks[0].predictionCount.toLocaleString()}건</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center text-xs font-bold text-white/45">
+                                                <span>관심 흐름</span>
+                                                <span>많이 보는 편</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                <div className="h-full w-full bg-gradient-to-r from-neon-teal to-neon-pink animate-pulse"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
+
                             {/* Sacred Posts Section - Hide when searching */}
                             {!searchQuery && (
-                                <section className="space-y-5 sm:space-y-6">
+                                <section className="space-y-4 sm:space-y-5">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">최근 성지글</p>
-                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
-                                            <p className="mt-2 text-sm font-bold text-white/40">이미 맞은 예언만 따로 모아둔 성지 아카이브입니다</p>
+                                            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
+                                            <p className="mt-2 text-sm font-bold text-white/40">최근 적중 기록</p>
                                         </div>
                                         <button onClick={() => navigate('/sacred')} className="text-sm font-bold text-neon-pink hover:text-white transition">더 보기 →</button>
                                     </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     {sacredHomePosts.length > 0 ? sacredHomePosts.map((post) => (
                                         <article
                                             key={post.id}
@@ -951,7 +1013,7 @@ function App() {
                                                         )}
                                                         <div>
                                                             <p className={`text-xs font-black tracking-[0.18em] uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>성지글</p>
-                                                            <p className="text-[11px] font-bold text-white/35">작성자 {post.authorNickname}</p>
+                                                            <p className="text-[11px] font-bold text-white/35">{post.authorNickname}</p>
                                                         </div>
                                                     </div>
                                                     <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white/60">적중 완료</span>
@@ -960,14 +1022,14 @@ function App() {
                                                     {post.stockName} {Number(post.targetPrice).toLocaleString()}원 적중
                                                 </h4>
                                                 <p className="mt-2 text-xs font-medium text-white/50">
-                                                    작성자 {post.authorNickname} • 기록일 {formatSacredDate(post.createdAt)} • 적중일 {formatSacredDate(post.hitDate)}
+                                                    {post.authorNickname} • {formatSacredDate(post.hitDate)} 적중
                                                 </p>
                                             </div>
                                         </article>
                                     )) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
-                                            <p className="text-white/60 font-bold">아직 오늘 뜬 성지글이 없습니다</p>
-                                            <p className="mt-2 text-sm text-white/35">첫 적중 기록이 올라오면 여기서 바로 보입니다</p>
+                                            <p className="text-white/60 font-bold">아직 성지글이 없습니다</p>
+                                            <p className="mt-2 text-sm text-white/35">첫 적중 기록이 올라오면 여기에 뜹니다</p>
                                         </div>
                                     )}
                                 </div>
@@ -1008,6 +1070,7 @@ function App() {
                         <Suspense fallback={<RouteLoadingScreen />}>
                             <SacredDetail
                                 onBack={() => navigate('/sacred')}
+                                onPredictStock={(symbol) => symbol && navigate(`/stock/${symbol}`, { state: { intent: 'open-prediction' } })}
                             />
                         </Suspense>
                     } />

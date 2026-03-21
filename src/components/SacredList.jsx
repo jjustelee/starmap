@@ -40,7 +40,7 @@ export const SacredList = ({ onSelect }) => {
             {/* Header */}
             <div className="space-y-2 text-center pt-3 sm:pt-4">
                 <h2 className="text-[30px] sm:text-4xl font-black text-white tracking-tight">성지글 아카이브</h2>
-                <p className="text-white/50 text-sm">맞아버린 예언만 차곡차곡 쌓이는 기록 보관함</p>
+                <p className="text-white/50 text-sm">적중한 예언만 차곡차곡 모아둔 기록 보관함</p>
             </div>
 
             {/* Tabs */}
@@ -62,12 +62,12 @@ export const SacredList = ({ onSelect }) => {
             {/* List */}
             {isLoading ? (
                 <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center text-white/45">
-                    성지글을 불러오는 중...
+                    성지글 불러오는 중
                 </div>
             ) : posts.length === 0 ? (
                 <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
-                    <p className="text-white/60 font-bold">아직 박제된 성지글이 없습니다</p>
-                    <p className="mt-2 text-sm text-white/35">첫 적중이 나오면 이 아카이브에 순서대로 쌓입니다</p>
+                    <p className="text-white/60 font-bold">아직 성지글이 없습니다</p>
+                    <p className="mt-2 text-sm text-white/35">첫 적중이 나오면 여기에 쌓입니다</p>
                 </div>
             ) : (
             <div className="grid gap-3 sm:gap-4">
@@ -86,7 +86,7 @@ export const SacredList = ({ onSelect }) => {
                                         <BadgeCheck className="w-8 h-8 sm:w-10 sm:h-10 text-neon-teal" />
                                     )}
                                     <div>
-                                        <p className={`text-[10px] font-black tracking-widest uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>성지 기록</p>
+                                        <p className={`text-[10px] font-black tracking-widest uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>맞은 기록</p>
                                         <p className="text-[11px] font-bold text-white/30 truncate max-w-[180px]">작성자 {post.authorNickname}</p>
                                     </div>
                                 </div>
@@ -100,6 +100,9 @@ export const SacredList = ({ onSelect }) => {
                                 <ChevronRight className="w-3 h-3" />
                                 <span className={`${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink/60' : 'text-neon-teal/60'}`}>적중: {formatSacredDate(post.hitDate)}</span>
                             </div>
+                            <p className={`mt-3 text-[11px] font-black ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>
+                                성지글 보기 →
+                            </p>
                         </div>
                     </article>
                 ))}

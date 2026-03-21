@@ -14,7 +14,7 @@ const SACRED_REACTION_OPTIONS = [
     { key: 'wish_i_saw_it', label: '나도 봤어야 했는데' }
 ];
 
-export const SacredDetail = ({ onBack }) => {
+export const SacredDetail = ({ onBack, onPredictStock }) => {
     const { id } = useParams();
     const { user, isLoggedIn, signInWithKakao } = useAuth();
     const [post, setPost] = React.useState(null);
@@ -144,14 +144,14 @@ export const SacredDetail = ({ onBack }) => {
     };
 
     if (isLoading) {
-        return <div className="py-16 text-center text-white/45">성지글을 불러오는 중...</div>;
+        return <div className="py-16 text-center text-white/45">성지글 불러오는 중</div>;
     }
 
     if (!post) {
         return (
             <div className="py-16 text-center space-y-3">
                 <p className="text-white/60 font-bold">아직 이 성지 기록은 비어 있습니다</p>
-                <p className="text-sm text-white/35">적중한 예언이 쌓이면 여기서 상세 기록을 볼 수 있습니다</p>
+                <p className="text-sm text-white/35">적중 기록이 쌓이면 여기서 볼 수 있습니다</p>
                 <button onClick={onBack} className="inline-flex items-center gap-1 text-white/60 hover:text-white transition">
                     <ChevronLeft className="w-4 h-4" />
                     <span className="font-bold">목록으로</span>
@@ -290,6 +290,17 @@ export const SacredDetail = ({ onBack }) => {
                 {reactionFeedback ? (
                     <p className="text-[11px] sm:text-[12px] font-bold text-white/45 pt-0.5">{reactionFeedback}</p>
                 ) : null}
+            </div>
+
+            <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-4 sm:p-5">
+                <p className="text-[12px] sm:text-[13px] font-bold text-white/55">이 성지 기록을 봤다면, 이제 당신 목표가도 남길 차례입니다.</p>
+                <button
+                    type="button"
+                    onClick={() => onPredictStock?.(post.stockSymbol)}
+                    className="mt-3 w-full min-h-11 rounded-2xl border border-neon-teal/35 bg-neon-teal/10 text-[14px] sm:text-[15px] font-black text-neon-teal transition hover:bg-neon-teal/15"
+                >
+                    나도 이 종목 예언 남기기
+                </button>
             </div>
 
             <p className="text-center text-[11px] font-bold text-white/20 uppercase tracking-[0.4em] pb-8">
