@@ -15,6 +15,8 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
     const [isLoadingPreds, setIsLoadingPreds] = useState(false);
     const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
+    const [deleteFeedbackId, setDeleteFeedbackId] = useState('');
+    const [deleteFeedbackMessage, setDeleteFeedbackMessage] = useState('');
     const [isGuideExpanded, setIsGuideExpanded] = useState(false);
 
     // [백엔드] 로그인 유저의 예언 기록 로드
@@ -24,9 +26,17 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                 setIsLoadingPreds(true);
                 const data = await fetchMyPredictions(user.id);
                 setPredictions(data || []);
+                setIsLoadingPreds(false);
 
-                // 캐시값 먼저 노출 후, 화면에 표시되는 예언 종목 전체를 비동기 최신화
-                const targetSymbols = [...new Set((data || []).map((p) => p.stockSymbol).filter(Boolean))];
+                // 현재가가 비어 있는 종목만 백그라운드로 보강합니다.
+                const targetSymbols = [
+                    ...new Set(
+                        (data || [])
+                            .filter((p) => Number(p?.currentPrice || 0) <= 0)
+                            .map((p) => p.stockSymbol)
+                            .filter(Boolean)
+                    )
+                ];
                 if (targetSymbols.length > 0) {
                     const updates = await Promise.all(
                         targetSymbols.map(async (symbol) => {
@@ -62,8 +72,6 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                         }));
                     }
                 }
-
-                setIsLoadingPreds(false);
             };
             load();
         }
@@ -403,8 +411,11 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                                                     await deletePrediction(pred.id);
                                                                     setPredictions(prev => prev.filter(p => p.id !== pred.id));
                                                                     setDeletingId(null);
+                                                                    setDeleteFeedbackId('');
+                                                                    setDeleteFeedbackMessage('');
                                                                 } catch (err) {
-                                                                    alert('삭제에 실패했습니다.');
+                                                                    setDeleteFeedbackId(pred.id);
+                                                                    setDeleteFeedbackMessage('삭제에 실패했어요');
                                                                 }
                                                             }}
                                                             className="px-4 py-2 bg-neon-pink text-white text-[12px] font-black rounded-xl shadow-lg shadow-neon-pink/20"
@@ -434,6 +445,12 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                                 )}
                                             </div>
                                         </div>
+
+                                        {deleteFeedbackId === pred.id && deleteFeedbackMessage ? (
+                                            <p className="mb-3 text-[11px] font-bold text-white/45">
+                                                {deleteFeedbackMessage}
+                                            </p>
+                                        ) : null}
 
                                         {/* Content: Price Comparison (Super High Clarity Grid) */}
                                         <div className="grid grid-cols-2 gap-px bg-white/5 border-[0.5px] border-white/10 rounded-2xl overflow-hidden mb-5 sm:mb-8 shadow-2xl">

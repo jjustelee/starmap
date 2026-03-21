@@ -22,6 +22,7 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
     const [shareFeedback, setShareFeedback] = React.useState('');
     const [myReactionKey, setMyReactionKey] = React.useState('');
     const [reactionFeedback, setReactionFeedback] = React.useState('');
+    const [showReactionLoginPrompt, setShowReactionLoginPrompt] = React.useState(false);
 
     React.useEffect(() => {
         let active = true;
@@ -100,9 +101,11 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
 
         if (!isLoggedIn || !user?.id) {
             setReactionFeedback('축하 반응은 로그인 후 남길 수 있어요');
-            await signInWithKakao?.();
+            setShowReactionLoginPrompt(true);
             return;
         }
+
+        setShowReactionLoginPrompt(false);
 
         const previousReaction = myReactionKey;
         const nextReaction = previousReaction === reactionKey ? '' : reactionKey;
@@ -288,7 +291,18 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
                 </div>
 
                 {reactionFeedback ? (
-                    <p className="text-[11px] sm:text-[12px] font-bold text-white/45 pt-0.5">{reactionFeedback}</p>
+                    <div className="pt-0.5 space-y-2">
+                        <p className="text-[11px] sm:text-[12px] font-bold text-white/45">{reactionFeedback}</p>
+                        {showReactionLoginPrompt ? (
+                            <button
+                                type="button"
+                                onClick={() => signInWithKakao?.()}
+                                className="min-h-10 rounded-xl border border-neon-teal/25 bg-neon-teal/10 px-3 py-2 text-[12px] font-black text-neon-teal transition hover:bg-neon-teal/15"
+                            >
+                                카카오로 계속하기
+                            </button>
+                        ) : null}
+                    </div>
                 ) : null}
             </div>
 

@@ -5,8 +5,8 @@ import PredictionComposerV2 from './PredictionComposerV2';
 import DistributionSummary from './DistributionSummary';
 import MarketReality from './MarketReality';
 import { useChartContext } from '../context/ChartContext';
+import { useAuth } from '../context/AuthContext';
 import {
-    loadCurrentPrice,
     loadPredictionSnapshot,
     submitPredictionDraft,
     validatePredictionDraft
@@ -24,15 +24,19 @@ import {
  * props:
  * - stock: object
  * - onBack: () => void
- * - onRecord: (price: number) => void
+ * - onRecord: ({ targetPrice: number, stock: object }) => void
  * - openComposerSignal?: number
  * - onComposerVisibilityChange?: (visible: boolean) => void
  */
 const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComposerVisibilityChange }) => {
     const { stockInfo, basePrice, dashboardData, realityData } = useChartContext();
+    const { isLoggedIn, signInWithKakao, userId } = useAuth();
     const symbol = stockInfo?.symbol || stock?.symbol || '000000';
+    const stockId = stockInfo?.id || stock?.id || null;
     const initialPrice = Number(stockInfo?.currentPrice || basePrice || 0);
     const initialDate = useMemo(() => toISODate(addDays(new Date(), 90)), []);
+    const draftStorageKey = `prediction-draft:${symbol}`;
+    const draftTtlMs = 1000 * 60 * 60 * 6;
 
     const [windowKey, setWindowKey] = useState('7d');
     const [currentPrice, setCurrentPrice] = useState(initialPrice);
@@ -40,6 +44,8 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
     const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [showRestoreNotice, setShowRestoreNotice] = useState(false);
+    const [hasHydratedDraft, setHasHydratedDraft] = useState(false);
     const [draft, setDraft] = useState({
         symbol,
         targetPrice: initialPrice,
@@ -48,36 +54,91 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
         source: 'slider',
         rangeLevel: 'L1'
     });
+    const [restoreComposerSignal, setRestoreComposerSignal] = useState(0);
 
     useEffect(() => {
-        let alive = true;
-        (async () => {
-            const price = await loadCurrentPrice(symbol, initialPrice);
-            if (!alive) return;
-            setCurrentPrice(price);
+        if (typeof window === 'undefined') return;
+        try {
+            const raw = window.localStorage.getItem(draftStorageKey);
+            if (!raw) {
+                setHasHydratedDraft(true);
+                return;
+            }
+            const saved = JSON.parse(raw);
+            if (!saved?.savedAt || Date.now() - Number(saved.savedAt) > draftTtlMs) {
+                window.localStorage.removeItem(draftStorageKey);
+                setHasHydratedDraft(true);
+                return;
+            }
             setDraft((prev) => ({
                 ...prev,
                 symbol,
-                targetPrice: Math.max(100, Math.round(price)),
-                targetDate: prev.targetDate || initialDate,
-                rangeLevel: prev.rangeLevel || 'L1'
+                targetPrice: Number(saved.targetPrice) > 0 ? Number(saved.targetPrice) : prev.targetPrice,
+                targetDate: saved.targetDate || prev.targetDate,
+                source: saved.source || prev.source,
+                rangeLevel: saved.rangeLevel || prev.rangeLevel
             }));
-        })();
-        return () => {
-            alive = false;
-        };
-    }, [symbol, initialPrice, initialDate]);
+            if (saved.resumeComposer) {
+                setShowRestoreNotice(true);
+                setRestoreComposerSignal((prev) => prev + 1);
+                window.localStorage.setItem(draftStorageKey, JSON.stringify({
+                    ...saved,
+                    resumeComposer: false
+                }));
+            }
+        } catch (error) {
+            console.warn('Failed to restore prediction draft:', error);
+        } finally {
+            setHasHydratedDraft(true);
+        }
+    }, [draftStorageKey, symbol, draftTtlMs]);
+
+    useEffect(() => {
+        const price = Math.max(0, Math.round(Number(stockInfo?.currentPrice || basePrice || 0)));
+        if (!price) return;
+        setCurrentPrice(price);
+        setDraft((prev) => ({
+            ...prev,
+            symbol,
+            targetPrice: prev.symbol === symbol && Number(prev.targetPrice) > 0
+                ? prev.targetPrice
+                : Math.max(100, price),
+            targetDate: prev.targetDate || initialDate,
+            rangeLevel: prev.rangeLevel || 'L1'
+        }));
+    }, [stockInfo?.currentPrice, basePrice, symbol, initialDate]);
 
     const reloadSnapshot = useCallback(async () => {
         setIsLoadingSnapshot(true);
-        const data = await loadPredictionSnapshot(symbol, windowKey, { currentPrice });
+        const data = await loadPredictionSnapshot(symbol, windowKey, {
+            stockId,
+            currentPrice,
+            currentUserId: userId
+        });
         setSnapshot(data);
         setIsLoadingSnapshot(false);
-    }, [symbol, windowKey, currentPrice]);
+    }, [symbol, windowKey, stockId, currentPrice, userId]);
 
     useEffect(() => {
         reloadSnapshot();
     }, [reloadSnapshot]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!hasHydratedDraft) return;
+        try {
+            window.localStorage.setItem(draftStorageKey, JSON.stringify({
+                targetPrice: draft?.targetPrice,
+                targetDate: draft?.targetDate,
+                source: draft?.source,
+                rangeLevel: draft?.rangeLevel,
+                savedAt: Date.now(),
+                resumeComposer: false
+            }));
+        } catch (error) {
+            console.warn('Failed to persist prediction draft:', error);
+        }
+    }, [draft?.rangeLevel, draft?.source, draft?.targetDate, draft?.targetPrice, draftStorageKey, hasHydratedDraft]);
 
     const handleDraftChange = useCallback((partial) => {
         setDraft((prev) => ({
@@ -86,10 +147,15 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
             symbol,
             window: windowKey
         }));
+        setShowRestoreNotice(false);
         setErrorMessage('');
     }, [symbol, windowKey]);
 
     const handleSubmit = useCallback(async () => {
+        if (!isLoggedIn) {
+            return;
+        }
+
         const payload = {
             ...draft,
             symbol,
@@ -103,16 +169,46 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
 
         setIsSubmitting(true);
         setErrorMessage('');
+        setShowRestoreNotice(false);
         try {
             await submitPredictionDraft(payload);
-            if (typeof onRecord === 'function') onRecord(Number(payload.targetPrice));
+            if (typeof window !== 'undefined') {
+                window.localStorage.removeItem(draftStorageKey);
+            }
+            if (typeof onRecord === 'function') {
+                onRecord({
+                    targetPrice: Number(payload.targetPrice),
+                    stock: {
+                        symbol,
+                        name: stockInfo?.name || stock?.name || symbol,
+                        currentPrice: Number(currentPrice) || 0,
+                        quoteStatusLabel: stockInfo?.quoteStatusLabel || stock?.quoteStatusLabel || '최근값',
+                        priceChange: Number(stockInfo?.price_change || stock?.priceChange || 0),
+                        priceChangeRate: Number(stockInfo?.price_change_rate || stock?.priceChangeRate || 0)
+                    }
+                });
+            }
             await reloadSnapshot();
         } catch (error) {
             setErrorMessage(error?.message || '예언 박제에 실패했어요.');
         } finally {
             setIsSubmitting(false);
         }
-    }, [draft, symbol, windowKey, onRecord, reloadSnapshot]);
+    }, [draft, symbol, windowKey, onRecord, reloadSnapshot, isLoggedIn, draftStorageKey, stockInfo, stock, currentPrice]);
+
+    const handleRequireLogin = useCallback(async () => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(draftStorageKey, JSON.stringify({
+                targetPrice: draft?.targetPrice,
+                targetDate: draft?.targetDate,
+                source: draft?.source,
+                rangeLevel: draft?.rangeLevel,
+                savedAt: Date.now(),
+                resumeComposer: true
+            }));
+        }
+        await signInWithKakao?.();
+    }, [draft?.rangeLevel, draft?.source, draft?.targetDate, draft?.targetPrice, draftStorageKey, signInWithKakao]);
 
     const mergedSnapshot = useMemo(() => {
         // BACKEND_TODO(API): snapshot.stats/overlay/currentPrice를 detail-v2 응답에서 1:1로 수신.
@@ -185,10 +281,9 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                     <PredictionChartV2
                         snapshot={mergedSnapshot}
                         currentPrice={currentPrice}
-                        targetPrice={draft.targetPrice}
-                        targetDate={draft.targetDate}
                         selectedWindow={windowKey}
                         onWindowChange={setWindowKey}
+                        isLoading={isLoadingSnapshot}
                     />
 
                     <MarketReality kisData={realityData} />
@@ -207,6 +302,7 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
             <PredictionComposerV2
                 currentPrice={currentPrice}
                 draft={draft}
+                isLoggedIn={isLoggedIn}
                 communityHint={{
                     sampleSize: mergedSnapshot?.sampleSize || 0,
                     anchorPrice: pickPositiveNumber(mergedSnapshot?.stats?.mode, mergedSnapshot?.stats?.avg),
@@ -214,9 +310,11 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                 }}
                 onChange={handleDraftChange}
                 onSubmit={handleSubmit}
+                onRequireLogin={handleRequireLogin}
                 isSubmitting={isSubmitting}
                 errorMessage={errorMessage}
-                forceOpenSignal={openComposerSignal}
+                isRestoredDraft={showRestoreNotice}
+                forceOpenSignal={openComposerSignal + restoreComposerSignal}
                 onVisibilityChange={onComposerVisibilityChange}
             />
         </>

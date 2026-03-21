@@ -6,16 +6,18 @@ import { useAuth } from '../context/AuthContext';
  * [UX] 최초 로그인 시 닉네임을 설정하는 온보딩 바텀시트.
  */
 const NicknameSetupSheet = ({ isOpen }) => {
-    const { profile, updateProfile } = useAuth();
+    const { profile, hasProfileRecord, updateProfile } = useAuth();
     const [nickname, setNickname] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (profile?.nickname) {
+        if (hasProfileRecord && profile?.nickname) {
             setNickname(profile.nickname);
+        } else if (isOpen) {
+            setNickname('');
         }
-    }, [profile]);
+    }, [profile, hasProfileRecord, isOpen]);
 
     if (!isOpen) return null;
 

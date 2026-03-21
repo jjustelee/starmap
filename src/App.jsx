@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useRef } from 'react'
+import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './utils/supabaseClient'
 import { 
@@ -71,16 +71,20 @@ function App() {
     const [isSearching, setIsSearching] = useState(false);
     const [visibleCount, setVisibleCount] = useState(20); // 무한 스크롤: 현재 보여줄 개수
     const [allStockMaster, setAllStockMaster] = useState([]); // [백엔드] 전 종목 캐싱용
+    const [isStockMasterLoading, setIsStockMasterLoading] = useState(false);
     const observerTarget = useRef(null); // 무한 스크롤 감지용 타겟
     const searchInputRef = useRef(null);
     const searchSectionRef = useRef(null);
     const searchQuoteInFlightRef = useRef(new Set());
     const searchQuoteCacheRef = useRef({});
+    const stockMasterPromiseRef = useRef(null);
+    const stockMasterLoadedRef = useRef(false);
     const [openComposerSignal, setOpenComposerSignal] = useState(0);
     const [isDetailComposerVisible, setIsDetailComposerVisible] = useState(false);
     const [predictionReactionSelections, setPredictionReactionSelections] = useState({});
     const [reactionBusyPredictionId, setReactionBusyPredictionId] = useState('');
     const [predictionReactionFeedback, setPredictionReactionFeedback] = useState({});
+    const [predictionReactionLoginPromptId, setPredictionReactionLoginPromptId] = useState('');
     const [expandedPredictionReactions, setExpandedPredictionReactions] = useState({});
 
     // 현재 경로를 기반으로 view 상태 유도 (UI 조건부 렌더링용)
@@ -121,13 +125,20 @@ function App() {
         return () => window.cancelAnimationFrame(frame);
     }, [view, location.pathname, location.state, navigate]);
 
-    // [백엔드] stock_master 전체 로드 (앱 시작 시 1회)
-    useEffect(() => {
-        const loadStockMaster = async () => {
+    const loadStockMaster = useCallback(async () => {
+        if (stockMasterLoadedRef.current && allStockMaster.length > 0) {
+            return allStockMaster;
+        }
+        if (stockMasterPromiseRef.current) {
+            return stockMasterPromiseRef.current;
+        }
+
+        setIsStockMasterLoading(true);
+        stockMasterPromiseRef.current = (async () => {
             try {
                 let allData = [];
                 let from = 0;
-                let step = 1000;
+                const step = 1000;
                 let hasMore = true;
 
                 // [백엔드] PostgREST 기본 제한(1000개)을 우회하기 위해 페이징 처리
@@ -136,9 +147,9 @@ function App() {
                         .from('stock_master')
                         .select('code, name, chosung, market_type')
                         .range(from, from + step - 1);
-                    
+
                     if (error) throw error;
-                    
+
                     if (data && data.length > 0) {
                         allData = [...allData, ...data];
                         if (data.length < step) {
@@ -153,14 +164,22 @@ function App() {
 
                 if (allData.length > 0) {
                     setAllStockMaster(allData);
+                    stockMasterLoadedRef.current = true;
                     console.log(`[stock_master] ${allData.length}개 종목 캐싱 완료`);
                 }
+
+                return allData;
             } catch (err) {
                 console.error('Failed to load stock master:', err);
+                return [];
+            } finally {
+                setIsStockMasterLoading(false);
+                stockMasterPromiseRef.current = null;
             }
-        };
-        loadStockMaster();
-    }, []);
+        })();
+
+        return stockMasterPromiseRef.current;
+    }, [allStockMaster]);
 
     useEffect(() => {
         const loadSacredHomePosts = async () => {
@@ -268,6 +287,12 @@ function App() {
             return;
         }
 
+        if (!stockMasterLoadedRef.current && !allStockMaster.length) {
+            setIsSearching(true);
+            void loadStockMaster();
+            return;
+        }
+
         // [UX] 입력 즉시 로딩 상태 및 결과 비우기 (잔상 제거)
         setIsSearching(true);
         setSearchResults([]);
@@ -297,7 +322,7 @@ function App() {
         }, 150); // 디바운싱 살짝 단축 (200ms -> 150ms)
 
         return () => clearTimeout(timer);
-    }, [searchQuery, allStockMaster]);
+    }, [searchQuery, allStockMaster, loadStockMaster]);
 
     // [UI] 무한 스크롤 핸들러 (Intersection Observer)
     useEffect(() => {
@@ -424,8 +449,12 @@ function App() {
         window.scrollTo(0, 0);
     };
 
-    const handleRecordComplete = (price) => {
-        setLastTargetPrice(Number(price));
+    const handleRecordComplete = (payload) => {
+        const nextPrice = Number(payload?.targetPrice || payload || 0);
+        if (payload?.stock?.symbol) {
+            setSelectedStock(payload.stock);
+        }
+        setLastTargetPrice(nextPrice);
         navigate('/success');
         window.scrollTo(0, 0);
     };
@@ -482,9 +511,11 @@ function App() {
                 ...prev,
                 [item.id]: '반응은 로그인 후 남길 수 있어요'
             }));
-            await signInWithKakao();
+            setPredictionReactionLoginPromptId(item.id);
             return;
         }
+
+        setPredictionReactionLoginPromptId('');
 
         if (!user?.id || reactionBusyPredictionId === item.id) return;
 
@@ -584,10 +615,17 @@ function App() {
         window.scrollTo(0, 0);
     };
 
-    const { isLoggedIn, isLoading: authLoading, profile, user, signInWithKakao } = useAuth();
+    const { isLoggedIn, isLoading: authLoading, isProfileLoading, hasProfileRecord, profile, user, signInWithKakao } = useAuth();
     
     // 온보딩(닉네임 설정) 노출 여부: 로그인 상태이며 온보딩 미완료인 경우
-    const showOnboarding = Boolean(isLoggedIn && profile && !profile.isOnboarded);
+    const showOnboarding = Boolean(
+        isLoggedIn &&
+        !isProfileLoading &&
+        (
+            !hasProfileRecord ||
+            (profile && !profile.isOnboarded)
+        )
+    );
 
     if (authLoading) {
         return (
@@ -690,13 +728,18 @@ function App() {
                                     <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-neon-teal/30 to-neon-pink/30 opacity-20 blur transition duration-700 group-hover:opacity-90"></div>
                                     <div className="relative crystal-glass flex items-center rounded-2xl border-white/15 px-4 sm:px-5">
                                         <Search className="mr-3 text-white/35 w-5 h-5" />
-                                                <input
+                                        <input
                                             ref={searchInputRef}
                                             aria-label="종목 검색"
                                             className="w-full bg-transparent py-4 sm:py-5 text-[15px] sm:text-base font-semibold text-white placeholder:text-white/35 focus:outline-none"
                                             placeholder="종목명을 검색해 목표가를 확인하세요"
                                             type="text"
                                             value={searchQuery}
+                                            onFocus={() => {
+                                                if (!stockMasterLoadedRef.current) {
+                                                    void loadStockMaster();
+                                                }
+                                            }}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                         />
                                         {searchQuery && (
@@ -794,6 +837,12 @@ function App() {
                                                     <div className="flex items-center gap-2 px-4 py-2 text-white/30 text-sm">
                                                         <div className="w-3 h-3 border border-white/20 border-t-neon-teal rounded-full animate-spin"></div>
                                                         불러오는 중
+                                                    </div>
+                                                )}
+                                                {isStockMasterLoading && !stockMasterLoadedRef.current && (
+                                                    <div className="flex items-center gap-2 px-4 py-2 text-white/30 text-sm">
+                                                        <div className="w-3 h-3 border border-white/20 border-t-neon-teal rounded-full animate-spin"></div>
+                                                        검색 준비 중
                                                     </div>
                                                 )}
                                             </div>
@@ -919,10 +968,21 @@ function App() {
                                                             </button>
                                                         ) : null}
                                                     </div>
-                                                    {predictionReactionFeedback[item.id] ? (
-                                                        <p className="mt-2 text-[11px] font-bold text-white/45">
-                                                            {predictionReactionFeedback[item.id]}
-                                                        </p>
+            {predictionReactionFeedback[item.id] ? (
+                                                        <div className="mt-2 space-y-2">
+                                                            <p className="text-[11px] font-bold text-white/45">
+                                                                {predictionReactionFeedback[item.id]}
+                                                            </p>
+                                                            {predictionReactionLoginPromptId === item.id ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => signInWithKakao?.()}
+                                                                    className="min-h-10 rounded-xl border border-neon-teal/25 bg-neon-teal/10 px-3 py-2 text-[12px] font-black text-neon-teal transition hover:bg-neon-teal/15"
+                                                                >
+                                                                    카카오로 계속하기
+                                                                </button>
+                                                            ) : null}
+                                                        </div>
                                                     ) : null}
                                                             </>
                                                         );
@@ -1042,7 +1102,7 @@ function App() {
                             <StockDetail
                                 stock={selectedStock}
                                 onBack={() => navigate('/')}
-                                onRecord={(price) => handleRecordComplete(price)}
+                                onRecord={(payload) => handleRecordComplete(payload)}
                                 openComposerSignal={openComposerSignal}
                                 onComposerVisibilityChange={setIsDetailComposerVisible}
                             />
@@ -1079,7 +1139,10 @@ function App() {
                             <MyPage 
                                 onBack={() => navigate('/')}
                                 onStockClick={(stock) => handleStockClick(stock)}
-                                onNavigatePath={(path) => navigate(path)}
+                                onNavigatePath={(path) => {
+                                    navigate(path);
+                                    window.scrollTo(0, 0);
+                                }}
                             />
                         </Suspense>
                     } />

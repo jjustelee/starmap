@@ -18,8 +18,11 @@ const PredictionChartV2 = ({
     snapshot,
     currentPrice,
     selectedWindow = '7d',
-    onWindowChange
+    onWindowChange,
+    isLoading = false
 }) => {
+    const snapshotWindow = snapshot?.window || selectedWindow;
+    const isWindowSyncing = isLoading && snapshotWindow !== selectedWindow;
     const dots = useMemo(
         () => buildDots(snapshot?.overlay?.dots || []),
         [snapshot]
@@ -29,9 +32,9 @@ const PredictionChartV2 = ({
         () => buildPointChart({
             dots,
             currentPrice,
-            windowKey: selectedWindow
+            windowKey: snapshotWindow
         }),
-        [dots, currentPrice, selectedWindow]
+        [dots, currentPrice, snapshotWindow]
     );
 
     return (
@@ -49,6 +52,7 @@ const PredictionChartV2 = ({
                 <div className="grid grid-cols-4 gap-2">
                     {WINDOWS.map((window) => {
                         const active = selectedWindow === window;
+                        const pending = isWindowSyncing && snapshotWindow !== window && selectedWindow === window;
                         return (
                             <button
                                 key={window}
@@ -60,7 +64,7 @@ const PredictionChartV2 = ({
                                         : 'bg-white/5 text-white/65 border-white/10'
                                 }`}
                             >
-                                {WINDOW_LABELS[window]}
+                                {WINDOW_LABELS[window]}{pending ? '…' : ''}
                             </button>
                         );
                     })}
@@ -79,29 +83,35 @@ const PredictionChartV2 = ({
                         </div>
                     </div>
 
+                    {isWindowSyncing ? (
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[12px] text-white/55 font-medium">
+                            {WINDOW_LABELS[selectedWindow]} 예언 불러오는 중
+                        </div>
+                    ) : null}
+
                     {(chart.outlierTopCount > 0 || chart.outlierBottomCount > 0) ? (
                         <div className="flex flex-wrap gap-2">
                             {chart.outlierTopCount > 0 ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border bg-neon-pink/8 text-neon-pink border-neon-pink/25">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border bg-white/[0.03] text-neon-pink/85 border-neon-pink/18">
                                     상단 밖 {chart.outlierTopCount}건
                                 </span>
                             ) : null}
                             {chart.outlierBottomCount > 0 ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border bg-neon-blue/8 text-neon-blue border-neon-blue/25">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border bg-white/[0.03] text-neon-blue/85 border-neon-blue/18">
                                     하단 밖 {chart.outlierBottomCount}건
                                 </span>
                             ) : null}
                         </div>
                     ) : null}
 
-                    {chart.points.length ? (
+                    {!isWindowSyncing && chart.points.length ? (
                         <>
                             <div className="relative rounded-[20px] border border-white/10 bg-black/25 overflow-hidden px-3 py-4 h-[260px] sm:h-[300px] lg:h-[340px]">
                                 <div className="absolute inset-x-3 top-4 bottom-10 pointer-events-none">
                                     {[0, 25, 50, 75, 100].map((pct) => (
                                         <div
                                             key={pct}
-                                            className="absolute inset-x-0 border-t border-white/8"
+                                            className="absolute inset-x-0 border-t border-white/5"
                                             style={{ top: `${pct}%` }}
                                         />
                                     ))}
@@ -148,9 +158,9 @@ const PredictionChartV2 = ({
                             </div>
 
                             <div className="grid grid-cols-3 gap-2">
-                                <MiniLegend label="최저 예언" value={formatWon(chart.minPrice)} tone="blue" />
-                                <MiniLegend label="평균 예언" value={formatWon(chart.avgPrice)} tone="white" />
-                                <MiniLegend label="최고 예언" value={formatWon(chart.maxPrice)} tone="pink" />
+                                <MiniLegend label="최저" value={formatWon(chart.minPrice)} tone="blue" />
+                                <MiniLegend label="평균" value={formatWon(chart.avgPrice)} tone="white" />
+                                <MiniLegend label="최고" value={formatWon(chart.maxPrice)} tone="pink" />
                             </div>
                         </>
                     ) : (
@@ -173,7 +183,7 @@ function MiniLegend({ label, value, tone }) {
 
     return (
         <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
-            <p className="text-[11px] text-white/45 font-bold">{label}</p>
+            <p className="text-[11px] text-white/45 font-bold whitespace-nowrap leading-none">{label}</p>
             <p className={`mt-1 text-[13px] font-bold ${valueClass}`}>{value}</p>
         </div>
     );
@@ -226,31 +236,31 @@ function buildPointChart({ dots, currentPrice, windowKey }) {
 
     const priced = dots.slice().sort((a, b) => a.price - b.price);
     const prices = priced.map((dot) => dot.price);
-    const q10 = quantile(prices, 0.1);
-    const q90 = quantile(prices, 0.9);
-    const coreMin = Math.min(q10 || currentPrice || prices[0], Number(currentPrice || 0) || prices[0]);
-    const coreMax = Math.max(q90 || currentPrice || prices[prices.length - 1], Number(currentPrice || 0) || prices[prices.length - 1]);
-    const pad = Math.max((coreMax - coreMin) * 0.15, Number(currentPrice || 0) * 0.02, 100);
-    const visibleMin = Math.max(100, Math.round(coreMin - pad));
-    const visibleMax = Math.max(visibleMin + 1, Math.round(coreMax + pad));
+    const safeCurrentPrice = Math.max(100, Number(currentPrice || 0) || prices[0]);
+    const relativeMoves = prices.map((price) => (price - safeCurrentPrice) / safeCurrentPrice);
+    const q10 = quantile(relativeMoves, 0.1);
+    const q90 = quantile(relativeMoves, 0.9);
+    const rawAbsRange = Math.max(Math.abs(q10), Math.abs(q90), 0.03);
+    const visibleAbsRange = Math.min(Math.max(rawAbsRange * 1.2, 0.05), 1.5);
 
     let outlierTopCount = 0;
     let outlierBottomCount = 0;
     const visibleDots = [];
 
     dots.forEach((dot, index) => {
-        if (dot.price > visibleMax) {
+        const relativeMove = (dot.price - safeCurrentPrice) / safeCurrentPrice;
+        if (relativeMove > visibleAbsRange) {
             outlierTopCount += 1;
             return;
         }
-        if (dot.price < visibleMin) {
+        if (relativeMove < -visibleAbsRange) {
             outlierBottomCount += 1;
             return;
         }
 
         const timeMs = Number.isFinite(dot.createdAtMs) ? dot.createdAtMs : xMax - ((sampleCount - index) * (rangeMs / Math.max(1, sampleCount)));
         const xPct = clamp(((timeMs - xMin) / Math.max(1, xMax - xMin)) * 100, 0, 100);
-        const yPct = 100 - clamp(((dot.price - visibleMin) / Math.max(1, visibleMax - visibleMin)) * 100, 0, 100);
+        const yPct = 50 - clamp((relativeMove / visibleAbsRange) * 40, -40, 40);
         const isAboveCurrent = dot.price >= Number(currentPrice || 0);
 
         visibleDots.push({
@@ -272,12 +282,11 @@ function buildPointChart({ dots, currentPrice, windowKey }) {
     });
 
     const avgPrice = Math.round(prices.reduce((sum, price) => sum + price, 0) / Math.max(1, prices.length));
-    const currentLinePct = 100 - clamp(((Number(currentPrice || 0) - visibleMin) / Math.max(1, visibleMax - visibleMin)) * 100, 0, 100);
 
     return {
         sampleCount,
         points: visibleDots,
-        currentLinePct,
+        currentLinePct: 50,
         outlierTopCount,
         outlierBottomCount,
         xLabels: getXAxisLabels(windowKey),

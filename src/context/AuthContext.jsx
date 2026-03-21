@@ -20,6 +20,8 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isProfileLoading, setIsProfileLoading] = useState(false);
+    const [hasProfileRecord, setHasProfileRecord] = useState(false);
     const postLoginAction = React.useRef(null);
 
     const fetchProfile = async (userId) => {
@@ -44,6 +46,8 @@ export const AuthProvider = ({ children }) => {
                 const userProfile = await fetchProfile(userId);
                 if (!isMounted) return;
                 setProfile(userProfile || null);
+                setHasProfileRecord(Boolean(userProfile));
+                setIsProfileLoading(false);
 
                 // 로그인 성공 시 지연 실행할 액션이 있다면 실행
                 if (userProfile && postLoginAction.current) {
@@ -56,6 +60,8 @@ export const AuthProvider = ({ children }) => {
                 if (!isMounted) return;
                 console.error('AuthContext: Profile refresh failed:', err);
                 setProfile(null);
+                setHasProfileRecord(false);
+                setIsProfileLoading(false);
             }
         };
 
@@ -68,9 +74,13 @@ export const AuthProvider = ({ children }) => {
             if (currentUser) {
                 // 이전 프로필이 남아있지 않도록 초기화 후 비동기 갱신
                 setProfile(null);
+                setHasProfileRecord(false);
+                setIsProfileLoading(true);
                 void refreshProfile(currentUser.id);
             } else {
                 setProfile(null);
+                setHasProfileRecord(false);
+                setIsProfileLoading(false);
             }
         };
 
@@ -146,25 +156,30 @@ export const AuthProvider = ({ children }) => {
     const updateProfile = async (updates) => {
         if (!user) return;
 
-        const { error } = await supabase
+        const payload = {
+            id: user.id,
+            ...updates,
+            updated_at: new Date().toISOString(),
+        };
+
+        const { data, error } = await supabase
             .from('profiles')
-            .update({
-                ...updates,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', user.id);
+            .upsert(payload, { onConflict: 'id' })
+            .select('*')
+            .single();
 
         if (error) {
             console.error('Error updating profile:', error.message);
             throw error;
         }
 
-        // 로컬 상태 갱신
-        setProfile((prev) => ({ ...prev, ...updates }));
+        setProfile(data || payload);
+        setHasProfileRecord(true);
     };
 
     const value = {
         user,
+        userId: user?.id || null,
         profile: {
             nickname: profile?.nickname || (user ? '별지기' : null),
             avatar: profile?.avatar_url || null,
@@ -173,6 +188,8 @@ export const AuthProvider = ({ children }) => {
         },
         isLoggedIn: !!user,
         isLoading,
+        isProfileLoading,
+        hasProfileRecord,
         signInWithKakao,
         signInWithEmail,
         signOut,

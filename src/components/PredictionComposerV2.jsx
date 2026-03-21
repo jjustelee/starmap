@@ -31,13 +31,16 @@ const QUICK_PRICE_STEPS = [-10, -5, 0, 5, 10];
  * - currentPrice: number
  * - draft: { symbol, targetPrice, targetDate, window, source, rangeLevel }
  * - communityHint?: { sampleSize, anchorPrice, bullishRatio }
+ * - isLoggedIn?: boolean
  * - onChange: (partialDraft) => void
  * - onSubmit: () => Promise<void> | void
+ * - onRequireLogin?: () => Promise<void> | void
  * - isSubmitting: boolean
  * - errorMessage: string
+ * - isRestoredDraft?: boolean
  * - onVisibilityChange?: (visible: boolean) => void
  */
-const PredictionComposerV2 = ({ currentPrice, draft, communityHint, onChange, onSubmit, isSubmitting, errorMessage, forceOpenSignal = 0, onVisibilityChange }) => {
+const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn = false, onChange, onSubmit, onRequireLogin, isSubmitting, errorMessage, isRestoredDraft = false, forceOpenSignal = 0, onVisibilityChange }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [sheetMaxHeight, setSheetMaxHeight] = useState(460);
     const [showManualPrice, setShowManualPrice] = useState(false);
@@ -47,6 +50,7 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, onChange, on
     const [pricePct, setPricePct] = useState(0);
     const [periodIdx, setPeriodIdx] = useState(2);
     const [activeStep, setActiveStep] = useState('price');
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     const profile = RANGE_PROFILES[rangeLevel] || RANGE_PROFILES.L1;
     const delta = getDeltaRate(currentPrice, draft?.targetPrice);
@@ -115,6 +119,7 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, onChange, on
     useEffect(() => {
         if (!isExpanded) {
             setActiveStep('price');
+            setShowLoginPrompt(false);
         }
     }, [isExpanded]);
 
@@ -122,6 +127,12 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, onChange, on
         if (!showManualPrice) return;
         setManualPriceInput(String(Number(draft?.targetPrice || 0)));
     }, [showManualPrice, draft?.targetPrice]);
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            setShowLoginPrompt(false);
+        }
+    }, [isLoggedIn]);
 
     const commitPriceFromPercent = (nextPct, levelKey, source = 'slider') => {
         const level = RANGE_PROFILES[levelKey] || RANGE_PROFILES.L1;
@@ -286,6 +297,12 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, onChange, on
 
                                 {activeStep === 'price' ? (
                                     <div className="space-y-2">
+                                        {isRestoredDraft ? (
+                                            <div className="rounded-2xl border border-neon-teal/25 bg-neon-teal/10 px-3 py-3">
+                                                <p className="text-[13px] font-bold text-neon-teal">이전 입력값을 불러왔어요</p>
+                                                <p className="mt-1 text-[12px] text-white/60">그대로 박제하거나, 값을 바꾼 뒤 남길 수 있어요.</p>
+                                            </div>
+                                        ) : null}
                                         <div className="rounded-2xl border border-white/10 bg-black/22 p-3">
                                             <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                                 <p className="text-[13px] text-white/70 font-bold inline-flex items-center gap-1.5">
@@ -427,13 +444,39 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, onChange, on
                                 <div className="sticky bottom-0 pt-1 pb-1 bg-[#0b0b10]/95 backdrop-blur-xl">
                                     <button
                                         type="button"
-                                        onClick={onSubmit}
+                                        onClick={() => {
+                                            if (!isLoggedIn) {
+                                                setShowLoginPrompt(true);
+                                                return;
+                                            }
+                                            onSubmit?.();
+                                        }}
                                         disabled={isSubmitting}
                                         className={`w-full min-h-11 rounded-xl font-bold text-[16px] ${isSubmitting ? 'bg-white/10 text-white/40' : 'bg-gradient-to-r from-neon-teal to-neon-pink text-white'}`}
                                     >
-                                        {isSubmitting ? '박제 중...' : '예언 박제하기'}
+                                        {isSubmitting ? '박제 중...' : (isLoggedIn ? (isRestoredDraft ? '이 값으로 예언 박제하기' : '예언 박제하기') : '로그인하고 예언 남기기')}
                                     </button>
-                                    <p className="mt-2 px-1 text-[12px] sm:text-[13px] text-white/60">30초 예언 · 적중 시 성지글</p>
+                                    {showLoginPrompt ? (
+                                        <div className="mt-2 rounded-2xl border border-neon-pink/25 bg-neon-pink/10 px-3 py-3 text-left">
+                                            <p className="text-[13px] font-bold text-white">예언은 로그인 후 남길 수 있어요</p>
+                                            <p className="mt-1 text-[12px] text-white/60 leading-relaxed">
+                                                카카오로 로그인하면 바로 이어서 남길 수 있어요.
+                                                <br />
+                                                입력한 목표가와 기한은 그대로 유지됩니다.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => onRequireLogin?.()}
+                                                className="mt-3 w-full min-h-11 rounded-xl border border-neon-teal/30 bg-neon-teal/15 text-neon-teal font-bold text-[14px]"
+                                            >
+                                                카카오로 계속하기
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <p className="mt-2 px-1 text-[12px] sm:text-[13px] text-white/60">
+                                            {isLoggedIn ? '30초 예언 · 적중 시 성지글' : '30초 예언 · 로그인 후 그대로 이어집니다'}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>

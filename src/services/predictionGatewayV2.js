@@ -41,24 +41,34 @@ export async function loadCurrentPrice(symbol, hintPrice = 0) {
 export async function loadPredictionSnapshot(symbol, window, options = {}) {
     // BACKEND_TODO(API): GET /api/v1/symbols/{symbol}/prediction-snapshot?window=... 응답 shape로 교체.
     const normalizedWindow = WINDOW_DAYS[window] ? window : '7d';
-    const { data: authData } = await supabase.auth.getUser();
-    const currentUserId = authData?.user?.id || null;
-    const stock = await fetchStockInfo(String(symbol || ''));
-    const fromStock = Number(stock?.currentPrice || stock?.current_price || 0);
+    let currentUserId = options.currentUserId || null;
+    if (!currentUserId) {
+        const { data: authData } = await supabase.auth.getUser();
+        currentUserId = authData?.user?.id || null;
+    }
+
+    const stockIdFromOption = String(options.stockId || '');
+    let stockId = stockIdFromOption || null;
+    let fromStock = 0;
+    if (!stockId || !(Number(options.currentPrice) > 0)) {
+        const stock = await fetchStockInfo(String(symbol || ''));
+        stockId = stock?.id || stockId;
+        fromStock = Number(stock?.currentPrice || stock?.current_price || 0);
+    }
     const fromOption = Number(options.currentPrice) || 0;
     const currentPrice = Math.max(
         MIN_PRICE,
         Math.round(fromStock > 0 ? fromStock : (fromOption > 0 ? fromOption : MIN_PRICE))
     );
 
-    if (!stock?.id) {
+    if (!stockId) {
         return buildEmptySnapshot(normalizedWindow, currentPrice);
     }
 
     let query = supabase
         .from('predictions')
         .select('id, user_id, price_target, target_date, x_future_ratio, created_at')
-        .eq('stock_id', stock.id);
+        .eq('stock_id', stockId);
 
     if (normalizedWindow !== 'all') {
         const cutoff = new Date(Date.now() - WINDOW_DAYS[normalizedWindow] * 24 * 60 * 60 * 1000).toISOString();

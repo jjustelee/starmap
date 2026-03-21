@@ -131,7 +131,7 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
                     className="w-full rounded-2xl border border-white/10 bg-white/5 text-white/80 py-4 text-base font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition active:scale-95"
                 >
                     <ChevronRight className="w-4 h-4" />
-                    같은 종목 계속 보기
+                    같은 종목 다시 보기
                 </button>
                 <button
                     onClick={handleShare}
