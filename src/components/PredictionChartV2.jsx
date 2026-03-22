@@ -142,7 +142,7 @@ const PredictionChartV2 = ({
                                 </div>
                             </div>
 
-                            <div className="rounded-[20px] border border-white/10 bg-[#121212]/20 px-4 py-3">
+                            <div className="rounded-[20px] border border-white/10 bg-[#121212]/20 px-3 py-3">
                                 <div className="grid grid-cols-3 gap-3 text-left">
                                     <MiniLegend label="최저" value={formatWon(chart.minPrice)} tone="blue" />
                                     <MiniLegend label="평균" value={formatWon(chart.avgPrice)} tone="white" />
@@ -151,11 +151,11 @@ const PredictionChartV2 = ({
                             </div>
                         </>
                     ) : isWindowSyncing ? (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-center text-[15px] text-[#9CA3AF] font-medium">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-4 text-center text-[15px] text-[#9CA3AF] font-medium">
                             {WINDOW_LABELS[selectedWindow]} 예언 불러오는 중
                         </div>
                     ) : (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-center text-[15px] text-[#9CA3AF] font-medium">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-4 text-center text-[15px] text-[#9CA3AF] font-medium">
                             아직 예언 점이 없습니다.
                         </div>
                     )}

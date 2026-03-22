@@ -272,7 +272,7 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                         sampleSize={mergedSnapshot?.sampleSize}
                     />
 
-                    <div className="rounded-[22px] border border-neon-pink/20 bg-white/[0.035] px-4 py-3 shadow-[0_8px_28px_rgba(0,0,0,0.24)]">
+                    <div className="rounded-[22px] border border-neon-pink/20 bg-white/[0.035] px-3 py-3 shadow-[0_8px_28px_rgba(0,0,0,0.24)]">
                         <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                                 <p className="text-sm font-bold text-[#F3F4F6]">이 종목 예언</p>

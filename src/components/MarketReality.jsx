@@ -237,7 +237,7 @@ const MetricGauge = ({ type, analysis }) => {
         const energyRaw = analysis.supply ?? 0;
         const energy = Math.min(10, Math.max(0, (energyRaw / 1000000) + 5));
         return (
-            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1.5">
+            <div className="flex w-full shrink-0 flex-col gap-2.5">
                 <div className="grid h-1 w-full grid-cols-10 gap-0.5">
                     {[...Array(10)].map((_, i) => (
                         <div 
@@ -257,14 +257,14 @@ const MetricGauge = ({ type, analysis }) => {
             ? 'w-full bg-neon-teal shadow-[0_0_8px_#22d3ee]'
             : (analysis.level === 'mid' ? 'w-3/5 bg-yellow-400' : 'w-1/4 bg-neon-pink');
         return (
-            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1.5">
+            <div className="flex w-full shrink-0 flex-col gap-2.5">
                 <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
                     <div 
                         className={`absolute left-0 top-0 h-full transition-all duration-1000 ${fillClass}`}
                     />
                 </div>
                 <div className="flex gap-2">
-                    <span className="text-xs font-black text-[#9CA3AF]">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</span>
+                    <span className="text-xs font-black text-[#9CA3AF] whitespace-nowrap">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</span>
                 </div>
             </div>
         );
@@ -272,7 +272,7 @@ const MetricGauge = ({ type, analysis }) => {
     if (type === 'value') {
         const pos = analysis.level === 'low' ? 18 : (analysis.level === 'mid' ? 50 : 82);
         return (
-            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1.5">
+            <div className="flex w-full shrink-0 flex-col gap-2.5">
                 <div className="w-full h-1 bg-white/10 rounded-full relative">
                     <div className="absolute left-1/2 top-0 w-0.5 h-full bg-white/30 z-0"></div>
                     <div 
@@ -290,7 +290,7 @@ const MetricGauge = ({ type, analysis }) => {
         const score = Math.min(10, Math.max(0, analysis.score ?? 0));
         const pos = Math.min(90, Math.max(10, (score / 10) * 100));
         return (
-            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1">
+            <div className="flex w-full shrink-0 flex-col gap-2">
                 <div className="w-full h-1 bg-gradient-to-r from-blue-400 via-neon-teal to-red-400 rounded-full relative">
                     <div 
                         className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-white rounded-full shadow-lg z-10 transition-all duration-1000"
@@ -450,32 +450,36 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
     <div className="border-b border-white/5 last:border-0 overflow-hidden transition-all duration-300 border-x-0">
         <button 
             onClick={onToggle}
-            className="w-full flex items-center justify-between py-4.5 hover:bg-white/[0.02] transition-colors group px-1 gap-2"
+            className="w-full flex flex-col items-stretch py-6 hover:bg-white/[0.02] transition-colors group px-1 gap-2"
         >
-            <div className="flex items-center gap-3 w-full min-w-0 flex-1 pr-1">
-                <span className="material-symbols-outlined text-[#6B7280] group-hover:text-neon-teal transition-colors text-[24px] shrink-0">
-                    {icon}
-                </span>
-                <div className="text-left min-w-0 flex flex-col items-start leading-tight">
-                    <p className="text-[16px] font-bold text-[#D1D5DB] truncate w-full">{label}</p>
-                    <div className="mt-0.5 flex items-center w-full min-w-0 flex-nowrap">
-                        <span className="text-[13px] font-black text-neon-teal bg-neon-teal/10 px-2.5 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)] truncate max-w-full block">
+            {/* 상단행 (Header) - 모든 해상도에서 한 줄 배치 */}
+            <div className="flex items-center justify-between w-full min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1 pr-1">
+                    <span className="material-symbols-outlined text-[#6B7280] group-hover:text-neon-teal transition-colors text-[24px] shrink-0">
+                        {icon}
+                    </span>
+                    <div className="text-left min-w-0 flex flex-row items-center gap-2.5 leading-tight">
+                        <p className="text-[16px] font-bold text-[#D1D5DB] whitespace-nowrap">{label}</p>
+                        <span className="text-[12px] font-black text-neon-teal bg-neon-teal/10 px-2.5 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)] shrink-0">
                             {tag}
                         </span>
                     </div>
                 </div>
+                <div className="flex">
+                    <span className={`material-symbols-outlined text-[#8B92A0] transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
+                        expand_more
+                    </span>
+                </div>
             </div>
             
-            <div className="flex items-center justify-end gap-3 shrink-0">
+            {/* 하단행 (Data) - 모든 해상도에서 게이지 넓게 표시 */}
+            <div className="flex items-center w-full mt-4 px-1">
                 <MetricGauge type={type} analysis={analysis} />
-                <span className={`material-symbols-outlined text-[#8B92A0] transition-transform duration-300 shrink-0 relative right-[-2px] ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
-                    expand_more
-                </span>
             </div>
         </button>
 
         <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[600px] opacity-100 mb-6' : 'max-h-0 opacity-0 pointer-events-none'}`}>
-            <div className="bg-white/[0.05] mx-1 rounded-2xl p-4 space-y-4 border border-white/10 shadow-xl backdrop-blur-md">
+            <div className="bg-white/[0.05] mx-1 rounded-2xl p-3 space-y-4 border border-white/10 shadow-xl backdrop-blur-md">
                 <div className="space-y-1.5">
                     <p className="text-neon-teal text-xs font-black uppercase tracking-[0.2em]">Interpretation Guide</p>
                     <p className="text-[#F3F4F6] text-[13.5px] font-bold leading-relaxed">
@@ -484,11 +488,11 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4">
-                    <div className="bg-[#121212]/40 p-4 rounded-xl border border-white/10 space-y-2 shadow-inner">
+                    <div className="bg-[#121212]/40 p-3 rounded-xl border border-white/10 space-y-2 shadow-inner">
                         <p className="text-[#9CA3AF] text-xs font-black uppercase tracking-widest border-b border-white/10 pb-1">Live Formula</p>
                         <LiveFormula type={type} analysis={analysis} />
                     </div>
-                    <div className="bg-[#121212]/40 p-4 rounded-xl border border-white/10 space-y-3 shadow-inner">
+                    <div className="bg-[#121212]/40 p-3 rounded-xl border border-white/10 space-y-3 shadow-inner">
                         <p className="text-[#9CA3AF] text-xs font-black uppercase tracking-widest border-b border-white/10 pb-1 text-right">Judgment Criteria</p>
                         <CriteriaList type={type} analysis={analysis} />
                     </div>
@@ -526,7 +530,7 @@ const MarketReality = ({ kisData }) => {
         <div className="bg-white/5 backdrop-blur-2xl rounded-[28px] p-5 border border-white/10 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.6)] relative overflow-hidden mb-6 pointer-events-auto">
             <div className="absolute top-0 right-0 w-32 h-32 bg-neon-teal/5 blur-[60px] rounded-full"></div>
             
-            <div className="relative z-10 space-y-5">
+            <div className="relative z-10 space-y-4">
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
@@ -537,7 +541,7 @@ const MarketReality = ({ kisData }) => {
                         </div>
                         <span className={`text-xs font-black uppercase tracking-tighter ${statusTone}`}>{statusLabel}</span>
                     </div>
-                    <p className="text-[14px] text-[#9CA3AF] font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed">
+                    <p className="text-[14px] text-[#9CA3AF] font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed mb-1">
                         {realityStatus === 'live'
                             ? '숫자를 먼저 보고, 태그는 참고만 하세요.'
                             : (realityStatus === 'cached'
@@ -551,7 +555,7 @@ const MarketReality = ({ kisData }) => {
                     ) : null}
                 </div>
 
-                <div className="bg-[#121212]/20 rounded-2xl px-4 border border-white/5">
+                <div className="bg-[#121212]/20 rounded-2xl px-3 border border-white/5">
                     {indicators.map(ind => (
                         <IndicatorItem 
                             key={ind.type} 

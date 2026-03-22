@@ -91,7 +91,7 @@ const DistributionSummary = ({
                             </p>
                         </div>
 
-                        <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-5 py-6 mt-6 text-center">
+                        <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-3 py-4 mt-6 text-center">
                             <p className="text-[16px] font-bold text-[#F3F4F6]/72">52주 가격 데이터 준비 중</p>
                             <p className="mt-2 text-[14px] text-[#F3F4F6]/42 font-medium">실제 저점·고점이 확인되면 이 카드에 바로 반영됩니다.</p>
                         </div>
@@ -121,7 +121,7 @@ const DistributionSummary = ({
                         </p>
                     </div>
 
-                    <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-4 pt-4 pb-5 mt-6">
+                    <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-3 py-3 mt-6">
                         {/* BACKEND_TODO(API): history.low52/high52/current가 null일 경우 서버에서 fallback 값을 함께 전달. */}
                         <div className="relative w-full px-3 pt-12 pb-8">
                             <div className="relative w-full h-[3px] bg-white/10 rounded-full">
@@ -185,7 +185,7 @@ const DistributionSummary = ({
                         <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-xs font-black text-[#9CA3AF] uppercase tracking-widest">Pioneer Status</span>
                     </div>
 
-                    <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-4 pt-4 pb-5">
+                    <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-3 py-3">
                         <div className="relative w-full mt-2 px-3 pt-20 pb-8">
                             <div className="relative w-full h-[4px] bg-white/10 rounded-full">
                             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[1px] h-3 bg-white/20"></div>
@@ -257,7 +257,7 @@ const DistributionSummary = ({
                     </p>
                 </div>
 
-                <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-4 pt-4 pb-5 mt-6">
+                <div className="bg-[#121212]/20 rounded-2xl border border-white/5 px-3 py-3 mt-6">
                     <div className={`relative w-full px-3 pt-12 ${isStacked ? 'pb-6' : 'pb-6'}`}>
                         <div className="relative w-full h-[3px] bg-white/10 rounded-full">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[1px] h-3 bg-white/20"></div>

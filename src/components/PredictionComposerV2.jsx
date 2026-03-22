@@ -223,7 +223,7 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                 <button
                                     type="button"
                                     onClick={() => setIsExpanded(false)}
-                                    className="w-full min-h-11 px-4 py-3 flex items-center justify-between gap-2 border-b border-white/10 bg-[#121212]/20"
+                                    className="w-full min-h-11 px-3 py-3 flex items-center justify-between gap-2 border-b border-white/10 bg-[#121212]/20"
                                 >
                                     <div className="min-w-0 text-left">
                                     <p className="text-[17px] font-bold leading-snug text-[#F3F4F6] truncate">
