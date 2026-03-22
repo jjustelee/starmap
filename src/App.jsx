@@ -721,7 +721,7 @@ function App() {
                             {/* Search & Popular */}
                             <section ref={searchSectionRef} className="space-y-5 sm:space-y-6">
                                 <div className="relative group">
-                                    <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-neon-teal/30 to-neon-pink/30 opacity-20 blur transition duration-700 group-hover:opacity-90"></div>
+                                    <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-neon-teal/30 to-neon-pink/30 opacity-20 blur transition duration-700 group-hover:opacity-90 group-focus-within:opacity-90"></div>
                                     <div className="relative crystal-glass flex items-center rounded-2xl border-white/15 px-4 sm:px-5">
                                         <Search className="mr-3 text-[#9CA3AF] w-5 h-5" />
                                         <input
