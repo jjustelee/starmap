@@ -977,8 +977,11 @@ function App() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => signInWithKakao?.()}
-                                                                    className="min-h-10 rounded-xl border border-neon-teal/25 bg-neon-teal/10 px-3 py-2 text-[12px] font-black text-neon-teal transition hover:bg-neon-teal/15"
+                                                                    className="min-h-11 w-full rounded-xl bg-[#FEE500] hover:bg-[#FADA0A] text-[13px] font-black text-[#191919] transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2"
                                                                 >
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                        <path d="M12 3C6.48 3 2 6.36 2 10.44c0 2.66 1.76 4.98 4.38 6.3-.14.52-.9 3.34-.93 3.56 0 0-.02.16.08.22.1.06.22.02.22.02.3-.04 3.44-2.26 3.98-2.64.72.1 1.48.16 2.26.16 5.52 0 10-3.36 10-7.5S17.52 3 12 3z"/>
+                                                                    </svg>
                                                                     카카오로 계속하기
                                                                 </button>
                                                             ) : null}

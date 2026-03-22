@@ -467,8 +467,11 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                             <button
                                                 type="button"
                                                 onClick={() => onRequireLogin?.()}
-                                                className="mt-3 w-full min-h-11 rounded-xl border border-neon-teal/30 bg-neon-teal/15 text-neon-teal font-bold text-[14px]"
+                                                className="mt-3 w-full min-h-11 flex items-center justify-center gap-2 rounded-xl bg-[#FEE500] hover:bg-[#FADA0A] text-[13px] font-black text-[#191919] transition-all active:scale-[0.98] shadow-sm"
                                             >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M12 3C6.48 3 2 6.36 2 10.44c0 2.66 1.76 4.98 4.38 6.3-.14.52-.9 3.34-.93 3.56 0 0-.02.16.08.22.1.06.22.02.22.02.3-.04 3.44-2.26 3.98-2.64.72.1 1.48.16 2.26.16 5.52 0 10-3.36 10-7.5S17.52 3 12 3z"/>
+                                                </svg>
                                                 카카오로 계속하기
                                             </button>
                                         </div>
