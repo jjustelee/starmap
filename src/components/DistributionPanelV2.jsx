@@ -26,14 +26,14 @@ const DistributionPanelV2 = ({ snapshot, isLoading }) => {
         <section className="bg-white/[0.06] backdrop-blur-2xl rounded-[28px] sm:rounded-[32px] p-4 sm:p-5 border border-white/10 shadow-[0_12px_24px_-6px_rgba(0,0,0,0.5)] relative overflow-hidden pointer-events-auto">
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                    <span className="material-symbols-outlined text-neon-teal text-[24px]">analytics</span>
-                    <h2 className="text-[17px] sm:text-[19px] font-bold text-[#F3F4F6] font-brandKo tracking-tight leading-none">목표가 합의</h2>
+                    <span className="material-symbols-outlined text-neon-teal text-3xl">analytics</span>
+                    <h2 className="text-lg sm:text-xl font-bold text-[#F3F4F6] font-brandKo tracking-tight leading-none">목표가 합의</h2>
                 </div>
-                <span className="px-2 py-0.5 bg-neon-teal/10 border border-neon-teal/30 rounded text-[10px] font-bold text-neon-teal uppercase tracking-widest">예언 {sampleSize.toLocaleString()}건</span>
+                <span className="px-2 py-0.5 bg-neon-teal/10 border border-neon-teal/30 rounded text-xs font-bold text-neon-teal uppercase tracking-widest">예언 {sampleSize.toLocaleString()}건</span>
             </div>
 
             {isLoading ? (
-                <div className="text-[14px] text-[#9CA3AF] py-2 mt-4">집계 중</div>
+                <div className="text-[17px] text-[#9CA3AF] py-2 mt-4">집계 중</div>
             ) : (
                 <div className="grid grid-cols-2 gap-2 mt-4">
                     <MiniMetric icon="star" label="대표" value={modePrice} />
@@ -48,11 +48,11 @@ const DistributionPanelV2 = ({ snapshot, isLoading }) => {
 
 const MiniMetric = ({ icon, label, value, valueClass = 'text-[#F3F4F6]/92', noWrap = false }) => (
     <div className="rounded-2xl border border-white/10 bg-[#121212]/25 p-3.5 sm:p-4">
-        <p className="text-[11px] sm:text-[12px] text-[#9CA3AF] font-bold mb-1.5 inline-flex items-center gap-1">
-            <span className="material-symbols-outlined text-[13px]">{icon}</span>
+        <p className="text-xs sm:text-[15px] text-[#9CA3AF] font-bold mb-1.5 inline-flex items-center gap-1">
+            <span className="material-symbols-outlined text-sm">{icon}</span>
             {label}
         </p>
-        <p className={`text-[13px] sm:text-[14px] ${valueClass} font-bold font-brandEn leading-snug ${noWrap ? 'whitespace-nowrap text-[12px] sm:text-[13px]' : ''}`}>{value}</p>
+        <p className={`text-sm sm:text-[17px] ${valueClass} font-bold font-brandEn leading-snug ${noWrap ? 'whitespace-nowrap text-[15px] sm:text-sm' : ''}`}>{value}</p>
     </div>
 );
 

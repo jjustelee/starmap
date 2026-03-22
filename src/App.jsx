@@ -41,7 +41,7 @@ const HeaderProfileButton = () => {
             {isLoggedIn && profile?.avatar ? (
                 <img src={profile.avatar} alt="P" className="w-full h-full object-cover" />
             ) : isLoggedIn && profile?.nickname ? (
-                <span className="text-[14px] font-black text-neon-teal">{profile.nickname.charAt(0)}</span>
+                <span className="text-base font-black text-neon-teal">{profile.nickname.charAt(0)}</span>
             ) : (
                 <User className="w-5 h-5 text-[#D1D5DB]" />
             )}
@@ -675,8 +675,8 @@ function App() {
                             <Target className="w-7 h-7 text-neon-teal group-hover:scale-110 transition-transform" />
                             <div className="leading-none">
                                 <h1 className="flex items-end gap-2">
-                                    <span className="font-brandKo text-[22px] sm:text-[24px] font-extrabold tracking-[-0.03em] text-[#D1D5DB] group-hover:text-[#F3F4F6] transition-colors">콕콕</span>
-                                    <span className="font-brandEn text-[22px] sm:text-[24px] font-extrabold tracking-[0.05em] uppercase text-neon-teal/90 group-hover:text-neon-teal transition-colors">KOKOK</span>
+                                    <span className="font-brandKo text-2xl sm:text-[26px] font-extrabold tracking-[-0.03em] text-[#D1D5DB] group-hover:text-[#F3F4F6] transition-colors">콕콕</span>
+                                    <span className="font-brandEn text-2xl sm:text-[26px] font-extrabold tracking-[0.05em] uppercase text-neon-teal/90 group-hover:text-neon-teal transition-colors">KOKOK</span>
                                 </h1>
                             </div>
                         </div>
@@ -694,27 +694,27 @@ function App() {
                             {!searchQuery && (
                                 <section className="space-y-6 sm:space-y-8 pt-2 sm:pt-4 text-center">
                                     <div className="space-y-3 sm:space-y-4">
-                                        <p className="text-[11px] font-bold tracking-[0.32em] text-[#9CA3AF] uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
-                                        <h2 className="text-[30px] sm:text-4xl font-extrabold leading-tight tracking-tight text-[#F3F4F6] md:text-5xl">
+                                        <p className="text-[13px] font-bold tracking-[0.32em] text-[#9CA3AF] uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
+                                        <h2 className="text-[34px] sm:text-4xl font-extrabold leading-tight tracking-tight text-[#F3F4F6] md:text-5xl">
                                             사람들이 보는<br /> 목표가를 확인하고<br />
                                             <span className="bg-gradient-to-r from-neon-teal to-neon-pink bg-clip-text text-transparent">
                                                 내 예언 남기기
                                             </span>
                                         </h2>
-                                        <p className="mx-auto max-w-md text-[13px] sm:text-sm leading-5 sm:leading-6 text-[#9CA3AF] md:text-base">
+                                        <p className="mx-auto max-w-md text-[15px] sm:text-sm leading-5 sm:leading-6 text-[#9CA3AF] md:text-base">
                                             적중 시 성지글
                                         </p>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto">
                                         <button
                                             onClick={navigateToDiscovery}
-                                            className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-extrabold text-[#F3F4F6] shadow-glowPink transition hover:scale-[1.01] active:scale-95"
+                                            className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-4 sm:px-5 py-3.5 sm:py-4 text-[15px] sm:text-sm font-extrabold text-[#F3F4F6] shadow-glowPink transition hover:scale-[1.01] active:scale-95"
                                         >
                                             목표가 보러가기
                                         </button>
                                         <button
                                             onClick={() => navigate('/sacred')}
-                                            className="rounded-2xl border border-white/12 bg-white/5 px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-bold text-[#D1D5DB] transition hover:bg-white/10 active:scale-95"
+                                            className="rounded-2xl border border-white/12 bg-white/5 px-4 sm:px-5 py-3.5 sm:py-4 text-[15px] sm:text-sm font-bold text-[#D1D5DB] transition hover:bg-white/10 active:scale-95"
                                         >
                                             최근 성지글 보기
                                         </button>
@@ -731,7 +731,7 @@ function App() {
                                         <input
                                             ref={searchInputRef}
                                             aria-label="종목 검색"
-                                            className="w-full bg-transparent py-4 sm:py-5 text-[15px] sm:text-base font-semibold text-[#F3F4F6] placeholder:text-[#9CA3AF] focus:outline-none"
+                                            className="w-full bg-transparent py-4 sm:py-5 text-[17px] sm:text-base font-semibold text-[#F3F4F6] placeholder:text-[#9CA3AF] focus:outline-none"
                                             placeholder="종목명을 검색해 목표가를 확인하세요"
                                             type="text"
                                             value={searchQuery}
@@ -752,7 +752,7 @@ function App() {
                                 <div className="space-y-4">
                                     {searchQuery ? (
                                         <div className="space-y-2">
-                                            <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">
+                                            <p className="px-1 text-[13px] font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">
                                                 검색 결과 {searchResults.length > 0 && `(${searchResults.length.toLocaleString()}개)`}
                                             </p>
                                             <div className="grid gap-2">
@@ -795,7 +795,7 @@ function App() {
                                                                     {stock.currentPrice > 0 && (
                                                                         <div className="text-right mr-4 ml-auto">
                                                                             <p className="text-sm font-black text-[#F3F4F6]">{stock.currentPrice.toLocaleString()}</p>
-                                                                            <p className={`text-[10px] font-bold ${stock.priceChange >= 0 ? 'text-[#FF86C3]' : 'text-[#7BD1FA]'}`}>
+                                                                            <p className={`text-xs font-bold ${stock.priceChange >= 0 ? 'text-[#FF86C3]' : 'text-[#7BD1FA]'}`}>
                                                                                 {stock.priceChange >= 0 ? '▲' : '▼'} {Math.abs(stock.priceChange).toLocaleString()} ({stock.priceChangeRate.toFixed(2)}%)
                                                                             </p>
                                                                         </div>
@@ -814,21 +814,21 @@ function App() {
                                                 ) : (
                                                     <div className="py-12 text-center crystal-glass rounded-2xl border-white/5 bg-white/5">
                                                         <p className="text-[#6B7280] font-bold mb-1">검색 결과 없음</p>
-                                                        <p className="text-[11px] text-[#6B7280]">종목명이나 코드를 다시 확인해 주세요</p>
+                                                        <p className="text-[13px] text-[#6B7280]">종목명이나 코드를 다시 확인해 주세요</p>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-3">
-                                            <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">인기 종목</p>
+                                            <p className="px-1 text-[13px] font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">인기 종목</p>
                                             <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
                                                 {popularStocks.map((stock) => (
                                                     <button
                                                         key={stock.symbol}
                                                         onClick={() => handleStockClick(stock)}
                                                         type="button"
-                                                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm font-semibold text-[#D1D5DB] transition hover:border-neon-teal/40 hover:bg-white/10"
+                                                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 sm:px-4 py-1.5 sm:py-2 text-[15px] sm:text-sm font-semibold text-[#D1D5DB] transition hover:border-neon-teal/40 hover:bg-white/10"
                                                     >
                                                         {stock.name}
                                                     </button>
@@ -855,7 +855,7 @@ function App() {
                                 <section className="space-y-4 sm:space-y-5">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-widest text-[#9CA3AF]">홈 커뮤니티</p>
+                                            <p className="text-[13px] font-bold uppercase tracking-widest text-[#9CA3AF]">홈 커뮤니티</p>
                                             <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F4F6]">방금 박제된 예언</h3>
                                         </div>
                                         <span className="text-sm font-bold text-[#9CA3AF]">최근 7일 기준</span>
@@ -870,10 +870,10 @@ function App() {
                                                     type="button"
                                                     className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-neon-teal/40 hover:bg-white/10"
                                                 >
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-teal/70">최근 7일 많이 찍힘</p>
+                                                    <p className="text-xs font-black uppercase tracking-[0.18em] text-neon-teal/70">최근 7일 많이 찍힘</p>
                                                     <p className="mt-1 text-sm font-black text-[#F3F4F6]">{stock.stockName}</p>
-                                                    <p className="mt-1 text-[11px] font-bold text-[#9CA3AF]">{stock.predictionCount}건 찍힘</p>
-                                                    <p className="mt-2 text-[11px] font-black text-neon-teal">목표가 보기 →</p>
+                                                    <p className="mt-1 text-[13px] font-bold text-[#9CA3AF]">{stock.predictionCount}건 찍힘</p>
+                                                    <p className="mt-2 text-[13px] font-black text-neon-teal">목표가 보기 →</p>
                                                 </button>
                                             ))}
                                         </div>
@@ -918,8 +918,8 @@ function App() {
                                                     >
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FF86C3]/75">방금 박제</p>
-                                                                <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getPromotionStatusClasses(item.promotionStatus)}`}>
+                                                                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FF86C3]/75">방금 박제</p>
+                                                                <span className={`rounded-full border px-2 py-1 text-xs font-black uppercase tracking-[0.14em] ${getPromotionStatusClasses(item.promotionStatus)}`}>
                                                                     {item.promotionLabel}
                                                                 </span>
                                                             </div>
@@ -930,8 +930,8 @@ function App() {
                                                         </div>
                                                         <div className="shrink-0 text-right">
                                                             <p className="text-base font-black text-[#F3F4F6]">{Number(item.targetPrice || 0).toLocaleString()}원</p>
-                                                            <p className="mt-1 text-[10px] font-bold text-[#6B7280]">~ {formatSacredDate(item.targetDate)}</p>
-                                                            <p className={`mt-2 text-[11px] font-black ${item.promotionStatus === 'sacred' ? 'text-[#FF86C3]' : 'text-neon-teal'}`}>
+                                                            <p className="mt-1 text-xs font-bold text-[#6B7280]">~ {formatSacredDate(item.targetDate)}</p>
+                                                            <p className={`mt-2 text-[13px] font-black ${item.promotionStatus === 'sacred' ? 'text-[#FF86C3]' : 'text-neon-teal'}`}>
                                                                 {item.promotionStatus === 'sacred' ? '성지글 보러 →' : '예언 남기기 →'}
                                                             </p>
                                                         </div>
@@ -946,7 +946,7 @@ function App() {
                                                                     type="button"
                                                                     onClick={(event) => handlePredictionReactionClick(event, item, option.key)}
                                                                     disabled={reactionBusyPredictionId === item.id}
-                                                                    className={`rounded-full border px-2.5 sm:px-3 py-1.5 text-[11px] font-bold transition ${isSelected
+                                                                    className={`rounded-full border px-2.5 sm:px-3 py-1.5 text-[13px] font-bold transition ${isSelected
                                                                         ? 'border-neon-pink/40 bg-neon-pink/15 text-[#FF86C3]'
                                                                         : 'border-white/10 bg-white/5 text-[#9CA3AF] hover:border-neon-teal/30 hover:text-[#F3F4F6]'
                                                                     } ${reactionBusyPredictionId === item.id ? 'opacity-60' : ''}`}
@@ -962,7 +962,7 @@ function App() {
                                                                     ...prev,
                                                                     [item.id]: true
                                                                 }))}
-                                                                className="rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-[11px] font-bold text-[#9CA3AF] transition hover:border-white/20 hover:text-[#D1D5DB]"
+                                                                className="rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-[13px] font-bold text-[#9CA3AF] transition hover:border-white/20 hover:text-[#D1D5DB]"
                                                             >
                                                                 반응 더 보기
                                                             </button>
@@ -970,14 +970,14 @@ function App() {
                                                     </div>
             {predictionReactionFeedback[item.id] ? (
                                                         <div className="mt-2 space-y-2">
-                                                            <p className="text-[11px] font-bold text-[#9CA3AF]">
+                                                            <p className="text-[13px] font-bold text-[#9CA3AF]">
                                                                 {predictionReactionFeedback[item.id]}
                                                             </p>
                                                             {predictionReactionLoginPromptId === item.id ? (
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => signInWithKakao?.()}
-                                                                    className="min-h-11 w-full rounded-xl bg-[#FEE500] hover:bg-[#FADA0A] text-[13px] font-black text-[#191919] transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2"
+                                                                    className="min-h-11 w-full rounded-xl bg-[#FEE500] hover:bg-[#FADA0A] text-[15px] font-black text-[#191919] transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2"
                                                                 >
                                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                                                         <path d="M12 3C6.48 3 2 6.36 2 10.44c0 2.66 1.76 4.98 4.38 6.3-.14.52-.9 3.34-.93 3.56 0 0-.02.16.08.22.1.06.22.02.22.02.3-.04 3.44-2.26 3.98-2.64.72.1 1.48.16 2.26.16 5.52 0 10-3.36 10-7.5S17.52 3 12 3z"/>
@@ -1011,7 +1011,7 @@ function App() {
                                     <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-neon-teal/10 blur-3xl"></div>
                                     <div className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
                                         <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
+                                            <p className="text-[13px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
                                             <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F4F6] uppercase leading-none">지금 뜨는 종목</h3>
                                         </div>
                                         <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
@@ -1020,10 +1020,10 @@ function App() {
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <p className="text-sm font-bold text-[#9CA3AF]">{popularStocks[0].name}</p>
-                                                <p className="text-[28px] sm:text-3xl font-black text-[#F3F4F6]">
+                                                <p className="text-[32px] sm:text-3xl font-black text-[#F3F4F6]">
                                                     {popularStocks[0].currentPrice > 0 ? popularStocks[0].currentPrice.toLocaleString() : '시세 동기화 중'}
                                                 </p>
-                                                <p className="text-[10px] font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
+                                                <p className="text-xs font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
                                                     {popularStocks[0].currentPrice > 0 ? (popularStocks[0].quoteStatusLabel || '최근값') : '갱신중'}
                                                 </p>
                                                 <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-[#FF86C3]' : 'text-[#7BD1FA]'}`}>
@@ -1031,7 +1031,7 @@ function App() {
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[11px] font-black text-[#FF86C3] uppercase tracking-widest">기록 수</p>
+                                                <p className="text-[13px] font-black text-[#FF86C3] uppercase tracking-widest">기록 수</p>
                                                 <p className="text-xl font-black text-[#F3F4F6]">{popularStocks[0].predictionCount.toLocaleString()}건</p>
                                             </div>
                                         </div>
@@ -1076,7 +1076,7 @@ function App() {
                                                         )}
                                                         <div>
                                                             <p className={`text-xs font-black tracking-[0.18em] uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-[#FF86C3]' : 'text-neon-teal'}`}>성지글</p>
-                                                            <p className="text-[11px] font-bold text-[#9CA3AF]">{post.authorNickname}</p>
+                                                            <p className="text-[13px] font-bold text-[#9CA3AF]">{post.authorNickname}</p>
                                                         </div>
                                                     </div>
                                                     <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-[#9CA3AF]">적중 완료</span>
@@ -1163,7 +1163,7 @@ function App() {
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'home' ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <Home className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    <span className="text-[10px] font-black tracking-[0.12em]">홈</span>
+                                    <span className="text-xs font-black tracking-[0.12em]">홈</span>
                                 </button>
                             </li>
                             <li className="flex justify-center">
@@ -1172,7 +1172,7 @@ function App() {
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition hover:text-[#F3F4F6] active:scale-95 ${(view === 'home' && searchQuery.trim()) ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <Search className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    <span className="text-[10px] font-bold tracking-[0.12em]">검색</span>
+                                    <span className="text-xs font-bold tracking-[0.12em]">검색</span>
                                 </button>
                             </li>
                             <li className="relative flex justify-center">
@@ -1184,7 +1184,7 @@ function App() {
                                     <div className="absolute -inset-2 rounded-full bg-neon-pink/20 opacity-60 blur-xl"></div>
                                     <div className="relative flex flex-col items-center leading-none">
                                         <Pencil className="w-6 h-6 sm:w-7 sm:h-7" />
-                                        <span className="mt-0.5 text-[8px] sm:text-[9px] font-black">예언하기</span>
+                                        <span className="mt-0.5 text-xs sm:text-xs font-black">예언하기</span>
                                     </div>
                                 </button>
                             </li>
@@ -1194,7 +1194,7 @@ function App() {
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'sacred' || view === 'sacred-detail' ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    <span className="text-[10px] font-bold tracking-[0.12em]">성지글</span>
+                                    <span className="text-xs font-bold tracking-[0.12em]">성지글</span>
                                 </button>
                             </li>
                             <li className="flex justify-center">
@@ -1203,7 +1203,7 @@ function App() {
                                     className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'mypage' ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    <span className="text-[10px] font-bold tracking-[0.12em]">내 기록</span>
+                                    <span className="text-xs font-bold tracking-[0.12em]">내 기록</span>
                                 </button>
                             </li>
                         </ul>

@@ -76,8 +76,8 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
 
             {/* Success Message */}
             <div className="space-y-2.5 sm:space-y-3">
-                <h2 className="text-[30px] sm:text-4xl font-black text-[#F3F4F6] tracking-tight">예언 박제 완료!</h2>
-                <p className="text-[#9CA3AF] text-[14px] sm:text-base leading-6 sm:leading-relaxed">
+                <h2 className="text-4xl sm:text-4xl font-black text-[#F3F4F6] tracking-tight">예언 박제 완료!</h2>
+                <p className="text-[#9CA3AF] text-[17px] sm:text-base leading-6 sm:leading-relaxed">
                     이제 이 예언은 기록에 남았습니다.<br />
                     기한 종가가 맞으면 <span className="text-neon-pink font-bold">성지글</span>로 올라갑니다.
                 </p>
@@ -90,30 +90,30 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
                         <p className="text-xs font-bold text-[#9CA3AF] uppercase tracking-widest">{stock.symbol}</p>
                         <h3 className="text-lg sm:text-xl font-black text-[#F3F4F6]">{stock.name}</h3>
                     </div>
-                    <p className="text-[10px] font-bold text-neon-teal bg-neon-teal/10 px-2 py-1 rounded">기록 완료</p>
+                    <p className="text-xs font-bold text-neon-teal bg-neon-teal/10 px-2 py-1 rounded">기록 완료</p>
                 </div>
 
                 <div className="h-px w-full bg-white/10"></div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="text-left">
-                        <p className="text-[11px] font-bold text-[#6B7280] uppercase">기록 목표가</p>
+                        <p className="text-xs font-bold text-[#6B7280] uppercase">기록 목표가</p>
                         <p className="text-lg sm:text-xl font-black text-neon-pink">{targetPrice.toLocaleString()}원</p>
                     </div>
                     <div className="text-left">
-                        <p className="text-[11px] font-bold text-[#6B7280] uppercase">현재가</p>
+                        <p className="text-xs font-bold text-[#6B7280] uppercase">현재가</p>
                         <p className="text-lg sm:text-xl font-black text-[#F3F4F6]">
                             {latestPrice > 0 ? `${latestPrice.toLocaleString()}원` : '시세 동기화 중'}
                         </p>
-                        <p className="mt-1 text-[10px] font-bold text-[#9CA3AF] uppercase tracking-[0.14em]">
+                        <p className="mt-1 text-xs font-bold text-[#9CA3AF] uppercase tracking-[0.14em]">
                             {latestPrice > 0 ? latestQuoteStatusLabel : '갱신중'}
                         </p>
                     </div>
                 </div>
 
                 <div className="rounded-xl border border-white/10 bg-[#121212]/20 px-3 py-2 text-left">
-                    <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-[0.16em]">판정 기준</p>
-                    <p className="mt-1 text-[13px] font-bold text-[#D1D5DB]">기한 종가 기준으로 최종 판정됩니다</p>
+                    <p className="text-xs font-bold text-[#9CA3AF] uppercase tracking-[0.16em]">판정 기준</p>
+                    <p className="mt-1 text-sm font-bold text-[#D1D5DB]">기한 종가 기준으로 최종 판정됩니다</p>
                 </div>
             </div>
 
@@ -141,19 +141,19 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
                     예언 공유하기
                 </button>
                 {shareFeedback && (
-                    <p className="text-center text-[12px] font-bold text-[#9CA3AF]">
+                    <p className="text-center text-[15px] font-bold text-[#9CA3AF]">
                         {shareFeedback}
                     </p>
                 )}
                 <button
                     onClick={onHome}
-                    className="w-full text-center text-[14px] font-bold text-[#9CA3AF] hover:text-[#F3F4F6] transition active:scale-95 pt-1"
+                    className="w-full text-center text-[17px] font-bold text-[#9CA3AF] hover:text-[#F3F4F6] transition active:scale-95 pt-1"
                 >
                     홈으로
                 </button>
             </div>
 
-            <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-[0.4em]">
+            <p className="text-xs font-black text-[#6B7280] uppercase tracking-[0.4em]">
                 이제 이 기록도 성지 후보입니다
             </p>
         </div>

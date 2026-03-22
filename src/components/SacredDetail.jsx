@@ -179,7 +179,7 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
                 </button>
             </div>
             {shareFeedback ? (
-                <p className="text-right -mt-3 text-[12px] font-bold text-[#9CA3AF]">
+                <p className="text-right -mt-3 text-[15px] font-bold text-[#9CA3AF]">
                     {shareFeedback}
                 </p>
             ) : null}
@@ -190,7 +190,7 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
                     <BadgeCheck className="w-3 h-3" />
                     성지 입성 기록
                 </div>
-                <h2 className="text-[30px] sm:text-4xl font-black text-[#F3F4F6] tracking-tight leading-tight px-2 sm:px-4">
+                <h2 className="text-4xl sm:text-4xl font-black text-[#F3F4F6] tracking-tight leading-tight px-2 sm:px-4">
                     {post.stockName} {Number(post.targetPrice).toLocaleString()}원 적중
                 </h2>
                 <p className="text-[#9CA3AF] font-bold uppercase tracking-widest text-xs">작성자 {post.authorNickname} • {formatSacredDate(post.hitDate)} 적중</p>
@@ -200,12 +200,12 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 sm:pb-4">
                 <div className="crystal-glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-2">
                     <Target className="w-5 h-5 text-neon-teal mb-3 sm:mb-4" />
-                    <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest">목표가</p>
+                    <p className="text-xs font-bold text-[#9CA3AF] uppercase tracking-widest">목표가</p>
                     <p className="text-2xl font-black text-[#F3F4F6]">{Number(post.targetPrice).toLocaleString()}<span className="text-sm ml-1 text-[#6B7280]">원</span></p>
                 </div>
                 <div className="crystal-glass rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-2">
                     <TrendingUp className="w-5 h-5 text-neon-pink mb-3 sm:mb-4" />
-                    <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-widest">적중 난이도</p>
+                    <p className="text-xs font-bold text-[#9CA3AF] uppercase tracking-widest">적중 난이도</p>
                     <p className="text-2xl font-black text-[#F3F4F6]">{post.judgmentStatus === 'HIT_EXACT' ? '전설급' : '근접 적중'}</p>
                 </div>
             </div>
@@ -228,8 +228,8 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
                         </div>
                         <div>
                             <p className="text-xs font-black text-neon-teal uppercase tracking-widest">{formatSacredDate(post.createdAt)}</p>
-                            <h4 className="text-[16px] sm:text-lg font-black text-[#F3F4F6] mt-1">목표가 박제 완료</h4>
-                            <p className="text-[13px] sm:text-sm text-[#9CA3AF] mt-1 leading-relaxed">
+                            <h4 className="text-[19px] sm:text-lg font-black text-[#F3F4F6] mt-1">목표가 박제 완료</h4>
+                            <p className="text-sm sm:text-sm text-[#9CA3AF] mt-1 leading-relaxed">
                                 작성자가 {post.stockName} {Number(post.targetPrice).toLocaleString()}원을 예측하며<br />
                                 최초 기록을 남겼습니다.
                             </p>
@@ -243,7 +243,7 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
                         <div>
                             <p className="text-xs font-black text-neon-pink uppercase tracking-widest">{formatSacredDate(post.hitDate)}</p>
                             <h4 className="text-lg sm:text-xl font-black text-[#F3F4F6] mt-1">목표가 도달 (성지 등극)</h4>
-                            <p className="text-[13px] sm:text-sm text-[#9CA3AF] mt-1 leading-relaxed">
+                            <p className="text-sm sm:text-sm text-[#9CA3AF] mt-1 leading-relaxed">
                                 실제 종가 {Number(post.currentOrHitPrice).toLocaleString()}원이 기준에 들어와<br />
                                 이 기록은 영속적인 **성지글**이 되었습니다.
                             </p>
@@ -256,10 +256,10 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
             <div className="rounded-[1.6rem] border border-white/10 bg-white/5 p-4 sm:p-5 space-y-3.5">
                 <div className="flex items-center justify-between gap-3">
                     <div>
-                        <p className="text-[12px] sm:text-[13px] font-black text-neon-teal/70 uppercase tracking-[0.18em]">축하 반응</p>
-                        <p className="text-[11px] sm:text-[12px] text-[#9CA3AF] mt-1">성지 기록에 짧고 가볍게 축하를 남겨보세요</p>
+                        <p className="text-[15px] sm:text-sm font-black text-neon-teal/70 uppercase tracking-[0.18em]">축하 반응</p>
+                        <p className="text-xs sm:text-[15px] text-[#9CA3AF] mt-1">성지 기록에 짧고 가볍게 축하를 남겨보세요</p>
                     </div>
-                    <span className="text-[11px] sm:text-[12px] font-bold text-neon-teal/40 shrink-0">
+                    <span className="text-xs sm:text-[15px] font-bold text-neon-teal/40 shrink-0">
                         {Number(post.totalReactionCount || 0)}개 반응
                     </span>
                 </div>
@@ -273,7 +273,7 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
                                 key={option.key}
                                 type="button"
                                 onClick={() => handleReaction(option.key)}
-                                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-black transition ${
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-[15px] font-black transition ${
                                     isActive
                                         ? 'border-neon-pink/40 bg-neon-pink/15 text-neon-pink'
                                         : 'border-white/10 bg-[#121212]/20 text-[#D1D5DB] hover:border-white/20 hover:text-[#F3F4F6]'
@@ -281,7 +281,7 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
                             >
                                 <span>{option.label}</span>
                                 {count > 0 ? (
-                                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none ${isActive ? 'bg-neon-pink/15 text-neon-pink' : 'bg-white/5 text-[#9CA3AF]'}`}>
+                                    <span className={`rounded-full px-1.5 py-0.5 text-xs leading-none ${isActive ? 'bg-neon-pink/15 text-neon-pink' : 'bg-white/5 text-[#9CA3AF]'}`}>
                                         {count}
                                     </span>
                                 ) : null}
@@ -292,12 +292,12 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
 
                 {reactionFeedback ? (
                     <div className="pt-0.5 space-y-2">
-                        <p className="text-[11px] sm:text-[12px] font-bold text-[#9CA3AF]">{reactionFeedback}</p>
+                        <p className="text-xs sm:text-[15px] font-bold text-[#9CA3AF]">{reactionFeedback}</p>
                         {showReactionLoginPrompt ? (
                             <button
                                 type="button"
                                 onClick={() => signInWithKakao?.()}
-                                className="min-h-11 w-full flex items-center justify-center gap-2 rounded-xl bg-[#FEE500] hover:bg-[#FADA0A] text-[13px] font-black text-[#191919] transition-all active:scale-[0.98] shadow-sm"
+                                className="min-h-11 w-full flex items-center justify-center gap-2 rounded-xl bg-[#FEE500] hover:bg-[#FADA0A] text-sm font-black text-[#191919] transition-all active:scale-[0.98] shadow-sm"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M12 3C6.48 3 2 6.36 2 10.44c0 2.66 1.76 4.98 4.38 6.3-.14.52-.9 3.34-.93 3.56 0 0-.02.16.08.22.1.06.22.02.22.02.3-.04 3.44-2.26 3.98-2.64.72.1 1.48.16 2.26.16 5.52 0 10-3.36 10-7.5S17.52 3 12 3z"/>
@@ -310,17 +310,17 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
             </div>
 
             <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-                <p className="text-[12px] sm:text-[13px] font-bold text-[#9CA3AF]">이 성지 기록을 봤다면, 이제 당신 목표가도 남길 차례입니다.</p>
+                <p className="text-[15px] sm:text-sm font-bold text-[#9CA3AF]">이 성지 기록을 봤다면, 이제 당신 목표가도 남길 차례입니다.</p>
                 <button
                     type="button"
                     onClick={() => onPredictStock?.(post.stockSymbol)}
-                    className="mt-3 w-full min-h-11 rounded-2xl border border-neon-teal/35 bg-neon-teal/10 text-[14px] sm:text-[15px] font-black text-neon-teal transition hover:bg-neon-teal/15"
+                    className="mt-3 w-full min-h-11 rounded-2xl border border-neon-teal/35 bg-neon-teal/10 text-[17px] sm:text-base font-black text-neon-teal transition hover:bg-neon-teal/15"
                 >
                     나도 이 종목 예언 남기기
                 </button>
             </div>
 
-            <p className="text-center text-[11px] font-bold text-[#6B7280] uppercase tracking-[0.4em] pb-8">
+            <p className="text-center text-xs font-bold text-[#6B7280] uppercase tracking-[0.4em] pb-8">
                 성지는 계속 쌓입니다
             </p>
         </div>

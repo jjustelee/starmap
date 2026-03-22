@@ -18,7 +18,7 @@ export const StockDetailContent = (props) => {
             <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
                 <div className="w-16 h-16 border-4 border-white/10 border-t-neon-pink rounded-full animate-spin mb-6"></div>
                 <h2 className="text-xl font-black text-[#D1D5DB] mb-2 font-brandEn tracking-tighter uppercase italic">Scanning Ecosystem...</h2>
-                <p className="text-[#9CA3AF] text-[13px] font-medium leading-relaxed max-w-[240px]">
+                <p className="text-[#9CA3AF] text-sm font-medium leading-relaxed max-w-[240px]">
                     데이터베이스에 접속하여 실시간 <br />종목 및 예측 데이터를 수집 중입니다.
                 </p>
             </div>
@@ -32,7 +32,7 @@ export const StockDetailContent = (props) => {
                     <span className="text-neon-pink text-3xl font-black">!</span>
                 </div>
                 <h2 className="text-xl font-black text-[#D1D5DB] mb-2 font-brandKo tracking-tight">종목을 찾을 수 없습니다</h2>
-                <p className="text-[#9CA3AF] text-[13px] font-medium leading-relaxed max-w-[280px] mb-8">
+                <p className="text-[#9CA3AF] text-sm font-medium leading-relaxed max-w-[280px] mb-8">
                     해당 종목의 데이터를 불러오는데 실패했거나 <br />유효하지 않은 종목 코드입니다.
                 </p>
                 <button

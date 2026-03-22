@@ -269,12 +269,12 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                     <div className="rounded-[22px] border border-neon-pink/20 bg-white/[0.035] px-4 py-3 shadow-[0_8px_28px_rgba(0,0,0,0.24)]">
                         <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                                <p className="text-[13px] font-bold text-[#F3F4F6]">이 종목 예언</p>
-                                <p className="mt-1 text-[12px] font-bold text-[#9CA3AF]">
+                                <p className="text-sm font-bold text-[#F3F4F6]">이 종목 예언</p>
+                                <p className="mt-1 text-[15px] font-bold text-[#9CA3AF]">
                                     30초 예언
                                 </p>
                             </div>
-                            <p className="text-[12px] font-bold text-neon-pink shrink-0">적중 시 성지글</p>
+                            <p className="text-[15px] font-bold text-neon-pink shrink-0">적중 시 성지글</p>
                         </div>
                     </div>
 
@@ -357,9 +357,9 @@ function TargetConsensusSummary({ currentPrice, stats, sampleSize }) {
 
     return (
         <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-5 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-            <p className="text-[13px] font-bold text-[#9CA3AF]">종목 요약</p>
-            <p className="mt-2 text-[22px] sm:text-[24px] font-extrabold leading-none text-[#F3F4F6]">{headline}</p>
-            <p className="mt-2 text-[13px] sm:text-[14px] font-bold text-[#D1D5DB]">{subline}</p>
+            <p className="text-sm font-bold text-[#9CA3AF]">종목 요약</p>
+            <p className="mt-2 text-[26px] sm:text-3xl font-extrabold leading-none text-[#F3F4F6]">{headline}</p>
+            <p className="mt-2 text-sm sm:text-[17px] font-bold text-[#D1D5DB]">{subline}</p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
                 <SummaryMetric label="현재가" value={hasCurrentPrice ? formatSummaryWon(currentPrice) : '-'} tone="teal" />
                 <SummaryMetric label="대표 목표가" value={hasAnchorPrice ? formatSummaryWon(anchorPrice) : '-'} tone="amber" />
@@ -389,8 +389,8 @@ function SummaryMetric({ label, value, tone }) {
 
     return (
         <div className={`rounded-2xl border px-3 py-3 ${toneClass}`}>
-            <p className="text-[11px] text-[#9CA3AF] font-bold">{label}</p>
-            <p className={`mt-1 text-[14px] font-bold leading-tight ${valueClass}`}>{value}</p>
+            <p className="text-xs text-[#9CA3AF] font-bold">{label}</p>
+            <p className={`mt-1 text-[17px] font-bold leading-tight ${valueClass}`}>{value}</p>
         </div>
     );
 }
