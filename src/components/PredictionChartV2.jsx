@@ -142,7 +142,7 @@ const PredictionChartV2 = ({
                                 </div>
                             </div>
 
-                            <div className="rounded-[20px] border border-white/10 bg-[#121212]/20 px-3 py-3">
+                            <div>
                                 <div className="grid grid-cols-3 gap-3 text-left">
                                     <MiniLegend label="최저" value={formatWon(chart.minPrice)} tone="blue" />
                                     <MiniLegend label="평균" value={formatWon(chart.avgPrice)} tone="white" />
@@ -175,7 +175,7 @@ function MiniLegend({ label, value, tone }) {
     return (
         <div className="rounded-2xl border border-white/10 bg-[#121212]/20 px-3 py-3">
             <p className="text-xs text-[#9CA3AF] font-bold whitespace-nowrap leading-none">{label}</p>
-            <p className={`mt-1 text-sm font-bold ${valueClass}`}>{value}</p>
+            <p className={`mt-1 text-[13px] font-medium ${valueClass}`}>{value}</p>
         </div>
     );
 }
