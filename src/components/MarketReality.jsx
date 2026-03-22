@@ -237,7 +237,7 @@ const MetricGauge = ({ type, analysis }) => {
         const energyRaw = analysis.supply ?? 0;
         const energy = Math.min(10, Math.max(0, (energyRaw / 1000000) + 5));
         return (
-            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1.5">
+            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1.5">
                 <div className="grid h-1 w-full grid-cols-10 gap-0.5">
                     {[...Array(10)].map((_, i) => (
                         <div 
@@ -257,7 +257,7 @@ const MetricGauge = ({ type, analysis }) => {
             ? 'w-full bg-neon-teal shadow-[0_0_8px_#22d3ee]'
             : (analysis.level === 'mid' ? 'w-3/5 bg-yellow-400' : 'w-1/4 bg-neon-pink');
         return (
-            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1.5">
+            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1.5">
                 <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
                     <div 
                         className={`absolute left-0 top-0 h-full transition-all duration-1000 ${fillClass}`}
@@ -272,7 +272,7 @@ const MetricGauge = ({ type, analysis }) => {
     if (type === 'value') {
         const pos = analysis.level === 'low' ? 18 : (analysis.level === 'mid' ? 50 : 82);
         return (
-            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1.5">
+            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1.5">
                 <div className="w-full h-1 bg-white/10 rounded-full relative">
                     <div className="absolute left-1/2 top-0 w-0.5 h-full bg-white/30 z-0"></div>
                     <div 
@@ -290,7 +290,7 @@ const MetricGauge = ({ type, analysis }) => {
         const score = Math.min(10, Math.max(0, analysis.score ?? 0));
         const pos = Math.min(90, Math.max(10, (score / 10) * 100));
         return (
-            <div className="flex w-[118px] min-[380px]:w-[140px] flex-col items-end gap-1">
+            <div className="flex w-[120px] shrink-0 flex-col items-end gap-1">
                 <div className="w-full h-1 bg-gradient-to-r from-blue-400 via-neon-teal to-red-400 rounded-full relative">
                     <div 
                         className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-white rounded-full shadow-lg z-10 transition-all duration-1000"
@@ -450,25 +450,25 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
     <div className="border-b border-white/5 last:border-0 overflow-hidden transition-all duration-300 border-x-0">
         <button 
             onClick={onToggle}
-            className="w-full flex flex-col min-[340px]:flex-row items-start min-[340px]:items-center justify-between py-4 min-[380px]:py-5 hover:bg-white/[0.02] transition-colors group px-1 gap-3 min-[340px]:gap-0"
+            className="w-full flex items-center justify-between py-4.5 hover:bg-white/[0.02] transition-colors group px-1 gap-2"
         >
-            <div className="flex items-center gap-2.5 min-[380px]:gap-3 w-full min-w-0 min-[340px]:flex-1">
-                <span className="material-symbols-outlined text-[#6B7280] group-hover:text-neon-teal transition-colors text-xl">
+            <div className="flex items-center gap-3 w-full min-w-0 flex-1 pr-1">
+                <span className="material-symbols-outlined text-[#6B7280] group-hover:text-neon-teal transition-colors text-[24px] shrink-0">
                     {icon}
                 </span>
-                <div className="text-left min-w-0">
-                    <p className="text-[16px] font-bold text-[#D1D5DB] break-keep">{label}</p>
-                    <div className="mt-1">
-                        <span className="text-[13px] font-black text-neon-teal bg-neon-teal/10 px-2.5 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)]">
+                <div className="text-left min-w-0 flex flex-col items-start leading-tight">
+                    <p className="text-[16px] font-bold text-[#D1D5DB] truncate w-full">{label}</p>
+                    <div className="mt-0.5 flex items-center w-full min-w-0 flex-nowrap">
+                        <span className="text-[13px] font-black text-neon-teal bg-neon-teal/10 px-2.5 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)] truncate max-w-full block">
                             {tag}
                         </span>
                     </div>
                 </div>
             </div>
             
-            <div className="flex items-center justify-end gap-3 min-[380px]:gap-6 w-full min-[340px]:w-auto shrink-0">
+            <div className="flex items-center justify-end gap-3 shrink-0">
                 <MetricGauge type={type} analysis={analysis} />
-                <span className={`material-symbols-outlined text-[#6B7280] transition-transform duration-300 ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
+                <span className={`material-symbols-outlined text-[#8B92A0] transition-transform duration-300 shrink-0 relative right-[-2px] ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
                     expand_more
                 </span>
             </div>
