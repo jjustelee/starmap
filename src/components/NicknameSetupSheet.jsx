@@ -49,7 +49,7 @@ const NicknameSetupSheet = ({ isOpen }) => {
     return (
         <>
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[10000] animate-in fade-in duration-500" />
+            <div className="fixed inset-0 bg-[#121212]/80 backdrop-blur-md z-[10000] animate-in fade-in duration-500" />
 
             {/* Bottom Sheet */}
             <div className="fixed bottom-0 left-0 right-0 z-[10001] animate-in slide-in-from-bottom duration-500 cubic-bezier(0.32, 0.72, 0, 1)">
@@ -65,10 +65,10 @@ const NicknameSetupSheet = ({ isOpen }) => {
 
                         {/* Title & Description */}
                         <div className="text-center space-y-2.5 sm:space-y-3 mb-8 sm:mb-10">
-                            <h3 className="text-[21px] sm:text-[24px] font-black text-white leading-tight">
+                            <h3 className="text-[21px] sm:text-[24px] font-black text-[#F3F4F6] leading-tight">
                                 당신의 별명을<br />정해주세요
                             </h3>
-                            <p className="text-[13px] sm:text-[14px] text-white/40 font-medium leading-6 sm:leading-normal">
+                            <p className="text-[13px] sm:text-[14px] text-[#9CA3AF] font-medium leading-6 sm:leading-normal">
                                 성지글의 예언자로 활동할 별명을 입력해주세요.<br />
                                 나중에도 언제든 변경할 수 있습니다.
                             </p>
@@ -88,13 +88,13 @@ const NicknameSetupSheet = ({ isOpen }) => {
                                     className={`w-full bg-white/5 border ${error ? 'border-red-500/50' : 'border-white/10'} 
                                                group-focus-within:border-neon-teal/50
                                                rounded-2xl py-4 sm:py-5 px-4 sm:px-6 
-                                               text-[16px] sm:text-[18px] font-bold text-white placeholder:text-white/20
+                                               text-[16px] sm:text-[18px] font-bold text-[#F3F4F6] placeholder:text-[#6B7280]
                                                transition-all duration-300 outline-none
                                                shadow-inner`}
                                     maxLength={12}
                                     autoFocus
                                 />
-                                <div className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 text-white/20 text-[10px] sm:text-xs font-bold">
+                                <div className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 text-[#6B7280] text-[10px] sm:text-xs font-bold">
                                     {nickname.length}/12
                                 </div>
                                 {error && (
@@ -119,7 +119,7 @@ const NicknameSetupSheet = ({ isOpen }) => {
                         </form>
 
                         {/* Social Proof */}
-                        <p className="text-center text-[11px] sm:text-[12px] text-white/20 mt-6 sm:mt-8 font-medium">
+                        <p className="text-center text-[11px] sm:text-[12px] text-[#6B7280] mt-6 sm:mt-8 font-medium">
                             이미 <span className="text-neon-teal font-black">1,247명</span>이 성지글을 기다리고 있습니다
                         </p>
                     </div>

@@ -27,12 +27,12 @@ const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpd
     return (
         <header className="sticky top-4 z-50 mx-auto w-[calc(100%-2.5rem)] max-w-2xl transition-all duration-700 rounded-2xl crystal-glass px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-2.5 sm:gap-5 shadow-2xl">
             <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
-                <button onClick={onBack} className="text-white/60 hover:text-white transition active:scale-95 bg-white/5 p-2 rounded-full flex-shrink-0">
+                <button onClick={onBack} className="text-[#9CA3AF] hover:text-[#F3F4F6] transition active:scale-95 bg-white/5 p-2 rounded-full flex-shrink-0">
                     <span className="material-symbols-outlined text-[24px] sm:text-[28px]">arrow_back_ios_new</span>
                 </button>
                 <div className="min-w-0 flex-1">
-                    <h1 className="text-[17px] sm:text-xl font-black text-white leading-tight tracking-tight break-keep line-clamp-2">{stock.name}</h1>
-                    <p className="mt-0.5 font-brandEn text-[11px] sm:text-[13px] font-black tracking-widest text-white/60 uppercase truncate">{stock.symbol}</p>
+                    <h1 className="text-[17px] sm:text-xl font-black text-[#F3F4F6] leading-tight tracking-tight break-keep line-clamp-2">{stock.name}</h1>
+                    <p className="mt-0.5 font-brandEn text-[11px] sm:text-[13px] font-black tracking-widest text-[#9CA3AF] uppercase truncate">{stock.symbol}</p>
                 </div>
             </div>
             <div className="shrink-0 text-right flex flex-col items-end gap-1 sm:gap-1.5">
@@ -43,17 +43,17 @@ const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpd
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.9)]"></span>
                         </span>
                     ) : null}
-                    <p className="font-brandEn text-[22px] min-[420px]:text-[26px] sm:text-3xl font-black text-white leading-none tracking-tighter whitespace-nowrap">
+                    <p className="font-brandEn text-[22px] min-[420px]:text-[26px] sm:text-3xl font-black text-[#F3F4F6] leading-none tracking-tighter whitespace-nowrap">
                         {hasPrice ? Number(basePrice).toLocaleString() : '시세 동기화 중'}
                     </p>
                 </div>
                 <div className="flex items-center justify-end gap-2 min-h-[18px]">
                     {!market.isOpen ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-white/10 text-white/40 uppercase tracking-tighter whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-white/10 text-[#9CA3AF] uppercase tracking-tighter whitespace-nowrap">
                             {market.text}
                         </span>
                     ) : shouldShowQuoteStatus ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-white/10 text-white/55 tracking-tighter whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-white/10 text-[#9CA3AF] tracking-tighter whitespace-nowrap">
                             {statusText}
                         </span>
                     ) : null}

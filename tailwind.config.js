@@ -8,10 +8,11 @@ export default {
     theme: {
         extend: {
             colors: {
-                "void-black": "#000000",
+                black: "#121212",
+                "void-black": "#121212",
                 "neon-teal": "#22d3ee",
-                "neon-pink": "#f4258c",
-                "neon-blue": "#0099ff",
+                "neon-pink": "#FF86C3",
+                "neon-blue": "#7BD1FA",
                 "soft-white": "#e2e8f0",
                 "premium-rose": "#f43f5e",
                 "premium-gold": "#fbbf24",

@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-    background-color: #000000;
-    color: #e2e8f0;
+    background-color: #121212;
+    color: #F3F4F6;
 }
 
 body {
-    background-color: #000000;
+    background-color: #121212;
 }
 
 body {
@@ -28,11 +28,11 @@ body {
 }
 
 .text-neon-pink {
-    color: #f4258c !important;
+    color: #FF86C3 !important;
 }
 
 .text-neon-blue {
-    color: #0099ff !important;
+    color: #7BD1FA !important;
 }
 
 .text-neon-teal {

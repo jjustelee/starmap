@@ -264,7 +264,7 @@ const MetricGauge = ({ type, analysis }) => {
                     />
                 </div>
                 <div className="flex gap-2">
-                    <span className="text-[10px] font-black text-white/50">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</span>
+                    <span className="text-[10px] font-black text-[#9CA3AF]">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</span>
                 </div>
             </div>
         );
@@ -280,7 +280,7 @@ const MetricGauge = ({ type, analysis }) => {
                         style={{ left: `${pos}%`, transform: 'translate(-50%, -50%)' }}
                     />
                 </div>
-                <span className="text-[10px] font-black text-white/80">
+                <span className="text-[10px] font-black text-[#D1D5DB]">
                     {analysis.per !== null ? `PER ${formatRatio(analysis.per, '배')}` : `PBR ${formatRatio(analysis.pbr, '배')}`}
                 </span>
             </div>
@@ -297,7 +297,7 @@ const MetricGauge = ({ type, analysis }) => {
                         style={{ left: `${pos}%`, transform: 'translate(-50%, -50%)' }}
                     />
                 </div>
-                <span className="text-[10px] font-black text-white/80">
+                <span className="text-[10px] font-black text-[#D1D5DB]">
                     {analysis.score === null ? '동기화 중' : `${trimNumber(analysis.score)}%`}
                 </span>
             </div>
@@ -313,7 +313,7 @@ const LiveFormula = ({ type, analysis }) => {
     if (type === 'supply') {
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1">
-                <p className="text-white/60 font-medium">{INDICATOR_METADATA.supply.formulaLabel}</p>
+                <p className="text-[#9CA3AF] font-medium">{INDICATOR_METADATA.supply.formulaLabel}</p>
                 <p className="text-neon-teal font-bold">{analysis.supply === null ? '동기화 중' : formatValue(analysis.supply)}</p>
             </div>
         );
@@ -322,16 +322,16 @@ const LiveFormula = ({ type, analysis }) => {
         if (analysis.roe === null && analysis.debt === null) {
             return (
                 <div className="text-[11px] font-mono leading-tight space-y-1">
-                    <p className="text-white/60 font-medium">ROE · 부채비율</p>
+                    <p className="text-[#9CA3AF] font-medium">ROE · 부채비율</p>
                     <p className="text-neon-teal font-bold">동기화 중</p>
                 </div>
             );
         }
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1">
-                <p className="text-white/60 font-medium">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</p>
+                <p className="text-[#9CA3AF] font-medium">ROE {formatRatio(analysis.roe)} · 부채 {formatRatio(analysis.debt)}</p>
                 {(analysis.eps !== null || analysis.bps !== null) ? (
-                    <p className="text-white/50 font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
+                    <p className="text-[#9CA3AF] font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
                 ) : null}
                 <p className={`${analysis.level === 'strong' ? 'text-neon-teal' : (analysis.level === 'mid' ? 'text-yellow-400' : 'text-neon-pink')} font-bold`}>
                     판단: {analysis.tag}
@@ -342,17 +342,17 @@ const LiveFormula = ({ type, analysis }) => {
     if (type === 'value') {
         if (analysis.per === null && analysis.pbr === null) {
             return (
-                <div className="text-[11px] font-mono leading-tight space-y-1 text-white/90">
-                    <p className="text-white/60 font-medium">PER + PBR 참고</p>
+                <div className="text-[11px] font-mono leading-tight space-y-1 text-[#D1D5DB]">
+                    <p className="text-[#9CA3AF] font-medium">PER + PBR 참고</p>
                     <p className="text-neon-teal font-bold">결과: 동기화 중</p>
                 </div>
             );
         }
         return (
-            <div className="text-[11px] font-mono leading-tight space-y-1 text-white/90">
-                <p className="text-white/60 font-medium">PER {formatRatio(analysis.per, '배')} / PBR {formatRatio(analysis.pbr, '배')}</p>
+            <div className="text-[11px] font-mono leading-tight space-y-1 text-[#D1D5DB]">
+                <p className="text-[#9CA3AF] font-medium">PER {formatRatio(analysis.per, '배')} / PBR {formatRatio(analysis.pbr, '배')}</p>
                 {(analysis.eps !== null || analysis.bps !== null) ? (
-                    <p className="text-white/50 font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
+                    <p className="text-[#9CA3AF] font-medium">EPS {formatPlainNumber(analysis.eps)} / BPS {formatPlainNumber(analysis.bps)}</p>
                 ) : null}
                 <p className="text-neon-teal font-bold">결과: 밸류 부담 {analysis.tag}</p>
             </div>
@@ -361,8 +361,8 @@ const LiveFormula = ({ type, analysis }) => {
     if (type === 'risk') {
         return (
             <div className="text-[11px] font-mono leading-tight space-y-1">
-                <p className="text-white/60 font-medium">전일등락률 {formatSignedPercent(analysis.priceChangeRate)}</p>
-                <p className="text-white/50 font-medium">일중 변동폭 {formatRatio(analysis.intradaySwing)}</p>
+                <p className="text-[#9CA3AF] font-medium">전일등락률 {formatSignedPercent(analysis.priceChangeRate)}</p>
+                <p className="text-[#9CA3AF] font-medium">일중 변동폭 {formatRatio(analysis.intradaySwing)}</p>
                 <p className="text-neon-teal font-bold">체감 흔들림 {analysis.score === null ? '동기화 중' : `${trimNumber(analysis.score)}%`}</p>
             </div>
         );
@@ -437,9 +437,9 @@ const CriteriaList = ({ type, analysis }) => {
                 <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-500 ${c.active ? 'bg-neon-teal/20 border-neon-teal/50 scale-[1.03] shadow-[0_0_15px_-3px_rgba(34,211,238,0.3)]' : 'border-white/5 opacity-45'}`}>
                     <div className="flex items-center gap-2">
                         {c.active && <div className="w-1.5 h-1.5 bg-neon-teal rounded-full animate-pulse shadow-[0_0_8px_#22d3ee]" />}
-                        <span className={`text-[12px] transition-all duration-300 ${c.active ? 'font-black text-neon-teal drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]' : 'font-bold text-white/50'}`}>{c.label}</span>
+                        <span className={`text-[12px] transition-all duration-300 ${c.active ? 'font-black text-neon-teal drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]' : 'font-bold text-[#9CA3AF]'}`}>{c.label}</span>
                     </div>
-                    <span className={`text-[10px] font-bold transition-all duration-300 ${c.active ? 'text-neon-teal' : 'text-white/40'}`}>{c.desc}</span>
+                    <span className={`text-[10px] font-bold transition-all duration-300 ${c.active ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}>{c.desc}</span>
                 </div>
             ))}
         </div>
@@ -453,11 +453,11 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
             className="w-full flex flex-col min-[340px]:flex-row items-start min-[340px]:items-center justify-between py-4 min-[380px]:py-5 hover:bg-white/[0.02] transition-colors group px-1 gap-3 min-[340px]:gap-0"
         >
             <div className="flex items-center gap-2.5 min-[380px]:gap-3 w-full min-w-0 min-[340px]:flex-1">
-                <span className="material-symbols-outlined text-white/30 group-hover:text-neon-teal transition-colors text-[20px]">
+                <span className="material-symbols-outlined text-[#6B7280] group-hover:text-neon-teal transition-colors text-[20px]">
                     {icon}
                 </span>
                 <div className="text-left min-w-0">
-                    <p className="text-[13px] sm:text-[14px] font-bold text-white/80 break-keep">{label}</p>
+                    <p className="text-[13px] sm:text-[14px] font-bold text-[#D1D5DB] break-keep">{label}</p>
                     <div className="mt-1">
                         <span className="text-[11px] sm:text-[12px] font-black text-neon-teal bg-neon-teal/10 px-2 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)]">
                             {tag}
@@ -468,7 +468,7 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
             
             <div className="flex items-center justify-end gap-3 min-[380px]:gap-6 w-full min-[340px]:w-auto shrink-0">
                 <MetricGauge type={type} analysis={analysis} />
-                <span className={`material-symbols-outlined text-white/20 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
+                <span className={`material-symbols-outlined text-[#6B7280] transition-transform duration-300 ${isExpanded ? 'rotate-180 text-neon-teal' : ''}`}>
                     expand_more
                 </span>
             </div>
@@ -478,18 +478,18 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
             <div className="bg-white/[0.05] mx-1 rounded-2xl p-4 sm:p-5 space-y-4 sm:space-y-5 border border-white/10 shadow-xl backdrop-blur-md">
                 <div className="space-y-1.5">
                     <p className="text-neon-teal text-[10px] font-black uppercase tracking-[0.2em]">Interpretation Guide</p>
-                    <p className="text-white text-[13px] sm:text-[13.5px] font-bold leading-relaxed">
+                    <p className="text-[#F3F4F6] text-[13px] sm:text-[13.5px] font-bold leading-relaxed">
                         {INDICATOR_METADATA[type].description}
                     </p>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4">
-                    <div className="bg-black/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-2 shadow-inner">
-                        <p className="text-white/60 text-[9px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Live Formula</p>
+                    <div className="bg-[#121212]/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-2 shadow-inner">
+                        <p className="text-[#9CA3AF] text-[9px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Live Formula</p>
                         <LiveFormula type={type} analysis={analysis} />
                     </div>
-                    <div className="bg-black/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-3 shadow-inner">
-                        <p className="text-white/60 text-[9px] font-black uppercase tracking-widest border-b border-white/10 pb-1 text-right">Judgment Criteria</p>
+                    <div className="bg-[#121212]/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-3 shadow-inner">
+                        <p className="text-[#9CA3AF] text-[9px] font-black uppercase tracking-widest border-b border-white/10 pb-1 text-right">Judgment Criteria</p>
                         <CriteriaList type={type} analysis={analysis} />
                     </div>
                 </div>
@@ -512,7 +512,7 @@ const MarketReality = ({ kisData }) => {
         : (realityStatus === 'cached' ? '최근 기준' : '동기화 중');
     const statusTone = realityStatus === 'live'
         ? 'text-neon-teal/70'
-        : (realityStatus === 'cached' ? 'text-white/55' : 'text-yellow-300/70');
+        : (realityStatus === 'cached' ? 'text-[#9CA3AF]' : 'text-yellow-300/70');
     const updatedAtText = formatUpdatedAt(safeData.updatedAt);
 
     const indicators = [
@@ -531,13 +531,13 @@ const MarketReality = ({ kisData }) => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <span className="material-symbols-outlined text-neon-teal text-[24px]">fact_check</span>
-                            <h3 className="text-[17px] sm:text-[20px] font-black text-white tracking-tight leading-none font-brandKo">
+                            <h3 className="text-[17px] sm:text-[20px] font-black text-[#F3F4F6] tracking-tight leading-none font-brandKo">
                                 팩트 체크
                             </h3>
                         </div>
                         <span className={`text-[10px] font-black uppercase tracking-tighter ${statusTone}`}>{statusLabel}</span>
                     </div>
-                    <p className="text-[11px] sm:text-[12px] text-white/50 font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed">
+                    <p className="text-[11px] sm:text-[12px] text-[#9CA3AF] font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed">
                         {realityStatus === 'live'
                             ? '숫자를 먼저 보고, 태그는 참고만 하세요.'
                             : (realityStatus === 'cached'
@@ -545,13 +545,13 @@ const MarketReality = ({ kisData }) => {
                                 : '실시간 지연 시 최근 기준 또는 대기 상태로 보입니다.')}
                     </p>
                     {updatedAtText ? (
-                        <p className="text-[10px] font-bold text-white/45 px-1">
+                        <p className="text-[10px] font-bold text-[#9CA3AF] px-1">
                             기준일: {updatedAtText}
                         </p>
                     ) : null}
                 </div>
 
-                <div className="bg-black/20 rounded-2xl px-3 sm:px-4 border border-white/5">
+                <div className="bg-[#121212]/20 rounded-2xl px-3 sm:px-4 border border-white/5">
                     {indicators.map(ind => (
                         <IndicatorItem 
                             key={ind.type} 
@@ -563,11 +563,11 @@ const MarketReality = ({ kisData }) => {
                 </div>
 
                 <div className="px-1">
-                    <p className="text-[11px] font-bold text-white/40 italic">
+                    <p className="text-[11px] font-bold text-[#9CA3AF] italic">
                         ※ 이 영역은 한국투자증권의 공개된 수치만을 기반으로 판별합니다.
                     </p>
                     {realityStatus === 'cached' && updatedAtText ? (
-                        <p className="text-[10px] font-bold text-white/35 mt-1">
+                        <p className="text-[10px] font-bold text-[#9CA3AF] mt-1">
                             최근 갱신 시각: {updatedAtText}
                         </p>
                     ) : null}

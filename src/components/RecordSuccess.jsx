@@ -60,7 +60,7 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
         setShareFeedback('공유에 실패했습니다');
     };
 
-    if (!stock) return <div className="text-white p-12 text-center font-bold">종목 정보를 찾을 수 없습니다.</div>;
+    if (!stock) return <div className="text-[#F3F4F6] p-12 text-center font-bold">종목 정보를 찾을 수 없습니다.</div>;
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 sm:space-y-8 text-center animate-in zoom-in-95 duration-700">
@@ -68,7 +68,7 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
             <div className="relative">
                 <div className="absolute inset-0 bg-neon-teal blur-3xl opacity-40 rounded-full"></div>
                 <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-gradient-to-tr from-neon-teal to-neon-pink p-1 shadow-glowTeal">
-                    <div className="h-full w-full rounded-full bg-black flex items-center justify-center">
+                    <div className="h-full w-full rounded-full bg-[#121212] flex items-center justify-center">
                         <BadgeCheck className="w-10 h-10 sm:w-12 sm:h-12 text-neon-teal" />
                     </div>
                 </div>
@@ -76,8 +76,8 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
 
             {/* Success Message */}
             <div className="space-y-2.5 sm:space-y-3">
-                <h2 className="text-[30px] sm:text-4xl font-black text-white tracking-tight">예언 박제 완료!</h2>
-                <p className="text-white/50 text-[14px] sm:text-base leading-6 sm:leading-relaxed">
+                <h2 className="text-[30px] sm:text-4xl font-black text-[#F3F4F6] tracking-tight">예언 박제 완료!</h2>
+                <p className="text-[#9CA3AF] text-[14px] sm:text-base leading-6 sm:leading-relaxed">
                     이제 이 예언은 기록에 남았습니다.<br />
                     기한 종가가 맞으면 <span className="text-neon-pink font-bold">성지글</span>로 올라갑니다.
                 </p>
@@ -87,8 +87,8 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
             <div className="w-full max-w-sm crystal-glass p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-neon-teal/30 space-y-3 sm:space-y-4">
                 <div className="flex justify-between items-start">
                     <div className="text-left">
-                        <p className="text-xs font-bold text-white/40 uppercase tracking-widest">{stock.symbol}</p>
-                        <h3 className="text-lg sm:text-xl font-black text-white">{stock.name}</h3>
+                        <p className="text-xs font-bold text-[#9CA3AF] uppercase tracking-widest">{stock.symbol}</p>
+                        <h3 className="text-lg sm:text-xl font-black text-[#F3F4F6]">{stock.name}</h3>
                     </div>
                     <p className="text-[10px] font-bold text-neon-teal bg-neon-teal/10 px-2 py-1 rounded">기록 완료</p>
                 </div>
@@ -97,23 +97,23 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="text-left">
-                        <p className="text-[11px] font-bold text-white/30 uppercase">기록 목표가</p>
+                        <p className="text-[11px] font-bold text-[#6B7280] uppercase">기록 목표가</p>
                         <p className="text-lg sm:text-xl font-black text-neon-pink">{targetPrice.toLocaleString()}원</p>
                     </div>
                     <div className="text-left">
-                        <p className="text-[11px] font-bold text-white/30 uppercase">현재가</p>
-                        <p className="text-lg sm:text-xl font-black text-white">
+                        <p className="text-[11px] font-bold text-[#6B7280] uppercase">현재가</p>
+                        <p className="text-lg sm:text-xl font-black text-[#F3F4F6]">
                             {latestPrice > 0 ? `${latestPrice.toLocaleString()}원` : '시세 동기화 중'}
                         </p>
-                        <p className="mt-1 text-[10px] font-bold text-white/40 uppercase tracking-[0.14em]">
+                        <p className="mt-1 text-[10px] font-bold text-[#9CA3AF] uppercase tracking-[0.14em]">
                             {latestPrice > 0 ? latestQuoteStatusLabel : '갱신중'}
                         </p>
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-left">
-                    <p className="text-[11px] font-bold text-white/35 uppercase tracking-[0.16em]">판정 기준</p>
-                    <p className="mt-1 text-[13px] font-bold text-white/70">기한 종가 기준으로 최종 판정됩니다</p>
+                <div className="rounded-xl border border-white/10 bg-[#121212]/20 px-3 py-2 text-left">
+                    <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-[0.16em]">판정 기준</p>
+                    <p className="mt-1 text-[13px] font-bold text-[#D1D5DB]">기한 종가 기준으로 최종 판정됩니다</p>
                 </div>
             </div>
 
@@ -128,32 +128,32 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
                 </button>
                 <button
                     onClick={onViewStock}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 text-white/80 py-4 text-base font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition active:scale-95"
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 text-[#D1D5DB] py-4 text-base font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition active:scale-95"
                 >
                     <ChevronRight className="w-4 h-4" />
                     같은 종목 다시 보기
                 </button>
                 <button
                     onClick={handleShare}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 text-white/80 py-4 text-base font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition active:scale-95"
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 text-[#D1D5DB] py-4 text-base font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition active:scale-95"
                 >
                     <Share2 className="w-4 h-4" />
                     예언 공유하기
                 </button>
                 {shareFeedback && (
-                    <p className="text-center text-[12px] font-bold text-white/45">
+                    <p className="text-center text-[12px] font-bold text-[#9CA3AF]">
                         {shareFeedback}
                     </p>
                 )}
                 <button
                     onClick={onHome}
-                    className="w-full text-center text-[14px] font-bold text-white/55 hover:text-white transition active:scale-95 pt-1"
+                    className="w-full text-center text-[14px] font-bold text-[#9CA3AF] hover:text-[#F3F4F6] transition active:scale-95 pt-1"
                 >
                     홈으로
                 </button>
             </div>
 
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">
+            <p className="text-[10px] font-black text-[#6B7280] uppercase tracking-[0.4em]">
                 이제 이 기록도 성지 후보입니다
             </p>
         </div>

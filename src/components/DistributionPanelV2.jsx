@@ -27,13 +27,13 @@ const DistributionPanelV2 = ({ snapshot, isLoading }) => {
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-neon-teal text-[24px]">analytics</span>
-                    <h2 className="text-[17px] sm:text-[19px] font-bold text-white font-brandKo tracking-tight leading-none">목표가 합의</h2>
+                    <h2 className="text-[17px] sm:text-[19px] font-bold text-[#F3F4F6] font-brandKo tracking-tight leading-none">목표가 합의</h2>
                 </div>
                 <span className="px-2 py-0.5 bg-neon-teal/10 border border-neon-teal/30 rounded text-[10px] font-bold text-neon-teal uppercase tracking-widest">예언 {sampleSize.toLocaleString()}건</span>
             </div>
 
             {isLoading ? (
-                <div className="text-[14px] text-white/55 py-2 mt-4">집계 중</div>
+                <div className="text-[14px] text-[#9CA3AF] py-2 mt-4">집계 중</div>
             ) : (
                 <div className="grid grid-cols-2 gap-2 mt-4">
                     <MiniMetric icon="star" label="대표" value={modePrice} />
@@ -46,9 +46,9 @@ const DistributionPanelV2 = ({ snapshot, isLoading }) => {
     );
 };
 
-const MiniMetric = ({ icon, label, value, valueClass = 'text-white/92', noWrap = false }) => (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-3.5 sm:p-4">
-        <p className="text-[11px] sm:text-[12px] text-white/55 font-bold mb-1.5 inline-flex items-center gap-1">
+const MiniMetric = ({ icon, label, value, valueClass = 'text-[#F3F4F6]/92', noWrap = false }) => (
+    <div className="rounded-2xl border border-white/10 bg-[#121212]/25 p-3.5 sm:p-4">
+        <p className="text-[11px] sm:text-[12px] text-[#9CA3AF] font-bold mb-1.5 inline-flex items-center gap-1">
             <span className="material-symbols-outlined text-[13px]">{icon}</span>
             {label}
         </p>
@@ -61,8 +61,8 @@ function getSentiment(bullishRatio) {
         return {
             label: '대기',
             icon: 'schedule',
-            className: 'bg-white/10 border-white/20 text-white/65',
-            textClass: 'text-white/65'
+            className: 'bg-white/10 border-white/20 text-[#D1D5DB]',
+            textClass: 'text-[#D1D5DB]'
         };
     }
     const bull = Number(bullishRatio);
@@ -70,8 +70,8 @@ function getSentiment(bullishRatio) {
         return {
             label: '대기',
             icon: 'schedule',
-            className: 'bg-white/10 border-white/20 text-white/65',
-            textClass: 'text-white/65'
+            className: 'bg-white/10 border-white/20 text-[#D1D5DB]',
+            textClass: 'text-[#D1D5DB]'
         };
     }
     if (bull >= 0.57) {
@@ -93,8 +93,8 @@ function getSentiment(bullishRatio) {
     return {
         label: '중립',
         icon: 'drag_handle',
-        className: 'bg-white/10 border-white/20 text-white/70',
-        textClass: 'text-white/80'
+        className: 'bg-white/10 border-white/20 text-[#D1D5DB]',
+        textClass: 'text-[#D1D5DB]'
     };
 }
 
@@ -108,11 +108,11 @@ function formatDeltaPct(base, target) {
 }
 
 function getDeltaClass(deltaText) {
-    if (typeof deltaText !== 'string') return 'text-white/70';
-    if (deltaText === '-') return 'text-white/60';
+    if (typeof deltaText !== 'string') return 'text-[#D1D5DB]';
+    if (deltaText === '-') return 'text-[#9CA3AF]';
     if (deltaText.startsWith('+')) return 'text-neon-pink';
     if (deltaText.startsWith('-')) return 'text-neon-blue';
-    return 'text-white/70';
+    return 'text-[#D1D5DB]';
 }
 
 function formatParticipantCount(value) {

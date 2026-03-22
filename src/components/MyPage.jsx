@@ -94,7 +94,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <div className="w-8 h-8 border-4 border-neon-teal/20 border-t-neon-teal rounded-full animate-spin"></div>
-                <p className="text-white/20 text-[13px] font-bold">불러오는 중</p>
+                <p className="text-[#6B7280] text-[13px] font-bold">불러오는 중</p>
             </div>
         );
     }
@@ -110,7 +110,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                             <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-neon-teal/10 to-neon-pink/10 
                                             rounded-full flex items-center justify-center
                                             border border-white/10">
-                                <Star className="w-10 h-10 sm:w-12 sm:h-12 text-white/20" />
+                                <Star className="w-10 h-10 sm:w-12 sm:h-12 text-[#6B7280]" />
                             </div>
                             <div className="absolute -inset-6 bg-neon-teal/5 rounded-full blur-2xl -z-10"></div>
                         </div>
@@ -118,10 +118,10 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
 
                     {/* Message */}
                     <div className="space-y-4">
-                        <h2 className="text-[22px] sm:text-[25px] font-black text-white leading-tight">
+                        <h2 className="text-[22px] sm:text-[25px] font-black text-[#F3F4F6] leading-tight">
                             내 예언을<br />관리하고 싶다면
                         </h2>
-                        <p className="text-[12px] sm:text-[13px] text-white/40 leading-6 sm:leading-relaxed max-w-xs mx-auto">
+                        <p className="text-[12px] sm:text-[13px] text-[#9CA3AF] leading-6 sm:leading-relaxed max-w-xs mx-auto">
                             카카오로 시작하면 박제한 기록을 모아볼 수 있고,<br />
                             내 예언 기록과 적중 흐름을 한곳에서 차분하게 확인할 수 있습니다.
                         </p>
@@ -155,7 +155,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                             <div key={i} className="flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 
                                                       bg-white/5 border border-white/5 rounded-2xl">
                                 <div className="text-neon-teal/60">{f.icon}</div>
-                                <span className="text-[12px] sm:text-[13px] font-bold text-white/50">{f.text}</span>
+                                <span className="text-[12px] sm:text-[13px] font-bold text-[#9CA3AF]">{f.text}</span>
                             </div>
                         ))}
                     </div>
@@ -182,7 +182,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                         ) : (
                             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-neon-teal/20 to-neon-pink/20 
                                             border-2 border-white/10 flex items-center justify-center">
-                                <span className="text-xl sm:text-2xl font-black text-white/60">
+                                <span className="text-xl sm:text-2xl font-black text-[#9CA3AF]">
                                     {profile?.nickname?.charAt(0) || '⭐'}
                                 </span>
                             </div>
@@ -219,7 +219,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                         </div>
                         <div className="min-w-0">
                             <p className="text-[12px] sm:text-[13px] font-black text-neon-teal/70 uppercase tracking-[0.18em]">새 소식</p>
-                            <p className="text-[11px] sm:text-[12px] text-white/40">기한 도래와 적중 흐름만 먼저 모아 보여줍니다</p>
+                            <p className="text-[11px] sm:text-[12px] text-[#9CA3AF]">기한 도래와 적중 흐름만 먼저 모아 보여줍니다</p>
                         </div>
                     </div>
                     <span className="text-[11px] sm:text-[12px] font-bold text-neon-teal/40 shrink-0">
@@ -228,11 +228,11 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                 </div>
 
                 {isLoadingNotifications ? (
-                    <div className="py-4 text-center text-[12px] font-bold text-white/35">새 소식 불러오는 중</div>
+                    <div className="py-4 text-center text-[12px] font-bold text-[#9CA3AF]">새 소식 불러오는 중</div>
                 ) : notifications.length === 0 ? (
-                    <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-4 text-center">
-                        <p className="text-[12px] sm:text-[13px] font-bold text-white/35">아직 새 소식이 없습니다</p>
-                        <p className="text-[11px] sm:text-[12px] text-white/20 mt-1">기한 도래와 적중 소식이 여기에 뜹니다</p>
+                    <div className="rounded-2xl border border-white/5 bg-[#121212]/20 px-4 py-4 text-center">
+                        <p className="text-[12px] sm:text-[13px] font-bold text-[#9CA3AF]">아직 새 소식이 없습니다</p>
+                        <p className="text-[11px] sm:text-[12px] text-[#6B7280] mt-1">기한 도래와 적중 소식이 여기에 뜹니다</p>
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -247,12 +247,12 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                         onNavigatePath?.(item.target_path);
                                     }
                                 }}
-                                className={`w-full rounded-2xl border px-4 py-3 text-left transition ${item.is_read ? 'border-white/5 bg-black/15' : 'border-neon-teal/15 bg-neon-teal/5'}`}
+                                className={`w-full rounded-2xl border px-4 py-3 text-left transition ${item.is_read ? 'border-white/5 bg-[#121212]/15' : 'border-neon-teal/15 bg-neon-teal/5'}`}
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                        <p className={`text-[12px] sm:text-[13px] font-black ${item.is_read ? 'text-white/70' : 'text-white'}`}>{item.title}</p>
-                                        <p className="text-[11px] sm:text-[12px] text-white/35 mt-1.5 leading-relaxed">{item.body}</p>
+                                        <p className={`text-[12px] sm:text-[13px] font-black ${item.is_read ? 'text-[#D1D5DB]' : 'text-[#F3F4F6]'}`}>{item.title}</p>
+                                        <p className="text-[11px] sm:text-[12px] text-[#9CA3AF] mt-1.5 leading-relaxed">{item.body}</p>
                                     </div>
                                     {!item.is_read ? (
                                         <span className="mt-1 h-2.5 w-2.5 rounded-full bg-neon-teal shadow-[0_0_10px_rgba(34,211,238,0.5)] shrink-0"></span>
@@ -273,7 +273,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
 
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
                     <p className="text-[11px] sm:text-[12px] font-black text-neon-teal/70 tracking-wider uppercase">판정 룰</p>
-                    <p className="text-[11px] sm:text-[12px] text-white/60">기한일 종가 기준 · <span className="text-joy-gold font-bold">1%</span> 적중 · <span className="text-joy-gold/90 font-bold">3%</span> 근접</p>
+                    <p className="text-[11px] sm:text-[12px] text-[#9CA3AF]">기한일 종가 기준 · <span className="text-joy-gold font-bold">1%</span> 적중 · <span className="text-joy-gold/90 font-bold">3%</span> 근접</p>
                     <button
                         type="button"
                         onClick={() => setIsGuideExpanded(prev => !prev)}
@@ -282,12 +282,12 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                         {isGuideExpanded ? '접기' : '더보기'}
                     </button>
                     {isGuideExpanded && (
-                        <div className="mt-1.5 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 space-y-1.5">
-                            <p className="text-[11px] sm:text-[12px] text-white/70">1. 기한일 종가로 최종 판정합니다.</p>
-                            <p className="text-[11px] sm:text-[12px] text-white/70">2. 오차율 = `|실제 종가 - 예언가| / 예언가 × 100`</p>
-                            <p className="text-[11px] sm:text-[12px] text-white/70">3. 5% 이내면 아슬아슬, 그 밖은 빗나감으로 봅니다.</p>
-                            <p className="text-[11px] sm:text-[12px] text-white/70">4. 근접 적중은 적중 그룹으로 집계되고, 기한 전에는 진행중으로 표시됩니다.</p>
-                            <p className="text-[11px] sm:text-[12px] text-white/50">시장 휴장/데이터 지연 시 실제 반영 시점이 늦어질 수 있습니다.</p>
+                        <div className="mt-1.5 rounded-xl border border-white/10 bg-[#121212]/20 px-3 py-2.5 space-y-1.5">
+                            <p className="text-[11px] sm:text-[12px] text-[#D1D5DB]">1. 기한일 종가로 최종 판정합니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-[#D1D5DB]">2. 오차율 = `|실제 종가 - 예언가| / 예언가 × 100`</p>
+                            <p className="text-[11px] sm:text-[12px] text-[#D1D5DB]">3. 5% 이내면 아슬아슬, 그 밖은 빗나감으로 봅니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-[#D1D5DB]">4. 근접 적중은 적중 그룹으로 집계되고, 기한 전에는 진행중으로 표시됩니다.</p>
+                            <p className="text-[11px] sm:text-[12px] text-[#9CA3AF]">시장 휴장/데이터 지연 시 실제 반영 시점이 늦어질 수 있습니다.</p>
                         </div>
                     )}
                 </div>
@@ -295,13 +295,13 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                 {isLoadingPreds ? (
                     <div className="flex items-center justify-center gap-3 py-12">
                         <div className="w-5 h-5 border-2 border-white/10 border-t-neon-teal rounded-full animate-spin"></div>
-                        <span className="text-white/30 text-sm font-bold">기록 불러오는 중</span>
+                        <span className="text-[#6B7280] text-sm font-bold">기록 불러오는 중</span>
                     </div>
                 ) : predictions.length === 0 ? (
                     <div className="text-center py-12 space-y-3">
                         <div className="text-4xl opacity-30">🔮</div>
-                        <p className="text-[14px] font-bold text-white/25">아직 예언이 없습니다</p>
-                        <p className="text-[12px] text-white/15">종목 상세에서 예언을 남겨보세요</p>
+                        <p className="text-[14px] font-bold text-[#6B7280]">아직 예언이 없습니다</p>
+                        <p className="text-[12px] text-[#6B7280]">종목 상세에서 예언을 남겨보세요</p>
                         <button
                             type="button"
                             onClick={() => onBack?.()}
@@ -385,7 +385,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                                 onClick={() => pred.stock && onStockClick?.(pred.stock)}
                                             >
                                                 <div className="flex items-center gap-2.5 min-w-0">
-                                                    <span className={`text-[10px] sm:text-[12px] font-black uppercase tracking-widest px-2.5 sm:px-4 py-1.5 rounded-xl border ${theme.border} ${theme.color} bg-black/60 shadow-lg shadow-black/20 shrink-0`}>
+                                                    <span className={`text-[10px] sm:text-[12px] font-black uppercase tracking-widest px-2.5 sm:px-4 py-1.5 rounded-xl border ${theme.border} ${theme.color} bg-[#121212]/60 shadow-lg shadow-black/20 shrink-0`}>
                                                         {theme.label}
                                                     </span>
                                                     <span className={`text-[19px] sm:text-[32px] font-black ${theme.color} brightness-125 group-hover:brightness-150 transition-all leading-none tracking-tighter truncate`}>{pred.stockName}</span>
@@ -418,7 +418,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                                                     setDeleteFeedbackMessage('삭제에 실패했어요');
                                                                 }
                                                             }}
-                                                            className="px-4 py-2 bg-neon-pink text-white text-[12px] font-black rounded-xl shadow-lg shadow-neon-pink/20"
+                                                            className="px-4 py-2 bg-neon-pink text-[#F3F4F6] text-[12px] font-black rounded-xl shadow-lg shadow-neon-pink/20"
                                                         >
                                                             삭제
                                                         </button>
@@ -427,7 +427,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                                                 e.stopPropagation();
                                                                 setDeletingId(null);
                                                             }}
-                                                            className="px-4 py-2 bg-white/10 text-white/60 text-[12px] font-black rounded-xl"
+                                                            className="px-4 py-2 bg-white/10 text-[#9CA3AF] text-[12px] font-black rounded-xl"
                                                         >
                                                             취소
                                                         </button>
@@ -447,25 +447,25 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                                         </div>
 
                                         {deleteFeedbackId === pred.id && deleteFeedbackMessage ? (
-                                            <p className="mb-3 text-[11px] font-bold text-white/45">
+                                            <p className="mb-3 text-[11px] font-bold text-[#9CA3AF]">
                                                 {deleteFeedbackMessage}
                                             </p>
                                         ) : null}
 
                                         {/* Content: Price Comparison (Super High Clarity Grid) */}
                                         <div className="grid grid-cols-2 gap-px bg-white/5 border-[0.5px] border-white/10 rounded-2xl overflow-hidden mb-5 sm:mb-8 shadow-2xl">
-                                            <div className="bg-black/40 p-3.5 sm:p-7 space-y-2 sm:space-y-3">
+                                            <div className="bg-[#121212]/40 p-3.5 sm:p-7 space-y-2 sm:space-y-3">
                                                 <p className={`text-[11px] sm:text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>현재가</p>
                                                 {currentPriceValue > 0 ? (
                                                     <p className={`text-[22px] sm:text-[28px] font-black font-brandEn ${theme.color} brightness-110 leading-none truncate`}>
                                                         {currentPriceValue.toLocaleString()}<span className="text-[11px] sm:text-[16px] ml-1 opacity-20 font-brandKo">원</span>
                                                     </p>
                                                 ) : (
-                                                    <p className="text-[15px] sm:text-[18px] font-black text-white/50 leading-none">시세 동기화 중</p>
+                                                    <p className="text-[15px] sm:text-[18px] font-black text-[#9CA3AF] leading-none">시세 동기화 중</p>
                                                 )}
-                                                <p className="text-[10px] font-black text-white/40 tracking-[0.14em] uppercase">{currentPriceValue > 0 ? (pred.quoteStatusLabel || '최근값') : '갱신중'}</p>
+                                                <p className="text-[10px] font-black text-[#9CA3AF] tracking-[0.14em] uppercase">{currentPriceValue > 0 ? (pred.quoteStatusLabel || '최근값') : '갱신중'}</p>
                                             </div>
-                                            <div className={`bg-black/60 p-3.5 sm:p-7 space-y-2 sm:space-y-3 text-right`}>
+                                            <div className={`bg-[#121212]/60 p-3.5 sm:p-7 space-y-2 sm:space-y-3 text-right`}>
                                                 <p className={`text-[11px] sm:text-[15px] font-black ${theme.color} opacity-40 uppercase tracking-widest`}>목표가</p>
                                                 <p className={`text-[22px] sm:text-[28px] font-black font-brandEn leading-none ${theme.color} brightness-125 truncate`}>
                                                     {Number(pred.price_target).toLocaleString()}<span className="text-[11px] sm:text-[16px] ml-1 opacity-20 font-brandKo">원</span>
@@ -494,7 +494,7 @@ const MyPage = ({ onBack, onStockClick, onNavigatePath }) => {
                 <button
                     onClick={signOut}
                     className="w-full flex items-center justify-center gap-2 py-3 
-                               text-[13px] font-bold text-white/20 hover:text-white/40 
+                               text-[13px] font-bold text-[#6B7280] hover:text-[#9CA3AF] 
                                transition-colors duration-200 border-t border-white/5 pt-6"
                 >
                     <LogOut className="w-4 h-4" />

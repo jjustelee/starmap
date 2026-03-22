@@ -43,9 +43,9 @@ const PredictionChartV2 = ({
             <div className="relative z-10 space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-neon-pink text-[24px]">monitoring</span>
-                    <h3 className="text-[17px] sm:text-[20px] font-bold text-white tracking-tight leading-none font-brandKo">사람들 예언 흐름</h3>
+                    <h3 className="text-[17px] sm:text-[20px] font-bold text-[#F3F4F6] tracking-tight leading-none font-brandKo">사람들 예언 흐름</h3>
                 </div>
-                <p className="text-[12px] sm:text-[13px] text-white/55 font-medium leading-relaxed">
+                <p className="text-[12px] sm:text-[13px] text-[#9CA3AF] font-medium leading-relaxed">
                     언제 얼마를 찍었는지
                 </p>
 
@@ -60,8 +60,8 @@ const PredictionChartV2 = ({
                                 onClick={() => onWindowChange?.(window)}
                                 className={`min-h-10 rounded-xl border text-[12px] font-bold transition ${
                                     active
-                                        ? 'bg-white/12 text-white border-white/30 shadow-[0_0_10px_rgba(255,255,255,0.08)]'
-                                        : 'bg-white/5 text-white/65 border-white/10'
+                                        ? 'bg-white/12 text-[#F3F4F6] border-white/30 shadow-[0_0_10px_rgba(255,255,255,0.08)]'
+                                        : 'bg-white/5 text-[#D1D5DB] border-white/10'
                                 }`}
                             >
                                 {WINDOW_LABELS[window]}{pending ? '…' : ''}
@@ -72,19 +72,19 @@ const PredictionChartV2 = ({
 
                 <div className="rounded-[20px] border border-white/10 bg-[#08080c] p-4 sm:p-5 space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                        <p className="text-[13px] font-bold text-white">예언 점 보기</p>
+                        <p className="text-[13px] font-bold text-[#F3F4F6]">예언 점 보기</p>
                         <div className="flex items-center gap-2 flex-wrap justify-end">
                             {chart.myCount > 0 ? (
                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border bg-neon-pink/8 text-neon-pink border-neon-pink/25">
                                     내 예언 {chart.myCount}건
                                 </span>
                             ) : null}
-                            <span className="text-[11px] text-white/45 font-medium">예언 {chart.sampleCount}건</span>
+                            <span className="text-[11px] text-[#9CA3AF] font-medium">예언 {chart.sampleCount}건</span>
                         </div>
                     </div>
 
                     {isWindowSyncing ? (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[12px] text-white/55 font-medium">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[12px] text-[#9CA3AF] font-medium">
                             {WINDOW_LABELS[selectedWindow]} 예언 불러오는 중
                         </div>
                     ) : null}
@@ -106,7 +106,7 @@ const PredictionChartV2 = ({
 
                     {!isWindowSyncing && chart.points.length ? (
                         <>
-                            <div className="relative rounded-[20px] border border-white/10 bg-black/25 overflow-hidden px-3 py-4 h-[260px] sm:h-[300px] lg:h-[340px]">
+                            <div className="relative rounded-[20px] border border-white/10 bg-[#121212]/25 overflow-hidden px-3 py-4 h-[260px] sm:h-[300px] lg:h-[340px]">
                                 <div className="absolute inset-x-3 top-4 bottom-10 pointer-events-none">
                                     {[0, 25, 50, 75, 100].map((pct) => (
                                         <div
@@ -122,7 +122,7 @@ const PredictionChartV2 = ({
                                     style={{ top: `calc(${chart.currentLinePct}% + 1rem)` }}
                                 />
                                 <span
-                                    className="absolute left-3 -translate-y-[calc(100%+6px)] px-2 py-1 rounded-full text-[10px] font-bold text-neon-teal border border-neon-teal/25 bg-black/72 z-20 whitespace-nowrap"
+                                    className="absolute left-3 -translate-y-[calc(100%+6px)] px-2 py-1 rounded-full text-[10px] font-bold text-neon-teal border border-neon-teal/25 bg-[#121212]/72 z-20 whitespace-nowrap"
                                     style={{ top: `calc(${chart.currentLinePct}% + 1rem)` }}
                                 >
                                     현재가 {formatWon(currentPrice)}
@@ -145,7 +145,7 @@ const PredictionChartV2 = ({
                                     ))}
                                 </div>
 
-                                <div className="absolute inset-x-3 bottom-3 grid grid-cols-5 text-[11px] text-white/45 font-medium">
+                                <div className="absolute inset-x-3 bottom-3 grid grid-cols-5 text-[11px] text-[#9CA3AF] font-medium">
                                     {chart.xLabels.map((label, index) => (
                                         <span
                                             key={`${label}_${index}`}
@@ -164,7 +164,7 @@ const PredictionChartV2 = ({
                             </div>
                         </>
                     ) : (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-center text-[12px] text-white/55 font-medium">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-center text-[12px] text-[#9CA3AF] font-medium">
                             아직 예언 점이 없습니다.
                         </div>
                     )}
@@ -179,11 +179,11 @@ function MiniLegend({ label, value, tone }) {
         ? 'text-neon-blue'
         : tone === 'pink'
             ? 'text-neon-pink'
-            : 'text-white';
+            : 'text-[#F3F4F6]';
 
     return (
-        <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
-            <p className="text-[11px] text-white/45 font-bold whitespace-nowrap leading-none">{label}</p>
+        <div className="rounded-2xl border border-white/10 bg-[#121212]/20 px-3 py-3">
+            <p className="text-[11px] text-[#9CA3AF] font-bold whitespace-nowrap leading-none">{label}</p>
             <p className={`mt-1 text-[13px] font-bold ${valueClass}`}>{value}</p>
         </div>
     );

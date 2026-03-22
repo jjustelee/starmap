@@ -36,14 +36,14 @@ const HeaderProfileButton = () => {
         <button
             onClick={() => navigate('/mypage')}
             aria-label="마이페이지"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 overflow-hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[#D1D5DB] transition hover:bg-white/10 overflow-hidden"
         >
             {isLoggedIn && profile?.avatar ? (
                 <img src={profile.avatar} alt="P" className="w-full h-full object-cover" />
             ) : isLoggedIn && profile?.nickname ? (
                 <span className="text-[14px] font-black text-neon-teal">{profile.nickname.charAt(0)}</span>
             ) : (
-                <User className="w-5 h-5 text-white/80" />
+                <User className="w-5 h-5 text-[#D1D5DB]" />
             )}
         </button>
     );
@@ -52,7 +52,7 @@ const HeaderProfileButton = () => {
 const RouteLoadingScreen = () => (
     <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
         <div className="w-12 h-12 border-4 border-white/10 border-t-neon-teal rounded-full animate-spin mb-5"></div>
-        <p className="text-sm font-bold text-white/50">페이지 불러오는 중</p>
+        <p className="text-sm font-bold text-[#9CA3AF]">페이지 불러오는 중</p>
     </div>
 );
 
@@ -631,13 +631,13 @@ function App() {
         return (
             <div className="min-h-screen bg-black text-soft-white flex flex-col items-center justify-center gap-4">
                 <div className="w-12 h-12 border-4 border-white/10 border-t-neon-teal rounded-full animate-spin"></div>
-                <p className="text-sm font-bold text-white/60">인증 상태를 확인하는 중...</p>
+                <p className="text-sm font-bold text-[#9CA3AF]">인증 상태를 확인하는 중...</p>
             </div>
         );
     }
 
     return (
-        <div className="font-display overflow-x-hidden min-h-screen text-soft-white pb-36">
+        <div className="font-display overflow-x-hidden min-h-screen bg-[#121212] text-[#F3F4F6] pb-36">
             {/* Onboarding Sheet */}
             <NicknameSetupSheet isOpen={showOnboarding} />
             {/* Background Layer (Desktop only) */}
@@ -675,7 +675,7 @@ function App() {
                             <Target className="w-7 h-7 text-neon-teal group-hover:scale-110 transition-transform" />
                             <div className="leading-none">
                                 <h1 className="flex items-end gap-2">
-                                    <span className="font-brandKo text-[22px] sm:text-[24px] font-extrabold tracking-[-0.03em] text-white/95 group-hover:text-white transition-colors">콕콕</span>
+                                    <span className="font-brandKo text-[22px] sm:text-[24px] font-extrabold tracking-[-0.03em] text-[#D1D5DB] group-hover:text-[#F3F4F6] transition-colors">콕콕</span>
                                     <span className="font-brandEn text-[22px] sm:text-[24px] font-extrabold tracking-[0.05em] uppercase text-neon-teal/90 group-hover:text-neon-teal transition-colors">KOKOK</span>
                                 </h1>
                             </div>
@@ -694,27 +694,27 @@ function App() {
                             {!searchQuery && (
                                 <section className="space-y-6 sm:space-y-8 pt-2 sm:pt-4 text-center">
                                     <div className="space-y-3 sm:space-y-4">
-                                        <p className="text-[11px] font-bold tracking-[0.32em] text-white/40 uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
-                                        <h2 className="text-[30px] sm:text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
+                                        <p className="text-[11px] font-bold tracking-[0.32em] text-[#9CA3AF] uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
+                                        <h2 className="text-[30px] sm:text-4xl font-extrabold leading-tight tracking-tight text-[#F3F4F6] md:text-5xl">
                                             사람들이 보는<br /> 목표가를 확인하고<br />
                                             <span className="bg-gradient-to-r from-neon-teal to-neon-pink bg-clip-text text-transparent">
                                                 내 예언 남기기
                                             </span>
                                         </h2>
-                                        <p className="mx-auto max-w-md text-[13px] sm:text-sm leading-5 sm:leading-6 text-white/60 md:text-base">
+                                        <p className="mx-auto max-w-md text-[13px] sm:text-sm leading-5 sm:leading-6 text-[#9CA3AF] md:text-base">
                                             적중 시 성지글
                                         </p>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto">
                                         <button
                                             onClick={navigateToDiscovery}
-                                            className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-extrabold text-white shadow-glowPink transition hover:scale-[1.01] active:scale-95"
+                                            className="rounded-2xl bg-gradient-to-r from-neon-teal to-neon-pink px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-extrabold text-[#F3F4F6] shadow-glowPink transition hover:scale-[1.01] active:scale-95"
                                         >
                                             목표가 보러가기
                                         </button>
                                         <button
                                             onClick={() => navigate('/sacred')}
-                                            className="rounded-2xl border border-white/12 bg-white/5 px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-bold text-white/85 transition hover:bg-white/10 active:scale-95"
+                                            className="rounded-2xl border border-white/12 bg-white/5 px-4 sm:px-5 py-3.5 sm:py-4 text-[13px] sm:text-sm font-bold text-[#D1D5DB] transition hover:bg-white/10 active:scale-95"
                                         >
                                             최근 성지글 보기
                                         </button>
@@ -727,11 +727,11 @@ function App() {
                                 <div className="relative group">
                                     <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-neon-teal/30 to-neon-pink/30 opacity-20 blur transition duration-700 group-hover:opacity-90"></div>
                                     <div className="relative crystal-glass flex items-center rounded-2xl border-white/15 px-4 sm:px-5">
-                                        <Search className="mr-3 text-white/35 w-5 h-5" />
+                                        <Search className="mr-3 text-[#9CA3AF] w-5 h-5" />
                                         <input
                                             ref={searchInputRef}
                                             aria-label="종목 검색"
-                                            className="w-full bg-transparent py-4 sm:py-5 text-[15px] sm:text-base font-semibold text-white placeholder:text-white/35 focus:outline-none"
+                                            className="w-full bg-transparent py-4 sm:py-5 text-[15px] sm:text-base font-semibold text-[#F3F4F6] placeholder:text-[#9CA3AF] focus:outline-none"
                                             placeholder="종목명을 검색해 목표가를 확인하세요"
                                             type="text"
                                             value={searchQuery}
@@ -743,7 +743,7 @@ function App() {
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                         />
                                         {searchQuery && (
-                                            <button onClick={() => setSearchQuery('')} className="text-white/30 hover:text-white transition">
+                                            <button onClick={() => setSearchQuery('')} className="text-[#6B7280] hover:text-[#F3F4F6] transition">
                                                 <X className="w-5 h-5" />
                                             </button>
                                         )}
@@ -752,14 +752,14 @@ function App() {
                                 <div className="space-y-4">
                                     {searchQuery ? (
                                         <div className="space-y-2">
-                                            <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white/35">
+                                            <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">
                                                 검색 결과 {searchResults.length > 0 && `(${searchResults.length.toLocaleString()}개)`}
                                             </p>
                                             <div className="grid gap-2">
                                                 {isSearching ? (
                                                     <div className="py-12 text-center crystal-glass rounded-2xl border-white/5 bg-white/5 space-y-3">
                                                         <div className="inline-block w-6 h-6 border-2 border-white/10 border-t-neon-teal rounded-full animate-spin"></div>
-                                                        <p className="text-white/30 text-xs font-bold font-brandEn tracking-widest uppercase">검색 중</p>
+                                                        <p className="text-[#6B7280] text-xs font-bold font-brandEn tracking-widest uppercase">검색 중</p>
                                                     </div>
                                                 ) : searchResults.length > 0 ? (
                                                     <>
@@ -787,20 +787,20 @@ function App() {
                                                                     className="flex items-center justify-between w-full p-3 sm:p-4 rounded-2xl border border-white/10 bg-white/5 transition hover:border-neon-teal/40 hover:bg-white/10 group animate-in slide-in-from-left-2 duration-300"
                                                                 >
                                                                     <div className="flex flex-col items-start gap-0.5">
-                                                                        <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{stock.symbol}</span>
-                                                                        <span className="text-base sm:text-lg font-black text-white group-hover:text-neon-teal transition-colors max-w-[180px] sm:max-w-none truncate">
+                                                                        <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-widest">{stock.symbol}</span>
+                                                                        <span className="text-base sm:text-lg font-black text-[#F3F4F6] group-hover:text-neon-teal transition-colors max-w-[180px] sm:max-w-none truncate">
                                                                             {renderHighlightedName(stock.name, searchQuery)}
                                                                         </span>
                                                                     </div>
                                                                     {stock.currentPrice > 0 && (
                                                                         <div className="text-right mr-4 ml-auto">
-                                                                            <p className="text-sm font-black text-white">{stock.currentPrice.toLocaleString()}</p>
-                                                                            <p className={`text-[10px] font-bold ${stock.priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
+                                                                            <p className="text-sm font-black text-[#F3F4F6]">{stock.currentPrice.toLocaleString()}</p>
+                                                                            <p className={`text-[10px] font-bold ${stock.priceChange >= 0 ? 'text-[#FF86C3]' : 'text-[#7BD1FA]'}`}>
                                                                                 {stock.priceChange >= 0 ? '▲' : '▼'} {Math.abs(stock.priceChange).toLocaleString()} ({stock.priceChangeRate.toFixed(2)}%)
                                                                             </p>
                                                                         </div>
                                                                     )}
-                                                                    <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-neon-teal transition-colors" />
+                                                                    <ChevronRight className="w-5 h-5 text-[#6B7280] group-hover:text-neon-teal transition-colors" />
                                                                 </button>
                                                             );
                                                         })}
@@ -813,34 +813,34 @@ function App() {
                                                     </>
                                                 ) : (
                                                     <div className="py-12 text-center crystal-glass rounded-2xl border-white/5 bg-white/5">
-                                                        <p className="text-white/30 font-bold mb-1">검색 결과 없음</p>
-                                                        <p className="text-[11px] text-white/20">종목명이나 코드를 다시 확인해 주세요</p>
+                                                        <p className="text-[#6B7280] font-bold mb-1">검색 결과 없음</p>
+                                                        <p className="text-[11px] text-[#6B7280]">종목명이나 코드를 다시 확인해 주세요</p>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-3">
-                                            <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white/35">인기 종목</p>
+                                            <p className="px-1 text-[11px] font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">인기 종목</p>
                                             <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
                                                 {popularStocks.map((stock) => (
                                                     <button
                                                         key={stock.symbol}
                                                         onClick={() => handleStockClick(stock)}
                                                         type="button"
-                                                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm font-semibold text-white/80 transition hover:border-neon-teal/40 hover:bg-white/10"
+                                                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm font-semibold text-[#D1D5DB] transition hover:border-neon-teal/40 hover:bg-white/10"
                                                     >
                                                         {stock.name}
                                                     </button>
                                                 ))}
                                                 {stocksLoading && (
-                                                    <div className="flex items-center gap-2 px-4 py-2 text-white/30 text-sm">
+                                                    <div className="flex items-center gap-2 px-4 py-2 text-[#6B7280] text-sm">
                                                         <div className="w-3 h-3 border border-white/20 border-t-neon-teal rounded-full animate-spin"></div>
                                                         불러오는 중
                                                     </div>
                                                 )}
                                                 {isStockMasterLoading && !stockMasterLoadedRef.current && (
-                                                    <div className="flex items-center gap-2 px-4 py-2 text-white/30 text-sm">
+                                                    <div className="flex items-center gap-2 px-4 py-2 text-[#6B7280] text-sm">
                                                         <div className="w-3 h-3 border border-white/20 border-t-neon-teal rounded-full animate-spin"></div>
                                                         검색 준비 중
                                                     </div>
@@ -855,10 +855,10 @@ function App() {
                                 <section className="space-y-4 sm:space-y-5">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">홈 커뮤니티</p>
-                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white">방금 박제된 예언</h3>
+                                            <p className="text-[11px] font-bold uppercase tracking-widest text-[#9CA3AF]">홈 커뮤니티</p>
+                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F4F6]">방금 박제된 예언</h3>
                                         </div>
-                                        <span className="text-sm font-bold text-white/40">최근 7일 기준</span>
+                                        <span className="text-sm font-bold text-[#9CA3AF]">최근 7일 기준</span>
                                     </div>
 
                                     {communityHomeFeed.hotStocks.length > 0 ? (
@@ -871,16 +871,16 @@ function App() {
                                                     className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-neon-teal/40 hover:bg-white/10"
                                                 >
                                                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-teal/70">최근 7일 많이 찍힘</p>
-                                                    <p className="mt-1 text-sm font-black text-white">{stock.stockName}</p>
-                                                    <p className="mt-1 text-[11px] font-bold text-white/45">{stock.predictionCount}건 찍힘</p>
+                                                    <p className="mt-1 text-sm font-black text-[#F3F4F6]">{stock.stockName}</p>
+                                                    <p className="mt-1 text-[11px] font-bold text-[#9CA3AF]">{stock.predictionCount}건 찍힘</p>
                                                     <p className="mt-2 text-[11px] font-black text-neon-teal">목표가 보기 →</p>
                                                 </button>
                                             ))}
                                         </div>
                                     ) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-center">
-                                            <p className="text-white/55 font-bold">아직 뜨는 종목이 없습니다</p>
-                                            <p className="mt-1 text-sm text-white/35">예언이 쌓이면 여기에 뜹니다</p>
+                                            <p className="text-[#9CA3AF] font-bold">아직 뜨는 종목이 없습니다</p>
+                                            <p className="mt-1 text-sm text-[#9CA3AF]">예언이 쌓이면 여기에 뜹니다</p>
                                         </div>
                                     )}
 
@@ -918,20 +918,20 @@ function App() {
                                                     >
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neon-pink/75">방금 박제</p>
+                                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FF86C3]/75">방금 박제</p>
                                                                 <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getPromotionStatusClasses(item.promotionStatus)}`}>
                                                                     {item.promotionLabel}
                                                                 </span>
                                                             </div>
-                                                            <h4 className="mt-1 truncate text-lg font-black text-white">{item.stockName}</h4>
-                                                            <p className="mt-1 text-sm font-bold text-white/55">
+                                                            <h4 className="mt-1 truncate text-lg font-black text-[#F3F4F6]">{item.stockName}</h4>
+                                                            <p className="mt-1 text-sm font-bold text-[#9CA3AF]">
                                                                 {item.authorNickname} · {formatRelativeTime(item.createdAt)}
                                                             </p>
                                                         </div>
                                                         <div className="shrink-0 text-right">
-                                                            <p className="text-base font-black text-white">{Number(item.targetPrice || 0).toLocaleString()}원</p>
-                                                            <p className="mt-1 text-[10px] font-bold text-white/25">~ {formatSacredDate(item.targetDate)}</p>
-                                                            <p className={`mt-2 text-[11px] font-black ${item.promotionStatus === 'sacred' ? 'text-neon-pink' : 'text-neon-teal'}`}>
+                                                            <p className="text-base font-black text-[#F3F4F6]">{Number(item.targetPrice || 0).toLocaleString()}원</p>
+                                                            <p className="mt-1 text-[10px] font-bold text-[#6B7280]">~ {formatSacredDate(item.targetDate)}</p>
+                                                            <p className={`mt-2 text-[11px] font-black ${item.promotionStatus === 'sacred' ? 'text-[#FF86C3]' : 'text-neon-teal'}`}>
                                                                 {item.promotionStatus === 'sacred' ? '성지글 보러 →' : '예언 남기기 →'}
                                                             </p>
                                                         </div>
@@ -947,8 +947,8 @@ function App() {
                                                                     onClick={(event) => handlePredictionReactionClick(event, item, option.key)}
                                                                     disabled={reactionBusyPredictionId === item.id}
                                                                     className={`rounded-full border px-2.5 sm:px-3 py-1.5 text-[11px] font-bold transition ${isSelected
-                                                                        ? 'border-neon-pink/40 bg-neon-pink/15 text-neon-pink'
-                                                                        : 'border-white/10 bg-white/5 text-white/60 hover:border-neon-teal/30 hover:text-white'
+                                                                        ? 'border-neon-pink/40 bg-neon-pink/15 text-[#FF86C3]'
+                                                                        : 'border-white/10 bg-white/5 text-[#9CA3AF] hover:border-neon-teal/30 hover:text-[#F3F4F6]'
                                                                     } ${reactionBusyPredictionId === item.id ? 'opacity-60' : ''}`}
                                                                 >
                                                                     {option.label}{reactionCount > 0 ? ` ${reactionCount}` : ''}
@@ -962,7 +962,7 @@ function App() {
                                                                     ...prev,
                                                                     [item.id]: true
                                                                 }))}
-                                                                className="rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-[11px] font-bold text-white/50 transition hover:border-white/20 hover:text-white/75"
+                                                                className="rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-[11px] font-bold text-[#9CA3AF] transition hover:border-white/20 hover:text-[#D1D5DB]"
                                                             >
                                                                 반응 더 보기
                                                             </button>
@@ -970,7 +970,7 @@ function App() {
                                                     </div>
             {predictionReactionFeedback[item.id] ? (
                                                         <div className="mt-2 space-y-2">
-                                                            <p className="text-[11px] font-bold text-white/45">
+                                                            <p className="text-[11px] font-bold text-[#9CA3AF]">
                                                                 {predictionReactionFeedback[item.id]}
                                                             </p>
                                                             {predictionReactionLoginPromptId === item.id ? (
@@ -992,8 +992,8 @@ function App() {
                                         </div>
                                     ) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
-                                            <p className="text-white/60 font-bold">아직 새 예언이 없습니다</p>
-                                            <p className="mt-2 text-sm text-white/35">첫 예언이 올라오면 여기에 뜹니다</p>
+                                            <p className="text-[#9CA3AF] font-bold">아직 새 예언이 없습니다</p>
+                                            <p className="mt-2 text-sm text-[#9CA3AF]">첫 예언이 올라오면 여기에 뜹니다</p>
                                         </div>
                                     )}
                                 </section>
@@ -1009,31 +1009,31 @@ function App() {
                                     <div className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
                                         <div>
                                             <p className="text-[11px] font-bold uppercase tracking-widest text-neon-teal/70">많이 적는 목표가</p>
-                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase leading-none">지금 뜨는 종목</h3>
+                                            <h3 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F4F6] uppercase leading-none">지금 뜨는 종목</h3>
                                         </div>
                                         <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
                                     </div>
                                     <div className="rounded-[1.5rem] sm:rounded-[1.75rem] glass-soft p-4 sm:p-5 border border-white/5">
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
-                                                <p className="text-sm font-bold text-white/55">{popularStocks[0].name}</p>
-                                                <p className="text-[28px] sm:text-3xl font-black text-white">
+                                                <p className="text-sm font-bold text-[#9CA3AF]">{popularStocks[0].name}</p>
+                                                <p className="text-[28px] sm:text-3xl font-black text-[#F3F4F6]">
                                                     {popularStocks[0].currentPrice > 0 ? popularStocks[0].currentPrice.toLocaleString() : '시세 동기화 중'}
                                                 </p>
                                                 <p className="text-[10px] font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
                                                     {popularStocks[0].currentPrice > 0 ? (popularStocks[0].quoteStatusLabel || '최근값') : '갱신중'}
                                                 </p>
-                                                <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-neon-pink' : 'text-neon-blue'}`}>
+                                                <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-[#FF86C3]' : 'text-[#7BD1FA]'}`}>
                                                     {popularStocks[0].priceChange >= 0 ? '▲' : '▼'} {Math.abs(popularStocks[0].priceChange).toLocaleString()} ({popularStocks[0].priceChangeRate.toFixed(2)}%)
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[11px] font-black text-neon-pink uppercase tracking-widest">기록 수</p>
-                                                <p className="text-xl font-black text-white">{popularStocks[0].predictionCount.toLocaleString()}건</p>
+                                                <p className="text-[11px] font-black text-[#FF86C3] uppercase tracking-widest">기록 수</p>
+                                                <p className="text-xl font-black text-[#F3F4F6]">{popularStocks[0].predictionCount.toLocaleString()}건</p>
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <div className="flex justify-between items-center text-xs font-bold text-white/45">
+                                            <div className="flex justify-between items-center text-xs font-bold text-[#9CA3AF]">
                                                 <span>관심 흐름</span>
                                                 <span>많이 보는 편</span>
                                             </div>
@@ -1050,10 +1050,10 @@ function App() {
                                 <section className="space-y-4 sm:space-y-5">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
-                                            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">최근 성지글</h3>
-                                            <p className="mt-2 text-sm font-bold text-white/40">최근 적중 기록</p>
+                                            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F4F6]">최근 성지글</h3>
+                                            <p className="mt-2 text-sm font-bold text-[#9CA3AF]">최근 적중 기록</p>
                                         </div>
-                                        <button onClick={() => navigate('/sacred')} className="text-sm font-bold text-neon-pink hover:text-white transition">더 보기 →</button>
+                                        <button onClick={() => navigate('/sacred')} className="text-sm font-bold text-[#FF86C3] hover:text-[#F3F4F6] transition">더 보기 →</button>
                                     </div>
 
                                 <div className="space-y-3">
@@ -1067,29 +1067,29 @@ function App() {
                                                 <div className="mb-5 flex items-start justify-between gap-4">
                                                     <div className="flex items-center gap-3">
                                                         {post.judgmentStatus === 'HIT_EXACT' ? (
-                                                            <Award className="w-8 h-8 sm:w-10 sm:h-10 text-neon-pink" />
+                                                            <Award className="w-8 h-8 sm:w-10 sm:h-10 text-[#FF86C3]" />
                                                         ) : (
                                                             <BadgeCheck className="w-8 h-8 sm:w-10 sm:h-10 text-neon-teal" />
                                                         )}
                                                         <div>
-                                                            <p className={`text-xs font-black tracking-[0.18em] uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>성지글</p>
-                                                            <p className="text-[11px] font-bold text-white/35">{post.authorNickname}</p>
+                                                            <p className={`text-xs font-black tracking-[0.18em] uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-[#FF86C3]' : 'text-neon-teal'}`}>성지글</p>
+                                                            <p className="text-[11px] font-bold text-[#9CA3AF]">{post.authorNickname}</p>
                                                         </div>
                                                     </div>
-                                                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white/60">적중 완료</span>
+                                                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-[#9CA3AF]">적중 완료</span>
                                                 </div>
-                                                <h4 className={`text-xl sm:text-2xl font-black tracking-tight text-white ${post.judgmentStatus === 'HIT_EXACT' ? 'group-hover:text-neon-pink' : 'group-hover:text-neon-teal'} transition-colors`}>
+                                                <h4 className={`text-xl sm:text-2xl font-black tracking-tight text-[#F3F4F6] ${post.judgmentStatus === 'HIT_EXACT' ? 'group-hover:text-[#FF86C3]' : 'group-hover:text-neon-teal'} transition-colors`}>
                                                     {post.stockName} {Number(post.targetPrice).toLocaleString()}원 적중
                                                 </h4>
-                                                <p className="mt-2 text-xs font-medium text-white/50">
+                                                <p className="mt-2 text-xs font-medium text-[#9CA3AF]">
                                                     {post.authorNickname} • {formatSacredDate(post.hitDate)} 적중
                                                 </p>
                                             </div>
                                         </article>
                                     )) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
-                                            <p className="text-white/60 font-bold">아직 성지글이 없습니다</p>
-                                            <p className="mt-2 text-sm text-white/35">첫 적중 기록이 올라오면 여기에 뜹니다</p>
+                                            <p className="text-[#9CA3AF] font-bold">아직 성지글이 없습니다</p>
+                                            <p className="mt-2 text-sm text-[#9CA3AF]">첫 적중 기록이 올라오면 여기에 뜹니다</p>
                                         </div>
                                     )}
                                 </div>
@@ -1157,7 +1157,7 @@ function App() {
                             <li className="flex justify-center">
                                 <button
                                     onClick={() => changeView('home')}
-                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'home' ? 'text-neon-teal' : 'text-white/45'}`}
+                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'home' ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <Home className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-black tracking-[0.12em]">홈</span>
@@ -1166,7 +1166,7 @@ function App() {
                             <li className="flex justify-center">
                                 <button
                                     onClick={navigateToSearch}
-                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition hover:text-white active:scale-95 ${(view === 'home' && searchQuery.trim()) ? 'text-neon-teal' : 'text-white/45'}`}
+                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition hover:text-[#F3F4F6] active:scale-95 ${(view === 'home' && searchQuery.trim()) ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <Search className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-bold tracking-[0.12em]">검색</span>
@@ -1176,7 +1176,7 @@ function App() {
                                 <button
                                     onClick={handlePrimaryCta}
                                     aria-label="예언하기"
-                                    className="group relative -mt-7 sm:-mt-8 flex h-14 w-14 sm:h-16 sm:w-16 flex-col items-center justify-center rounded-full bg-gradient-to-tr from-neon-teal via-neon-pink to-purple-600 text-white shadow-lg transition active:scale-95"
+                                    className="group relative -mt-7 sm:-mt-8 flex h-14 w-14 sm:h-16 sm:w-16 flex-col items-center justify-center rounded-full bg-gradient-to-tr from-neon-teal via-neon-pink to-purple-600 text-[#F3F4F6] shadow-lg transition active:scale-95"
                                 >
                                     <div className="absolute -inset-2 rounded-full bg-neon-pink/20 opacity-60 blur-xl"></div>
                                     <div className="relative flex flex-col items-center leading-none">
@@ -1188,7 +1188,7 @@ function App() {
                             <li className="flex justify-center">
                                 <button
                                     onClick={() => changeView('sacred')}
-                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'sacred' || view === 'sacred-detail' ? 'text-neon-teal' : 'text-white/45'}`}
+                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'sacred' || view === 'sacred-detail' ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-bold tracking-[0.12em]">성지글</span>
@@ -1197,7 +1197,7 @@ function App() {
                             <li className="flex justify-center">
                                 <button
                                     onClick={() => changeView('mypage')}
-                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'mypage' ? 'text-neon-teal' : 'text-white/45'}`}
+                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition active:scale-95 ${view === 'mypage' ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-[10px] font-bold tracking-[0.12em]">내 기록</span>
@@ -1234,10 +1234,10 @@ function formatRelativeTime(value) {
 
 function getPromotionStatusClasses(status) {
     if (status === 'sacred') {
-        return 'border-neon-pink/30 bg-neon-pink/10 text-neon-pink';
+        return 'border-neon-pink/30 bg-neon-pink/10 text-[#FF86C3]';
     }
     if (status === 'judging') {
-        return 'border-white/15 bg-white/5 text-white/70';
+        return 'border-white/15 bg-white/5 text-[#D1D5DB]';
     }
     return 'border-neon-teal/30 bg-neon-teal/10 text-neon-teal';
 }

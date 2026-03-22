@@ -17,8 +17,8 @@ export const StockDetailContent = (props) => {
         return (
             <div className="fixed inset-0 bg-[#08080c] flex flex-col items-center justify-center z-[1000] p-6 text-center">
                 <div className="w-16 h-16 border-4 border-white/10 border-t-neon-pink rounded-full animate-spin mb-6"></div>
-                <h2 className="text-xl font-black text-white/90 mb-2 font-brandEn tracking-tighter uppercase italic">Scanning Ecosystem...</h2>
-                <p className="text-white/40 text-[13px] font-medium leading-relaxed max-w-[240px]">
+                <h2 className="text-xl font-black text-[#D1D5DB] mb-2 font-brandEn tracking-tighter uppercase italic">Scanning Ecosystem...</h2>
+                <p className="text-[#9CA3AF] text-[13px] font-medium leading-relaxed max-w-[240px]">
                     데이터베이스에 접속하여 실시간 <br />종목 및 예측 데이터를 수집 중입니다.
                 </p>
             </div>
@@ -31,13 +31,13 @@ export const StockDetailContent = (props) => {
                 <div className="w-16 h-16 rounded-full bg-neon-pink/10 border border-neon-pink/20 flex items-center justify-center mb-6">
                     <span className="text-neon-pink text-3xl font-black">!</span>
                 </div>
-                <h2 className="text-xl font-black text-white/90 mb-2 font-brandKo tracking-tight">종목을 찾을 수 없습니다</h2>
-                <p className="text-white/40 text-[13px] font-medium leading-relaxed max-w-[280px] mb-8">
+                <h2 className="text-xl font-black text-[#D1D5DB] mb-2 font-brandKo tracking-tight">종목을 찾을 수 없습니다</h2>
+                <p className="text-[#9CA3AF] text-[13px] font-medium leading-relaxed max-w-[280px] mb-8">
                     해당 종목의 데이터를 불러오는데 실패했거나 <br />유효하지 않은 종목 코드입니다.
                 </p>
                 <button
                     onClick={props.onBack}
-                    className="px-8 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all active:scale-95"
+                    className="px-8 py-3 rounded-2xl bg-white/5 border border-white/10 text-[#F3F4F6] font-bold hover:bg-white/10 transition-all active:scale-95"
                 >
                     홈으로 돌아가기
                 </button>
