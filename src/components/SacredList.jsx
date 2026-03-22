@@ -87,7 +87,7 @@ export const SacredList = ({ onSelect }) => {
                                     )}
                                     <div>
                                         <p className={`text-xs font-black tracking-widest uppercase ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>맞은 기록</p>
-                                        <p className="text-xs font-bold text-[#6B7280] truncate max-w-[180px]">작성자 {post.authorNickname}</p>
+                                        <p className="text-xs font-bold text-[#6B7280] max-w-[180px] break-words whitespace-normal">작성자 {post.authorNickname}</p>
                                     </div>
                                 </div>
                                 <span className="text-xs font-bold text-[#9CA3AF] uppercase">{post.judgmentLabel}</span>

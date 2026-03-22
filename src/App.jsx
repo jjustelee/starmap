@@ -236,12 +236,11 @@ function App() {
 
                     // 1단계: 먼저 DB 데이터를 표시
                     setPopularStocks(sorted);
+                    setStocksLoading(false);
 
-                    // 2단계: 상위 종목에 대해 현재가 동기화 (quote-public 기반, TTL 60초 캐시 우선)
+                    // 2단계: 상위 종목 현재가 동기화는 뒤에서 조용히 반영
                     const topSymbols = sorted.slice(0, 10);
-                    
-                    // 병렬로 API 호출
-                    const syncPromises = topSymbols.map(async (stock) => {
+                    void Promise.all(topSymbols.map(async (stock) => {
                         try {
                             const info = await fetchStockInfo(stock.symbol);
                             if (info && Number(info.currentPrice) > 0) {
@@ -257,24 +256,21 @@ function App() {
                             console.warn(`Failed to sync price for ${stock.symbol}:`, err);
                         }
                         return stock;
-                    });
-
-                    const results = await Promise.all(syncPromises);
-                    
-                    // 업데이트된 가격을 기존 리스트와 병합
-                    setPopularStocks(prev => {
-                        const updated = [...prev];
-                        results.forEach(res => {
-                            const idx = updated.findIndex(u => u.symbol === res.symbol);
-                            if (idx !== -1) updated[idx] = res;
+                    })).then((results) => {
+                        setPopularStocks(prev => {
+                            const updated = [...prev];
+                            results.forEach(res => {
+                                const idx = updated.findIndex(u => u.symbol === res.symbol);
+                                if (idx !== -1) updated[idx] = res;
+                            });
+                            return updated;
                         });
-                        return updated;
                     });
                 }
             } catch (err) {
                 console.error("Failed to load popular stocks:", err);
+                setStocksLoading(false);
             }
-            setStocksLoading(false);
         };
         loadPopularStocks();
     }, []);
@@ -660,7 +656,7 @@ function App() {
 
             {/* Global Header */}
             {(view === 'home' || view === 'sacred' || view === 'mypage') && (
-                <header className="sticky top-3 sm:top-4 z-50 mx-auto mt-3 sm:mt-4 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-2xl rounded-2xl crystal-glass">
+                <header className="sticky top-3 sm:top-4 z-50 mx-auto mt-3 sm:mt-4 w-[calc(100%-2rem)] sm:w-[calc(100%-2.5rem)] max-w-[430px] rounded-2xl crystal-glass">
                     <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4">
                         <div 
                             className="flex items-center gap-3 cursor-pointer group/logo"
@@ -686,7 +682,7 @@ function App() {
                 </header>
             )}
 
-            <main className={view === 'detail' ? 'w-full py-8' : 'mx-auto max-w-2xl px-4 sm:px-5 py-6 sm:py-8'}>
+            <main className="mx-auto w-full max-w-[430px] px-4 sm:px-5 py-6 sm:py-8">
                 <Routes>
                     <Route path="/" element={
                         <div className="space-y-8 sm:space-y-12 animate-in fade-in duration-700">
@@ -788,7 +784,7 @@ function App() {
                                                                 >
                                                                     <div className="flex flex-col items-start gap-0.5">
                                                                         <span className="text-xs font-bold text-[#9CA3AF] uppercase tracking-widest">{stock.symbol}</span>
-                                                                        <span className="text-base sm:text-lg font-black text-[#F3F4F6] group-hover:text-neon-teal transition-colors max-w-[180px] sm:max-w-none truncate">
+                                                                        <span className="text-base sm:text-lg font-black text-[#F3F4F6] group-hover:text-neon-teal transition-colors max-w-[180px] sm:max-w-none break-words whitespace-normal leading-tight">
                                                                             {renderHighlightedName(stock.name, searchQuery)}
                                                                         </span>
                                                                     </div>
@@ -923,7 +919,7 @@ function App() {
                                                                     {item.promotionLabel}
                                                                 </span>
                                                             </div>
-                                                            <h4 className="mt-1 truncate text-lg font-black text-[#F3F4F6]">{item.stockName}</h4>
+                                                            <h4 className="mt-1 text-lg font-black text-[#F3F4F6] break-words whitespace-normal leading-tight">{item.stockName}</h4>
                                                             <p className="mt-1 text-sm font-bold text-[#9CA3AF]">
                                                                 {item.authorNickname} · {formatRelativeTime(item.createdAt)}
                                                             </p>
@@ -1154,7 +1150,7 @@ function App() {
 
             {/* Bottom Nav */}
             {view !== 'success' && !(view === 'detail' && isDetailComposerVisible) && (
-                <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 w-[94%] sm:w-[92%] max-w-md -translate-x-1/2">
+                <div className="fixed bottom-4 sm:bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] sm:w-[calc(100%-2.5rem)] max-w-[430px] -translate-x-1/2">
                     <nav className="crystal-glass rounded-[1.5rem] sm:rounded-[2rem] border-white/10 px-2.5 sm:px-3 py-2 sm:py-2.5 shadow-glass">
                         <ul className="grid grid-cols-5 items-end">
                             <li className="flex justify-center">

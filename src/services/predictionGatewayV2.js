@@ -16,6 +16,9 @@ const WINDOW_DAYS = {
 
 const MAX_HORIZON_DAYS = 1095;
 const MIN_PRICE = 100;
+const PREDICTION_SNAPSHOT_CACHE_TTL_MS = 10_000;
+
+const predictionSnapshotCache = new Map();
 
 /**
  * I/O Contract
@@ -41,6 +44,17 @@ export async function loadCurrentPrice(symbol, hintPrice = 0) {
 export async function loadPredictionSnapshot(symbol, window, options = {}) {
     // BACKEND_TODO(API): GET /api/v1/symbols/{symbol}/prediction-snapshot?window=... 응답 shape로 교체.
     const normalizedWindow = WINDOW_DAYS[window] ? window : '7d';
+    const cacheKey = getPredictionSnapshotCacheKey(symbol, normalizedWindow, options);
+    const cached = predictionSnapshotCache.get(cacheKey);
+    const now = Date.now();
+    if (cached?.value && cached.expiresAt > now) {
+        return cached.value;
+    }
+    if (cached?.promise) {
+        return cached.promise;
+    }
+
+    const promise = (async () => {
     let currentUserId = options.currentUserId || null;
     if (!currentUserId) {
         const { data: authData } = await supabase.auth.getUser();
@@ -125,14 +139,28 @@ export async function loadPredictionSnapshot(symbol, window, options = {}) {
             yDomain: { min: Math.round(yMin), max: Math.round(yMax) }
         }
     };
+    })();
+
+    predictionSnapshotCache.set(cacheKey, { promise });
+    try {
+        const snapshot = await promise;
+        predictionSnapshotCache.set(cacheKey, {
+            value: snapshot,
+            expiresAt: Date.now() + PREDICTION_SNAPSHOT_CACHE_TTL_MS
+        });
+        return snapshot;
+    } catch (error) {
+        predictionSnapshotCache.delete(cacheKey);
+        throw error;
+    }
 }
 
 /**
  * I/O Contract
- * input: draft({ symbol, targetPrice, targetDate, window, source, rangeLevel })
+ * input: draft({ symbol, targetPrice, targetDate, window, source, rangeLevel }), options({ stockId?, currentUserId? })
  * output: Promise<{ predictionId: string, acceptedAt: string }>
  */
-export async function submitPredictionDraft(draft) {
+export async function submitPredictionDraft(draft, options = {}) {
     // BACKEND_TODO(SUPABASE): predictions 테이블 insert 또는 RPC submit_prediction 사용.
     // BACKEND_TODO(API): POST /api/v1/predictions body/response 계약으로 교체.
     const validation = validatePredictionDraft(draft);
@@ -143,8 +171,11 @@ export async function submitPredictionDraft(draft) {
     const acceptedAt = new Date().toISOString();
     let predictionId = `prediction_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-    const stock = await fetchStockInfo(String(draft.symbol || ''));
-    let stockId = stock?.id || null;
+    let stockId = options.stockId || null;
+    if (!stockId) {
+        const stock = await fetchStockInfo(String(draft.symbol || ''));
+        stockId = stock?.id || null;
+    }
     if (!stockId) {
         const { data: resolvedId, error: resolveError } = await supabase
             .rpc('resolve_stock_id', {
@@ -156,8 +187,7 @@ export async function submitPredictionDraft(draft) {
         }
         stockId = resolvedId;
     }
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData?.user?.id || null;
+    const userId = options.currentUserId || null;
     if (!userId) {
         throw new Error('로그인 상태를 확인한 뒤 다시 시도해 주세요.');
     }
@@ -289,6 +319,12 @@ function buildCells(dots, yMin, yMax) {
             count
         };
     });
+}
+
+function getPredictionSnapshotCacheKey(symbol, window, options = {}) {
+    const stockId = String(options.stockId || '');
+    const userId = String(options.currentUserId || '');
+    return [String(symbol || ''), String(window || ''), stockId, userId].join('|');
 }
 
 function getModePrice(dots) {

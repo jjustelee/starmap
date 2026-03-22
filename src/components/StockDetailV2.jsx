@@ -170,12 +170,17 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
         setIsSubmitting(true);
         setErrorMessage('');
         setShowRestoreNotice(false);
+        let didNavigate = false;
         try {
-            await submitPredictionDraft(payload);
+            await submitPredictionDraft(payload, {
+                stockId,
+                currentUserId: userId
+            });
             if (typeof window !== 'undefined') {
                 window.localStorage.removeItem(draftStorageKey);
             }
             if (typeof onRecord === 'function') {
+                didNavigate = true;
                 onRecord({
                     targetPrice: Number(payload.targetPrice),
                     stock: {
@@ -188,13 +193,14 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                     }
                 });
             }
-            await reloadSnapshot();
         } catch (error) {
             setErrorMessage(error?.message || '예언 박제에 실패했어요.');
         } finally {
-            setIsSubmitting(false);
+            if (!didNavigate) {
+                setIsSubmitting(false);
+            }
         }
-    }, [draft, symbol, windowKey, onRecord, reloadSnapshot, isLoggedIn, draftStorageKey, stockInfo, stock, currentPrice]);
+    }, [draft, symbol, windowKey, onRecord, isLoggedIn, draftStorageKey, stockInfo, stock, currentPrice]);
 
     const handleRequireLogin = useCallback(async () => {
         if (typeof window !== 'undefined') {
@@ -258,8 +264,8 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                 onBack={onBack}
             />
 
-            <main className="w-full mt-6 relative z-40 pb-24 sm:pb-28">
-                <div className="mx-auto max-w-2xl px-5 space-y-6 sm:space-y-8">
+            <main className="w-full mt-6 relative z-40 pb-28">
+                <div className="w-full space-y-7">
                     <TargetConsensusSummary
                         currentPrice={currentPrice}
                         stats={mergedSnapshot?.stats}
@@ -357,10 +363,10 @@ function TargetConsensusSummary({ currentPrice, stats, sampleSize }) {
 
     return (
         <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-5 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-            <p className="text-sm font-bold text-[#9CA3AF]">종목 요약</p>
-            <p className="mt-2 text-[26px] sm:text-3xl font-extrabold leading-none text-[#F3F4F6]">{headline}</p>
-            <p className="mt-2 text-sm sm:text-[17px] font-bold text-[#D1D5DB]">{subline}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+            <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">종목 요약</p>
+            <p className="mt-2 text-[28px] font-extrabold leading-none text-[#F3F4F6] truncate">{headline}</p>
+            <p className="mt-2 text-[15px] font-bold text-[#D1D5DB] truncate">{subline}</p>
+            <div className="grid grid-cols-2 gap-2 mt-4">
                 <SummaryMetric label="현재가" value={hasCurrentPrice ? formatSummaryWon(currentPrice) : '-'} tone="teal" />
                 <SummaryMetric label="대표 목표가" value={hasAnchorPrice ? formatSummaryWon(anchorPrice) : '-'} tone="amber" />
                 <SummaryMetric label="집중 구간" value={headline} tone="neutral" />

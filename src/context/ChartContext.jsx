@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchStockDetailBundle, fetchStockInfo } from '../utils/mockData';
 
 const ChartContext = createContext(null);
@@ -98,7 +98,7 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
         loadInitialData();
     }, [symbol]);
 
-    const value = {
+    const value = useMemo(() => ({
         stateRef,
         isLoading,
         isDetailLoading,
@@ -116,7 +116,21 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
         setIsSealing,
         vowCount,
         setVowCount
-    };
+    }), [
+        isLoading,
+        isDetailLoading,
+        stockInfo,
+        historyData,
+        starsData,
+        dashboardData,
+        realityData,
+        basePrice,
+        INITIAL_MIN,
+        INITIAL_MAX,
+        chartDims,
+        isSealing,
+        vowCount
+    ]);
 
     return (
         <ChartContext.Provider value={value}>

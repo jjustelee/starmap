@@ -84,7 +84,7 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
             </div>
 
             {/* Record Card */}
-            <div className="w-full max-w-sm crystal-glass p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-neon-teal/30 space-y-3 sm:space-y-4">
+            <div className="w-full max-w-[430px] crystal-glass p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-neon-teal/30 space-y-3 sm:space-y-4">
                 <div className="flex justify-between items-start">
                     <div className="text-left">
                         <p className="text-xs font-bold text-[#9CA3AF] uppercase tracking-widest">{stock.symbol}</p>
@@ -118,7 +118,7 @@ export const RecordSuccess = ({ stock, targetPrice, onHome, onViewMyPredictions,
             </div>
 
             {/* Actions */}
-            <div className="w-full max-w-sm space-y-3">
+            <div className="w-full max-w-[430px] space-y-3">
                 <button
                     onClick={onViewMyPredictions}
                     className="w-full rounded-2xl bg-white text-black py-4 sm:py-5 text-base sm:text-lg font-black flex items-center justify-center gap-2 hover:opacity-90 transition active:scale-95"

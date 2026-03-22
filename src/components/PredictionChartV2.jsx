@@ -38,16 +38,13 @@ const PredictionChartV2 = ({
     );
 
     return (
-        <section className="bg-white/[0.06] backdrop-blur-2xl rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 border border-white/10 shadow-[0_12px_24px_-6px_rgba(0,0,0,0.5)] relative overflow-hidden pointer-events-auto">
+        <section className="bg-white/[0.06] backdrop-blur-2xl rounded-[28px] p-5 border border-white/10 shadow-[0_12px_24px_-6px_rgba(0,0,0,0.5)] relative overflow-hidden pointer-events-auto">
             <div className="absolute top-0 right-0 w-28 h-28 bg-neon-pink/5 blur-[55px] rounded-full pointer-events-none" />
-            <div className="relative z-10 space-y-3 sm:space-y-4">
+            <div className="relative z-10 space-y-4">
                 <div className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-neon-pink text-3xl">monitoring</span>
-                    <h3 className="text-lg sm:text-xl font-bold text-[#F3F4F6] tracking-tight leading-none font-brandKo">사람들 예언 흐름</h3>
+                    <h3 className="text-[20px] font-bold text-[#F3F4F6] tracking-tight leading-none font-brandKo">사람들 예언 흐름</h3>
                 </div>
-                <p className="text-[15px] sm:text-sm text-[#9CA3AF] font-medium leading-relaxed">
-                    언제 얼마를 찍었는지
-                </p>
 
                 <div className="grid grid-cols-4 gap-2">
                     {WINDOWS.map((window) => {
@@ -70,17 +67,12 @@ const PredictionChartV2 = ({
                     })}
                 </div>
 
-                <div className="rounded-[20px] border border-white/10 bg-[#08080c] p-4 sm:p-5 space-y-3">
+                <div className="rounded-[20px] border border-white/10 bg-[#08080c] p-4 space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-bold text-[#F3F4F6]">예언 점 보기</p>
-                        <div className="flex items-center gap-2 flex-wrap justify-end">
-                            {chart.myCount > 0 ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-neon-pink/8 text-neon-pink border-neon-pink/25">
-                                    내 예언 {chart.myCount}건
-                                </span>
-                            ) : null}
-                            <span className="text-xs text-[#9CA3AF] font-medium">예언 {chart.sampleCount}건</span>
-                        </div>
+                        <p className="text-sm font-bold text-[#F3F4F6]">예언 점</p>
+                        <p className="text-xs text-[#9CA3AF] font-medium text-right truncate">
+                            예언 {chart.sampleCount}건{chart.myCount > 0 ? ` · 내 ${chart.myCount}건` : ''}
+                        </p>
                     </div>
 
                     {isWindowSyncing ? (
@@ -90,23 +82,16 @@ const PredictionChartV2 = ({
                     ) : null}
 
                     {(chart.outlierTopCount > 0 || chart.outlierBottomCount > 0) ? (
-                        <div className="flex flex-wrap gap-2">
-                            {chart.outlierTopCount > 0 ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-white/[0.03] text-neon-pink/85 border-neon-pink/18">
-                                    상단 밖 {chart.outlierTopCount}건
-                                </span>
-                            ) : null}
-                            {chart.outlierBottomCount > 0 ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-white/[0.03] text-neon-blue/85 border-neon-blue/18">
-                                    하단 밖 {chart.outlierBottomCount}건
-                                </span>
-                            ) : null}
-                        </div>
+                        <p className="text-xs text-[#9CA3AF] font-medium">
+                            {chart.outlierTopCount > 0 ? `상단 밖 ${chart.outlierTopCount}건` : ''}
+                            {chart.outlierTopCount > 0 && chart.outlierBottomCount > 0 ? ' · ' : ''}
+                            {chart.outlierBottomCount > 0 ? `하단 밖 ${chart.outlierBottomCount}건` : ''}
+                        </p>
                     ) : null}
 
-                    {!isWindowSyncing && chart.points.length ? (
+                    {chart.points.length ? (
                         <>
-                            <div className="relative rounded-[20px] border border-white/10 bg-[#121212]/25 overflow-hidden px-3 py-4 h-[260px] sm:h-[300px] lg:h-[340px]">
+                            <div className="relative rounded-[20px] border border-white/10 bg-[#121212]/25 overflow-hidden px-3 py-4 h-[280px]">
                                 <div className="absolute inset-x-3 top-4 bottom-10 pointer-events-none">
                                     {[0, 25, 50, 75, 100].map((pct) => (
                                         <div
@@ -157,12 +142,18 @@ const PredictionChartV2 = ({
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-2">
-                                <MiniLegend label="최저" value={formatWon(chart.minPrice)} tone="blue" />
-                                <MiniLegend label="평균" value={formatWon(chart.avgPrice)} tone="white" />
-                                <MiniLegend label="최고" value={formatWon(chart.maxPrice)} tone="pink" />
+                            <div className="rounded-[20px] border border-white/10 bg-[#121212]/20 px-4 py-3">
+                                <div className="grid grid-cols-3 gap-3 text-left">
+                                    <MiniLegend label="최저" value={formatWon(chart.minPrice)} tone="blue" />
+                                    <MiniLegend label="평균" value={formatWon(chart.avgPrice)} tone="white" />
+                                    <MiniLegend label="최고" value={formatWon(chart.maxPrice)} tone="pink" />
+                                </div>
                             </div>
                         </>
+                    ) : isWindowSyncing ? (
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-center text-[15px] text-[#9CA3AF] font-medium">
+                            {WINDOW_LABELS[selectedWindow]} 예언 불러오는 중
+                        </div>
                     ) : (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-center text-[15px] text-[#9CA3AF] font-medium">
                             아직 예언 점이 없습니다.

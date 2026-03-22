@@ -64,6 +64,10 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
     const deltaToneClass = Math.abs(delta) < 0.05 ? 'text-[#9CA3AF]' : toneClass;
     const communitySummary = getCommunitySummary(communityHint, currentPrice);
     const compactCommunitySummary = getCompactCommunitySummary(communityHint);
+    const finalSummaryText = `${Number(draft?.targetPrice || 0).toLocaleString()}원 · ${dday}`;
+    const submitButtonText = isLoggedIn
+        ? (isRestoredDraft ? '이 값으로 박제하기' : '예언 박제하기')
+        : '로그인하고 예언 남기기';
 
     useEffect(() => {
         const updateHeight = () => {
@@ -212,22 +216,18 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                 />
             ) : null}
 
-            <section className="fixed bottom-0 left-0 right-0 z-[70] px-3 sm:px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pointer-events-none">
-                <div className="mx-auto max-w-2xl pointer-events-auto">
-                    <div className="rounded-[24px] sm:rounded-[28px] border border-white/10 bg-white/[0.06] backdrop-blur-2xl shadow-[0_-16px_36px_rgba(0,0,0,0.55)] overflow-hidden">
+            <section className="fixed bottom-0 left-0 right-0 z-[70] px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pointer-events-none">
+                <div className="mx-auto max-w-[430px] pointer-events-auto">
+                    <div className="rounded-[28px] border border-white/10 bg-white/[0.06] backdrop-blur-2xl shadow-[0_-16px_36px_rgba(0,0,0,0.55)] overflow-hidden">
                         {isExpanded ? (
-                            <button
-                                type="button"
-                                onClick={() => setIsExpanded(false)}
-                                className="w-full min-h-11 px-3 sm:px-4 py-3 flex items-center justify-between gap-2 border-b border-white/10 bg-[#121212]/20"
-                            >
-                                <div className="min-w-0 text-left">
-                                    <p className="text-[17px] sm:text-base font-bold leading-snug truncate">
-                                        <span className="text-[#F3F4F6]">{Number(draft?.targetPrice || 0).toLocaleString()}원</span>
-                                        <span className="text-[#9CA3AF]"> · </span>
-                                        <span className={deltaToneClass}>{deltaText}</span>
-                                        <span className="text-[#9CA3AF]"> · </span>
-                                        <span className="text-[#D1D5DB]">{dday}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsExpanded(false)}
+                                    className="w-full min-h-11 px-4 py-3 flex items-center justify-between gap-2 border-b border-white/10 bg-[#121212]/20"
+                                >
+                                    <div className="min-w-0 text-left">
+                                    <p className="text-[17px] font-bold leading-snug text-[#F3F4F6] truncate">
+                                        예언 입력 시트
                                     </p>
                                 </div>
                                 <span className="material-symbols-outlined text-[#9CA3AF] transition-transform rotate-180 shrink-0">expand_more</span>
@@ -237,30 +237,32 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                 type="button"
                                 aria-label="예언 입력 시트 열기"
                                 onClick={() => setIsExpanded(true)}
-                                className="w-full min-h-12 px-3 sm:px-4 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-neon-teal to-neon-pink text-[#F3F4F6] font-bold text-[19px]"
+                                className="w-full min-h-12 px-4 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-neon-teal to-neon-pink text-[#F3F4F6] font-bold text-left"
                             >
-                                <span>이 종목 예언 남기기</span>
-                                <span className="material-symbols-outlined text-[21px]">expand_more</span>
+                                <span className="min-w-0 flex-1 text-[18px] font-black leading-none text-center truncate">
+                                    {finalSummaryText} · 예언 남기기
+                                </span>
+                                <span className="material-symbols-outlined text-[21px] shrink-0">expand_more</span>
                             </button>
                         )}
 
                         {!isExpanded ? (
-                            <div className="px-3 sm:px-4 py-2 border-t border-white/10 bg-[#121212]/15">
-                                <p className="text-[15px] sm:text-sm font-bold text-[#D1D5DB]">
+                            <div className="px-4 py-2 border-t border-white/10 bg-[#121212]/15">
+                                <p className="text-sm font-bold text-[#D1D5DB] text-center">
                                     30초 예언
                                 </p>
                             </div>
                         ) : null}
 
                         {errorMessage ? (
-                            <div className="px-3 sm:px-4 pt-2 pb-1">
+                            <div className="px-4 pt-2 pb-1">
                                 <div
                                     role="alert"
                                     aria-live="assertive"
                                     className="min-h-11 rounded-xl border border-neon-pink/45 bg-neon-pink/20 px-3 py-2 flex items-center gap-2 shadow-[0_0_12px_rgba(244,37,140,0.22)]"
                                 >
                                     <span className="material-symbols-outlined text-neon-pink text-[21px]">error</span>
-                                    <p className="text-[17px] sm:text-base font-bold text-neon-pink leading-snug">{errorMessage}</p>
+                                    <p className="text-[15px] font-bold text-neon-pink leading-snug">{errorMessage}</p>
                                 </div>
                             </div>
                         ) : null}
@@ -269,12 +271,12 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                             className={`transition-[max-height,opacity] duration-300 ease-out ${isExpanded ? 'opacity-100' : 'opacity-0'}`}
                             style={{ maxHeight: isExpanded ? `${sheetMaxHeight}px` : '0px' }}
                         >
-                            <div className="overflow-y-auto px-3 sm:px-4 py-3 sm:py-4 space-y-4" style={{ maxHeight: `${sheetMaxHeight}px` }}>
+                            <div className="overflow-y-auto px-4 py-4 space-y-4" style={{ maxHeight: `${sheetMaxHeight}px` }}>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setActiveStep('price')}
-                                        className={`min-h-11 rounded-xl border text-sm sm:text-[17px] font-bold ${
+                                        className={`min-h-11 rounded-xl border text-[15px] font-bold ${
                                             activeStep === 'price'
                                                 ? 'border-neon-pink/45 bg-neon-pink/15 text-neon-pink'
                                                 : 'border-white/15 bg-white/5 text-[#D1D5DB]'
@@ -285,7 +287,7 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                     <button
                                         type="button"
                                         onClick={() => setActiveStep('date')}
-                                        className={`min-h-11 rounded-xl border text-sm sm:text-[17px] font-bold ${
+                                        className={`min-h-11 rounded-xl border text-[15px] font-bold ${
                                             activeStep === 'date'
                                                 ? 'border-neon-teal/45 bg-neon-teal/15 text-neon-teal'
                                                 : 'border-white/15 bg-white/5 text-[#D1D5DB]'
@@ -304,19 +306,19 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                             </div>
                                         ) : null}
                                         <div className="rounded-2xl border border-white/10 bg-[#121212]/22 p-3">
-                                            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                <p className="text-sm text-[#D1D5DB] font-bold inline-flex items-center gap-1.5">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <p className="text-sm text-[#D1D5DB] font-bold inline-flex items-center gap-1.5 shrink-0">
                                                     <span className="material-symbols-outlined text-base">paid</span>
                                                     현재가 기준 증감
                                                 </p>
-                                                <div className="flex items-center gap-2 self-end sm:self-auto">
-                                                    <span className="text-[15px] text-[#9CA3AF] font-bold">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[13px] text-[#9CA3AF] font-bold truncate">
                                                         {profile.minPct}% ~ {profile.maxPct}%
                                                     </span>
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowManualPrice((prev) => !prev)}
-                                                        className="min-h-11 px-3 rounded-xl text-sm font-bold border border-white/10 bg-white/5 text-[#D1D5DB]"
+                                                        className="min-h-10 px-3 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[#D1D5DB] shrink-0 whitespace-nowrap"
                                                     >
                                                         {showManualPrice ? '슬라이더로' : '직접 입력'}
                                                     </button>
@@ -342,13 +344,13 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                                     );
                                                 })}
                                             </div>
-                                            <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
-                                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">목표가</p>
-                                                <div className="mt-1 flex items-end justify-between gap-3">
-                                                    <p className="text-[26px] sm:text-3xl font-black text-[#F3F4F6]">
-                                                        {Number(draft?.targetPrice || 0).toLocaleString()}원
+                                        <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#9CA3AF]">목표가</p>
+                                            <div className="mt-1 flex items-end justify-between gap-3">
+                                                <p className="text-[28px] font-black text-[#F3F4F6] truncate">
+                                                    {Number(draft?.targetPrice || 0).toLocaleString()}원
                                                     </p>
-                                                    <p className={`text-[17px] sm:text-base font-black ${deltaToneClass}`}>
+                                                    <p className={`text-[16px] font-black truncate ${deltaToneClass}`}>
                                                         {deltaText}
                                                     </p>
                                                 </div>
@@ -392,17 +394,17 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                 ) : (
                                     <div className="space-y-2">
                                         <div className="rounded-2xl border border-white/10 bg-[#121212]/22 p-3">
-                                            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                <p className="text-sm text-[#D1D5DB] font-bold inline-flex items-center gap-1.5">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <p className="text-sm text-[#D1D5DB] font-bold inline-flex items-center gap-1.5 shrink-0">
                                                     <span className="material-symbols-outlined text-base">event</span>
                                                     예언 만기일
                                                 </p>
-                                                <div className="flex items-center gap-2 self-end sm:self-auto">
-                                                    <span className="text-[15px] text-[#9CA3AF] font-bold">{PERIOD_PRESETS[periodIdx]?.label || '-'}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[13px] text-[#9CA3AF] font-bold truncate">{PERIOD_PRESETS[periodIdx]?.label || '-'}</span>
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowManualDate((prev) => !prev)}
-                                                        className="min-h-11 px-3 rounded-xl text-sm font-bold border border-white/10 bg-white/5 text-[#D1D5DB]"
+                                                        className="min-h-10 px-3 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-[#D1D5DB] shrink-0 whitespace-nowrap"
                                                     >
                                                         {showManualDate ? '슬라이더로' : '날짜 직접'}
                                                     </button>
@@ -442,20 +444,26 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                 )}
 
                                 <div className="sticky bottom-0 pt-1 pb-1 bg-[#0b0b10]/95 backdrop-blur-xl">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (!isLoggedIn) {
-                                                setShowLoginPrompt(true);
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (!isLoggedIn) {
+                                                    setShowLoginPrompt(true);
                                                 return;
                                             }
                                             onSubmit?.();
-                                        }}
-                                        disabled={isSubmitting}
-                                        className={`w-full min-h-11 rounded-xl font-bold text-[19px] ${isSubmitting ? 'bg-white/10 text-[#9CA3AF]' : 'bg-gradient-to-r from-neon-teal to-neon-pink text-[#F3F4F6]'}`}
-                                    >
-                                        {isSubmitting ? '박제 중...' : (isLoggedIn ? (isRestoredDraft ? '이 값으로 예언 박제하기' : '예언 박제하기') : '로그인하고 예언 남기기')}
-                                    </button>
+                                            }}
+                                            disabled={isSubmitting}
+                                            className={`w-full min-h-11 rounded-[20px] px-4 py-3 text-center ${isSubmitting ? 'bg-white/10 text-[#9CA3AF]' : 'bg-gradient-to-r from-neon-teal to-neon-pink text-[#F3F4F6]'}`}
+                                        >
+                                            {isSubmitting ? (
+                                                <span className="block text-center text-[18px] font-black">박제 중...</span>
+                                            ) : (
+                                                <span className="block text-[18px] font-black leading-none truncate w-full">
+                                                    {finalSummaryText} · {submitButtonText}
+                                                </span>
+                                            )}
+                                        </button>
                                     {showLoginPrompt ? (
                                         <div className="mt-2 rounded-2xl border border-neon-pink/25 bg-neon-pink/10 px-3 py-3 text-left">
                                             <p className="text-sm font-bold text-[#F3F4F6]">예언은 로그인 후 남길 수 있어요</p>
@@ -476,8 +484,8 @@ const PredictionComposerV2 = ({ currentPrice, draft, communityHint, isLoggedIn =
                                             </button>
                                         </div>
                                     ) : (
-                                        <p className="mt-2 px-1 text-[15px] sm:text-sm text-[#9CA3AF]">
-                                            {isLoggedIn ? '30초 예언 · 적중 시 성지글' : '30초 예언 · 로그인 후 그대로 이어집니다'}
+                                        <p className="mt-2 text-[13px] text-center text-[#9CA3AF]">
+                                            {isLoggedIn ? '30초 예언' : '30초 예언 · 로그인 후 이어짐'}
                                         </p>
                                     )}
                                 </div>

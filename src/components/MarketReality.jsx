@@ -457,9 +457,9 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
                     {icon}
                 </span>
                 <div className="text-left min-w-0">
-                    <p className="text-sm sm:text-[17px] font-bold text-[#D1D5DB] break-keep">{label}</p>
+                    <p className="text-[16px] font-bold text-[#D1D5DB] break-keep">{label}</p>
                     <div className="mt-1">
-                        <span className="text-xs sm:text-[15px] font-black text-neon-teal bg-neon-teal/10 px-2 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)]">
+                        <span className="text-[13px] font-black text-neon-teal bg-neon-teal/10 px-2.5 py-0.5 rounded-full border border-neon-teal/20 tracking-tight shadow-[0_0_10px_-2px_rgba(34,211,238,0.1)]">
                             {tag}
                         </span>
                     </div>
@@ -475,20 +475,20 @@ const IndicatorItem = ({ icon, label, tag, type, analysis, isExpanded, onToggle 
         </button>
 
         <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[600px] opacity-100 mb-6' : 'max-h-0 opacity-0 pointer-events-none'}`}>
-            <div className="bg-white/[0.05] mx-1 rounded-2xl p-4 sm:p-5 space-y-4 sm:space-y-5 border border-white/10 shadow-xl backdrop-blur-md">
+            <div className="bg-white/[0.05] mx-1 rounded-2xl p-4 space-y-4 border border-white/10 shadow-xl backdrop-blur-md">
                 <div className="space-y-1.5">
                     <p className="text-neon-teal text-xs font-black uppercase tracking-[0.2em]">Interpretation Guide</p>
-                    <p className="text-[#F3F4F6] text-sm sm:text-[13.5px] font-bold leading-relaxed">
+                    <p className="text-[#F3F4F6] text-[13.5px] font-bold leading-relaxed">
                         {INDICATOR_METADATA[type].description}
                     </p>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4">
-                    <div className="bg-[#121212]/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-2 shadow-inner">
+                <div className="grid grid-cols-1 gap-4">
+                    <div className="bg-[#121212]/40 p-4 rounded-xl border border-white/10 space-y-2 shadow-inner">
                         <p className="text-[#9CA3AF] text-xs font-black uppercase tracking-widest border-b border-white/10 pb-1">Live Formula</p>
                         <LiveFormula type={type} analysis={analysis} />
                     </div>
-                    <div className="bg-[#121212]/40 p-3.5 sm:p-4 rounded-xl border border-white/10 space-y-3 shadow-inner">
+                    <div className="bg-[#121212]/40 p-4 rounded-xl border border-white/10 space-y-3 shadow-inner">
                         <p className="text-[#9CA3AF] text-xs font-black uppercase tracking-widest border-b border-white/10 pb-1 text-right">Judgment Criteria</p>
                         <CriteriaList type={type} analysis={analysis} />
                     </div>
@@ -523,21 +523,21 @@ const MarketReality = ({ kisData }) => {
     ];
 
     return (
-        <div className="bg-white/5 backdrop-blur-2xl rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 border border-white/10 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.6)] relative overflow-hidden mb-6 pointer-events-auto">
+        <div className="bg-white/5 backdrop-blur-2xl rounded-[28px] p-5 border border-white/10 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.6)] relative overflow-hidden mb-6 pointer-events-auto">
             <div className="absolute top-0 right-0 w-32 h-32 bg-neon-teal/5 blur-[60px] rounded-full"></div>
             
-            <div className="relative z-10 space-y-5 sm:space-y-6">
-                <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="relative z-10 space-y-5">
+                <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <span className="material-symbols-outlined text-neon-teal text-3xl">fact_check</span>
-                            <h3 className="text-lg sm:text-xl font-black text-[#F3F4F6] tracking-tight leading-none font-brandKo">
+                            <h3 className="text-[20px] font-black text-[#F3F4F6] tracking-tight leading-none font-brandKo">
                                 팩트 체크
                             </h3>
                         </div>
                         <span className={`text-xs font-black uppercase tracking-tighter ${statusTone}`}>{statusLabel}</span>
                     </div>
-                    <p className="text-xs sm:text-[15px] text-[#9CA3AF] font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed">
+                    <p className="text-[14px] text-[#9CA3AF] font-medium tracking-tight bg-white/5 px-3 py-2 rounded-xl border border-white/5 shadow-inner leading-relaxed">
                         {realityStatus === 'live'
                             ? '숫자를 먼저 보고, 태그는 참고만 하세요.'
                             : (realityStatus === 'cached'
@@ -551,7 +551,7 @@ const MarketReality = ({ kisData }) => {
                     ) : null}
                 </div>
 
-                <div className="bg-[#121212]/20 rounded-2xl px-3 sm:px-4 border border-white/5">
+                <div className="bg-[#121212]/20 rounded-2xl px-4 border border-white/5">
                     {indicators.map(ind => (
                         <IndicatorItem 
                             key={ind.type} 

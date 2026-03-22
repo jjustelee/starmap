@@ -53,7 +53,7 @@ const NicknameSetupSheet = ({ isOpen }) => {
 
             {/* Bottom Sheet */}
             <div className="fixed bottom-0 left-0 right-0 z-[10001] animate-in slide-in-from-bottom duration-500 cubic-bezier(0.32, 0.72, 0, 1)">
-                <div className="mx-auto max-w-lg">
+                <div className="mx-auto max-w-[430px]">
                     <div className="bg-[#141419]/95 backdrop-blur-[60px] border-t border-x border-white/10 
                                     rounded-t-[2rem] sm:rounded-t-[2.5rem] p-6 sm:p-8 pb-9 sm:pb-12
                                     shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.9),inset_0_1px_1px_rgba(255,255,255,0.05)]">
