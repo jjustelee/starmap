@@ -362,7 +362,7 @@ function TargetConsensusSummary({ currentPrice, stats, sampleSize }) {
     }
 
     return (
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-5 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
+        <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
             <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">종목 요약</p>
             <p className="mt-2 text-[28px] font-extrabold leading-none text-[#F3F4F6] truncate">{headline}</p>
             <p className="mt-2 text-[15px] font-bold text-[#D1D5DB] truncate">{subline}</p>

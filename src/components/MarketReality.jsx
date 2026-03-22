@@ -527,7 +527,7 @@ const MarketReality = ({ kisData }) => {
     ];
 
     return (
-        <div className="bg-white/5 backdrop-blur-2xl rounded-[28px] p-5 border border-white/10 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.6)] relative overflow-hidden mb-6 pointer-events-auto">
+        <div className="bg-white/5 backdrop-blur-2xl rounded-[28px] px-4 py-5 border border-white/10 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.6)] relative overflow-hidden mb-6 pointer-events-auto">
             <div className="absolute top-0 right-0 w-32 h-32 bg-neon-teal/5 blur-[60px] rounded-full"></div>
             
             <div className="relative z-10 space-y-4">

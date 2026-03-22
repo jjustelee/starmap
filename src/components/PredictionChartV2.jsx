@@ -38,7 +38,7 @@ const PredictionChartV2 = ({
     );
 
     return (
-        <section className="bg-white/[0.06] backdrop-blur-2xl rounded-[28px] p-5 border border-white/10 shadow-[0_12px_24px_-6px_rgba(0,0,0,0.5)] relative overflow-hidden pointer-events-auto">
+        <section className="bg-white/[0.06] backdrop-blur-2xl rounded-[28px] px-4 py-5 border border-white/10 shadow-[0_12px_24px_-6px_rgba(0,0,0,0.5)] relative overflow-hidden pointer-events-auto">
             <div className="absolute top-0 right-0 w-28 h-28 bg-neon-pink/5 blur-[55px] rounded-full pointer-events-none" />
             <div className="relative z-10 space-y-4">
                 <div className="flex items-center gap-2.5">

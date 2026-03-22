@@ -77,7 +77,7 @@ const DistributionSummary = ({
         if (!hasRangeData) {
             return (
                 <div className="w-full relative mt-4 mb-6 pointer-events-auto transition-all duration-700">
-                    <div className="bg-[#141419]/90 backdrop-blur-[40px] border border-white/10 rounded-[28px] p-5 relative overflow-visible shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_20px_40px_-10px_rgba(0,0,0,0.8)]">
+                    <div className="bg-[#141419]/90 backdrop-blur-[40px] border border-white/10 rounded-[28px] px-4 py-5 relative overflow-visible shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_20px_40px_-10px_rgba(0,0,0,0.8)]">
                         <div className="space-y-3">
                             <div className="flex flex-row justify-between items-center gap-3">
                                 <div className="flex items-center gap-2.5">
