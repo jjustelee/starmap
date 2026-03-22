@@ -100,7 +100,7 @@ export const SacredList = ({ onSelect }) => {
                                 <ChevronRight className="w-3 h-3" />
                                 <span className={`${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink/60' : 'text-neon-teal/60'}`}>적중: {formatSacredDate(post.hitDate)}</span>
                             </div>
-                            <p className={`mt-3 text-xs font-black ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>
+                            <p className={`mt-3 text-xs font-black text-right ${post.judgmentStatus === 'HIT_EXACT' ? 'text-neon-pink' : 'text-neon-teal'}`}>
                                 성지글 보기 →
                             </p>
                         </div>
