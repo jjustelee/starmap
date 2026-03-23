@@ -7,21 +7,23 @@ const formatQuoteAge = (value) => {
     if (!Number.isFinite(updatedAtMs)) return null;
 
     const diffMs = Date.now() - updatedAtMs;
-    if (diffMs < 0) return '1분 전';
+    if (diffMs < 0) return '방금 전';
 
-    const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+    const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+    if (diffMinutes < 1) return '방금 전';
     if (diffMinutes < 60) return `${diffMinutes}분 전`;
 
     const diffHours = Math.floor(diffMinutes / 60);
     if (diffHours < 24) return `${diffHours}시간 전`;
 
-    return null;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}일 전`;
 };
 
-const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpdatedAt, onBack }) => {
+const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpdatedAt, quoteErrorCode, onBack }) => {
     const market = getMarketStatus();
     const hasPrice = Number(basePrice) > 0;
-    const statusText = hasPrice ? (formatQuoteAge(quoteUpdatedAt) || '갱신중') : '갱신중';
+    const statusText = hasPrice ? (formatQuoteAge(quoteUpdatedAt) || '시각없음') : '시각없음';
     const shouldShowQuoteStatus = market.isOpen;
 
     return (
@@ -63,6 +65,11 @@ const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpd
                         </p>
                     ) : null}
                 </div>
+                {quoteErrorCode ? (
+                    <p className="text-[10px] font-bold text-[#9CA3AF] leading-none tracking-tight">
+                        {quoteErrorCode}
+                    </p>
+                ) : null}
             </div>
         </header>
     );

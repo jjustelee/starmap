@@ -50,7 +50,7 @@ const withSingleFlight = (key: string, runner: () => Promise<QuoteResponse>): Pr
   return promise;
 };
 
-const getKisAccessToken = async (supabase: ReturnType<typeof createClient>) => {
+const getKisAccessToken = async (supabase: ReturnType<typeof createClient>, forceRefresh = false) => {
   const KIS_APP_KEY = Deno.env.get("KIS_APP_KEY");
   const KIS_APP_SECRET = Deno.env.get("KIS_APP_SECRET");
   const KIS_URL = Deno.env.get("KIS_URL") || "https://openapi.koreainvestment.com:9443";
@@ -67,7 +67,7 @@ const getKisAccessToken = async (supabase: ReturnType<typeof createClient>) => {
 
   const now = new Date();
   const tokenExpiresSoon = !tokenRecord?.expired_at || new Date(tokenRecord.expired_at) <= new Date(now.getTime() + 3600 * 1000);
-  if (!tokenRecord?.token || tokenExpiresSoon) {
+  if (forceRefresh || !tokenRecord?.token || tokenExpiresSoon) {
     const tokenRes = await fetch(`${KIS_URL}/oauth2/tokenP`, {
       method: "POST",
       body: JSON.stringify({
@@ -101,12 +101,13 @@ const getKisAccessToken = async (supabase: ReturnType<typeof createClient>) => {
   };
 };
 
-const fetchLiveQuote = async (
+const requestQuote = async (
   supabase: ReturnType<typeof createClient>,
   symbol: string,
+  forceRefreshToken = false,
 ): Promise<{ quote: QuoteResponse | null; errorCode: string | null }> => {
   try {
-    const { accessToken, KIS_URL, KIS_APP_KEY, KIS_APP_SECRET } = await getKisAccessToken(supabase);
+    const { accessToken, KIS_URL, KIS_APP_KEY, KIS_APP_SECRET } = await getKisAccessToken(supabase, forceRefreshToken);
 
     const res = await fetch(
       `${KIS_URL}/uapi/domestic-stock/v1/quotations/inquire-price?fid_cond_mrkt_div_code=J&fid_input_iscd=${symbol}`,
@@ -188,6 +189,21 @@ const fetchLiveQuote = async (
   }
 };
 
+const shouldRetryWithFreshToken = (errorCode: string | null) => {
+  return errorCode === "EGW00123";
+};
+
+const fetchLiveQuote = async (
+  supabase: ReturnType<typeof createClient>,
+  symbol: string,
+): Promise<{ quote: QuoteResponse | null; errorCode: string | null }> => {
+  const firstAttempt = await requestQuote(supabase, symbol, false);
+  if (firstAttempt.quote || !shouldRetryWithFreshToken(firstAttempt.errorCode)) {
+    return firstAttempt;
+  }
+  return requestQuote(supabase, symbol, true);
+};
+
 const ensureStockRow = async (supabase: ReturnType<typeof createClient>, symbol: string) => {
   const { data: stock } = await supabase
     .from("stocks")
@@ -245,7 +261,11 @@ const buildFromStock = (
   };
 };
 
-const resolveQuote = async (supabase: ReturnType<typeof createClient>, symbol: string): Promise<QuoteResponse> => {
+const resolveQuote = async (
+  supabase: ReturnType<typeof createClient>,
+  symbol: string,
+  forceFresh = false,
+): Promise<QuoteResponse> => {
   const stock = await ensureStockRow(supabase, symbol);
   if (!stock) {
     return {
@@ -266,7 +286,7 @@ const resolveQuote = async (supabase: ReturnType<typeof createClient>, symbol: s
     (Date.now() - new Date(cachedUpdatedAt).getTime() <= TTL_MS),
   );
 
-  if (isFresh) {
+  if (!forceFresh && isFresh) {
     return buildFromStock(symbol, stock as Record<string, unknown>, "cached", false);
   }
 
@@ -319,6 +339,7 @@ serve(async (req) => {
     }
 
     const symbol = normalizeSymbol(body.symbol);
+    const forceFresh = Boolean(body.force);
     if (!symbol) {
       return new Response(JSON.stringify({ error: "Symbol is required" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -331,7 +352,8 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    const result = await withSingleFlight(symbol, () => resolveQuote(supabase, symbol));
+    const singleFlightKey = forceFresh ? `${symbol}:force` : symbol;
+    const result = await withSingleFlight(singleFlightKey, () => resolveQuote(supabase, symbol, forceFresh));
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

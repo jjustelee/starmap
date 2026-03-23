@@ -6,6 +6,7 @@ import DistributionSummary from './DistributionSummary';
 import MarketReality from './MarketReality';
 import { useChartContext } from '../context/ChartContext';
 import { useAuth } from '../context/AuthContext';
+import { getMarketStatus } from '../utils/marketStatus';
 import {
     loadPredictionSnapshot,
     submitPredictionDraft,
@@ -29,7 +30,7 @@ import {
  * - onComposerVisibilityChange?: (visible: boolean) => void
  */
 const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComposerVisibilityChange }) => {
-    const { stockInfo, basePrice, dashboardData, realityData } = useChartContext();
+    const { stockInfo, basePrice, dashboardData, realityData, refreshStockInfo } = useChartContext();
     const { isLoggedIn, signInWithKakao, userId } = useAuth();
     const symbol = stockInfo?.symbol || stock?.symbol || '000000';
     const stockId = stockInfo?.id || stock?.id || null;
@@ -118,6 +119,37 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
             rangeLevel: prev.rangeLevel || 'L1'
         }));
     }, [stockInfo?.currentPrice, basePrice, symbol, initialDate]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        let timer = null;
+        let cancelled = false;
+
+        const schedule = (delay) => {
+            timer = window.setTimeout(async () => {
+                if (cancelled) return;
+                await refreshStockInfo?.();
+                if (cancelled) return;
+                schedule(getMarketStatus().isOpen ? 60000 : 300000);
+            }, delay);
+        };
+
+        const kick = () => {
+            if (document.visibilityState !== 'visible') return;
+            void refreshStockInfo?.();
+        };
+
+        schedule(getMarketStatus().isOpen ? 60000 : 300000);
+        window.addEventListener('focus', kick);
+        document.addEventListener('visibilitychange', kick);
+
+        return () => {
+            cancelled = true;
+            if (timer) window.clearTimeout(timer);
+            window.removeEventListener('focus', kick);
+            document.removeEventListener('visibilitychange', kick);
+        };
+    }, [refreshStockInfo, symbol]);
 
     const reloadSnapshot = useCallback(async () => {
         if (!hasPrimedSnapshot) return;
@@ -274,6 +306,7 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                 priceChange={stockInfo?.price_change}
                 priceChangeRate={stockInfo?.price_change_rate}
                 quoteUpdatedAt={stockInfo?.quoteUpdatedAt}
+                quoteErrorCode={stockInfo?.quoteErrorCode}
                 onBack={onBack}
             />
 

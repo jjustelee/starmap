@@ -1,7 +1,49 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { callStockDetailPublic, fetchStockDetailBundle, fetchStockInfo } from '../utils/mockData';
 
 const ChartContext = createContext(null);
+
+const STOCK_INFO_CACHE_TTL_MS = 1000 * 60 * 15;
+const STOCK_INFO_CACHE_PREFIX = 'kokok.detail.stockInfo:';
+
+const readStockInfoCache = (symbol) => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.localStorage.getItem(`${STOCK_INFO_CACHE_PREFIX}${symbol}`);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (Date.now() - Number(parsed.savedAt || 0) > STOCK_INFO_CACHE_TTL_MS) {
+            window.localStorage.removeItem(`${STOCK_INFO_CACHE_PREFIX}${symbol}`);
+            return null;
+        }
+        return parsed.stock || null;
+    } catch {
+        return null;
+    }
+};
+
+const writeStockInfoCache = (symbol, stock) => {
+    if (typeof window === 'undefined' || !symbol || !stock) return;
+    try {
+        window.localStorage.setItem(`${STOCK_INFO_CACHE_PREFIX}${symbol}`, JSON.stringify({
+            savedAt: Date.now(),
+            stock: {
+                symbol: stock.symbol,
+                id: stock.id || null,
+                name: stock.name || null,
+                currentPrice: Number(stock.currentPrice || stock.current_price || 0) || 0,
+                price_change: Number(stock.price_change ?? stock.priceChange ?? 0),
+                price_change_rate: Number(stock.price_change_rate ?? stock.priceChangeRate ?? 0),
+                quoteStatusLabel: stock.quoteStatusLabel || stock.quote_status_label || '최근값',
+                quoteUpdatedAt: stock.quoteUpdatedAt || stock.updatedAt || null,
+                quoteErrorCode: stock.quoteErrorCode || null
+            }
+        }));
+    } catch {
+        // cache is best-effort
+    }
+};
 
 export const useChartContext = () => {
     const context = useContext(ChartContext);
@@ -24,6 +66,7 @@ export const ChartProvider = ({ children, symbol = '005930', seedStock = null })
     const [chartDims, setChartDims] = useState({ width: 0, height: 0 });
     const [isSealing, setIsSealing] = useState(false);
     const [vowCount, setVowCount] = useState(5);
+    const refreshStockInfoInFlightRef = useRef(null);
 
     // Initial constants (will be updated after loading)
     const basePrice = stockInfo?.currentPrice || 0;
@@ -51,7 +94,7 @@ export const ChartProvider = ({ children, symbol = '005930', seedStock = null })
 
     useEffect(() => {
         const loadInitialData = async () => {
-            const normalizedSeed = normalizeSeedStock(seedStock, symbol);
+            const normalizedSeed = normalizeSeedStock(seedStock, symbol) || readStockInfoCache(symbol);
             setIsLoading(true);
             setIsDetailLoading(true);
             setStockInfo(normalizedSeed);
@@ -77,26 +120,15 @@ export const ChartProvider = ({ children, symbol = '005930', seedStock = null })
             }
 
             const detailBundlePromise = callStockDetailPublic(symbol);
-            const stock = await fetchStockInfo(symbol);
+            const stock = await fetchStockInfo(symbol, { forceFresh: true });
             if (!stock) {
                 setIsLoading(false);
                 setIsDetailLoading(false);
                 return;
             }
 
-            setStockInfo(stock);
-
-            const realPriceRaw = Number(stock.currentPrice || 0);
-            const realPrice = Number.isFinite(realPriceRaw) && realPriceRaw > 0 ? realPriceRaw : 0;
-            const iMin = Math.max(0, Math.round(realPrice * 0.75));
-            const iMax = Math.round(realPrice * 1.25);
-
-            const s = stateRef.current;
-            s.currentPriceValue = realPrice;
-            s.currentPriceMin = iMin;
-            s.currentPriceMax = iMax;
-            s.axisPriceMin = iMin;
-            s.axisPriceMax = iMax;
+            applyStockInfo(stock);
+            writeStockInfoCache(symbol, stock);
 
             setIsLoading(false);
 
@@ -116,6 +148,42 @@ export const ChartProvider = ({ children, symbol = '005930', seedStock = null })
         loadInitialData();
     }, [seedStock, symbol]);
 
+    const applyStockInfo = useCallback((stock) => {
+        if (!stock) return;
+        setStockInfo(stock);
+
+        const realPriceRaw = Number(stock.currentPrice || 0);
+        const realPrice = Number.isFinite(realPriceRaw) && realPriceRaw > 0 ? realPriceRaw : 0;
+        const iMin = Math.max(0, Math.round(realPrice * 0.75));
+        const iMax = Math.round(realPrice * 1.25);
+
+        const s = stateRef.current;
+        s.currentPriceValue = realPrice;
+        s.currentPriceMin = iMin;
+        s.currentPriceMax = iMax;
+        s.axisPriceMin = iMin;
+        s.axisPriceMax = iMax;
+    }, []);
+
+    const refreshStockInfo = useCallback(async () => {
+        if (refreshStockInfoInFlightRef.current) {
+            return refreshStockInfoInFlightRef.current;
+        }
+
+        refreshStockInfoInFlightRef.current = (async () => {
+            const stock = await fetchStockInfo(symbol, { forceFresh: true });
+            if (stock) {
+                applyStockInfo(stock);
+                writeStockInfoCache(symbol, stock);
+            }
+            return stock;
+        })().finally(() => {
+            refreshStockInfoInFlightRef.current = null;
+        });
+
+        return refreshStockInfoInFlightRef.current;
+    }, [applyStockInfo, symbol]);
+
     const value = useMemo(() => ({
         stateRef,
         isLoading,
@@ -128,6 +196,7 @@ export const ChartProvider = ({ children, symbol = '005930', seedStock = null })
         basePrice,
         initialMin: INITIAL_MIN,
         initialMax: INITIAL_MAX,
+        refreshStockInfo,
         chartDims,
         setChartDims,
         isSealing,
@@ -145,6 +214,7 @@ export const ChartProvider = ({ children, symbol = '005930', seedStock = null })
         basePrice,
         INITIAL_MIN,
         INITIAL_MAX,
+        refreshStockInfo,
         chartDims,
         isSealing,
         vowCount
@@ -163,6 +233,7 @@ function normalizeSeedStock(seedStock, symbol) {
     return {
         ...seedStock,
         currentPrice: Number(seedStock.currentPrice || seedStock.current_price || 0) || null,
-        quoteStatusLabel: seedStock.quoteStatusLabel || seedStock.quote_status_label || '최근값'
+        quoteStatusLabel: seedStock.quoteStatusLabel || seedStock.quote_status_label || '최근값',
+        quoteErrorCode: seedStock.quoteErrorCode || null
     };
 }

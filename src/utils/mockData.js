@@ -3,10 +3,14 @@ import { supabase } from './supabaseClient';
 /**
  * [백엔드] 공개 현재가 API 호출 (price 전용)
  * @param {string} symbol
+ * @param {{ forceFresh?: boolean }} options
  */
-export const callQuotePublic = async (symbol) => {
+export const callQuotePublic = async (symbol, options = {}) => {
     const { data, error } = await supabase.functions.invoke('quote-public', {
-        body: { symbol }
+        body: {
+            symbol,
+            force: Boolean(options.forceFresh)
+        }
     });
     if (error) {
         console.error('Error calling quote-public:', error);
@@ -75,8 +79,10 @@ export const fetchCommunityHomeFeed = async () => {
  * Fetch stock information from Supabase
  * [백엔드] DB의 기본 정보와 KIS의 실시간 시세를 결합
  * DB에 price=0인 새 종목도 KIS API로 가격을 채워서 반환
+ * @param {string} symbol
+ * @param {{ forceFresh?: boolean }} options
  */
-export const fetchStockInfo = async (symbol) => {
+export const fetchStockInfo = async (symbol, options = {}) => {
     // 1. DB에서 기본 정보(이름 등) 가져오기
     let { data: dbData, error } = await supabase
         .from('stocks')
@@ -114,7 +120,7 @@ export const fetchStockInfo = async (symbol) => {
     }
 
     // 2. quote-public에서 현재가 조회 (SWR/TTL/부하제어는 서버에서 처리)
-    const quote = await callQuotePublic(symbol);
+    const quote = await callQuotePublic(symbol, options);
     const quotePrice = Number(quote?.currentPrice || 0);
     const fallbackPrice = Number(dbData.current_price || 0);
     const resolvedPrice = quotePrice > 0 ? quotePrice : (fallbackPrice > 0 ? fallbackPrice : null);
@@ -133,7 +139,8 @@ export const fetchStockInfo = async (symbol) => {
         quoteStatus,
         quoteStatusLabel: quoteLabel,
         quoteUpdatedAt: quote?.updatedAt || dbData.updated_at || null,
-        isStale: Boolean(quote?.isStale ?? quoteStatus !== 'live')
+        isStale: Boolean(quote?.isStale ?? quoteStatus !== 'live'),
+        quoteErrorCode: quote?.errorCode || null
     };
 };
 
