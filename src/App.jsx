@@ -630,7 +630,7 @@ function App() {
         window.scrollTo(0, 0);
     };
 
-    const { isLoggedIn, isLoading: authLoading, isProfileLoading, hasProfileRecord, profile, user, signInWithKakao } = useAuth();
+    const { isLoggedIn, isProfileLoading, hasProfileRecord, profile, user, signInWithKakao } = useAuth();
     
     // 온보딩(닉네임 설정) 노출 여부: 로그인 상태이며 온보딩 미완료인 경우
     const showOnboarding = Boolean(
@@ -641,15 +641,6 @@ function App() {
             (profile && !profile.isOnboarded)
         )
     );
-
-    if (authLoading) {
-        return (
-            <div className="min-h-screen bg-black text-soft-white flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-white/10 border-t-neon-teal rounded-full animate-spin"></div>
-                <p className="text-sm font-bold text-[#9CA3AF]">인증 상태를 확인하는 중...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="font-display overflow-x-hidden min-h-screen bg-[#121212] text-[#F3F4F6] pb-36">
