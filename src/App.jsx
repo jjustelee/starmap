@@ -955,7 +955,7 @@ function App() {
                                                                     {item.promotionLabel}
                                                                 </span>
                                                             </div>
-                                                            <h4 className="mt-1 text-lg font-black text-[#F3F4F6] break-words whitespace-normal leading-tight">{item.stockName}</h4>
+                                                            <h4 className="mt-1 text-[16px] font-semibold text-[#F3F4F6] break-words whitespace-normal leading-snug">{buildHomePredictionHeadline(item)}</h4>
                                                             <p className="mt-1 text-sm font-bold text-[#9CA3AF]">
                                                                 {item.authorNickname} · {formatRelativeTime(item.createdAt)}
                                                             </p>
@@ -1348,6 +1348,98 @@ function getPromotionStatusClasses(status) {
         return 'border-white/15 bg-white/5 text-[#D1D5DB]';
     }
     return 'border-neon-teal/30 bg-neon-teal/10 text-neon-teal';
+}
+
+function buildHomePredictionHeadline(item) {
+    const stockName = String(item?.stockName || '').trim() || '이 종목';
+    const targetPrice = Number(item?.targetPrice || 0);
+    const targetDate = String(item?.targetDate || '');
+    const promotionStatus = String(item?.promotionStatus || '');
+    const priceText = formatHomePredictionPriceText(targetPrice);
+    const horizonText = formatHomePredictionHorizonText(targetDate);
+    const seed = [
+        item?.id || '',
+        item?.createdAt || '',
+        stockName,
+        targetPrice,
+        targetDate,
+        promotionStatus
+    ].join('|');
+
+    const templates = promotionStatus === 'sacred'
+        ? [
+            '{stockName} {priceText} 적중',
+            '{stockName} {priceText} 맞췄다',
+            '{stockName} {priceText} 결국 닿음',
+            '{stockName} {priceText} 성지글 됨',
+            '{stockName} {priceText} 찍었다',
+            '{stockName} {priceText} 도달',
+            '{stockName} {priceText} 확인',
+            '{stockName} {priceText} 맞춰버림'
+        ]
+        : [
+            '{stockName} {horizonText} {priceText} 본다',
+            '{stockName} {horizonText} {priceText} 간다',
+            '{stockName} {horizonText} {priceText} 노려봄',
+            '{stockName} {horizonText} {priceText} 볼 듯',
+            '{stockName} {horizonText} {priceText} 쪽',
+            '{stockName} {horizonText} {priceText} 지켜봄',
+            '{stockName} {horizonText} {priceText} 도전',
+            '{stockName} {horizonText} {priceText} 기대',
+            '{stockName} {horizonText} {priceText} 바라봄',
+            '{stockName} {horizonText} {priceText} 전후',
+            '{stockName} {horizonText} {priceText} 부근',
+            '{stockName} {horizonText} {priceText} 한번 본다'
+        ];
+
+    const templateIndex = pickStableTemplateIndex(seed, templates.length);
+    return applyPredictionTemplate(templates[templateIndex], {
+        stockName,
+        horizonText,
+        priceText
+    });
+}
+
+function applyPredictionTemplate(template, values) {
+    return String(template || '')
+        .replaceAll('{stockName}', values.stockName)
+        .replaceAll('{horizonText}', values.horizonText)
+        .replaceAll('{priceText}', values.priceText);
+}
+
+function pickStableTemplateIndex(seed, length) {
+    if (!length) return 0;
+    const text = String(seed || '');
+    let hash = 0;
+    for (let index = 0; index < text.length; index += 1) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(index);
+        hash |= 0;
+    }
+    return Math.abs(hash) % length;
+}
+
+function formatHomePredictionPriceText(value) {
+    const num = Math.round(Number(value || 0));
+    if (!Number.isFinite(num) || num <= 0) return '-';
+    if (num >= 10000) {
+        const man = num / 10000;
+        const text = Number.isInteger(man) ? String(man) : man.toFixed(1).replace(/\.0$/, '');
+        return `${text}만원`;
+    }
+    return `${num.toLocaleString()}원`;
+}
+
+function formatHomePredictionHorizonText(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '곧';
+    const date = new Date(`${raw}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return '곧';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    if (diffDays > 0) return `${diffDays}일 후`;
+    if (diffDays === 0) return '오늘';
+    return `${Math.abs(diffDays)}일 전`;
 }
 
 export default App;

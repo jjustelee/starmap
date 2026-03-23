@@ -27,7 +27,7 @@ const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpd
     const shouldShowQuoteStatus = market.isOpen;
 
     return (
-        <header className="sticky top-3 z-50 mx-auto w-full transition-all duration-700 rounded-[1.25rem] crystal-glass px-4 py-3.5 flex items-center justify-between gap-3 shadow-2xl">
+        <header className="fixed top-3 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[430px] -translate-x-1/2 transition-all duration-700 rounded-[1.25rem] crystal-glass px-4 py-3.5 flex items-center justify-between gap-3 shadow-2xl">
             <div className="flex items-center gap-3 flex-1 min-w-0">
                 <button onClick={onBack} className="text-[#9CA3AF] hover:text-[#F3F4F6] transition active:scale-95 bg-white/5 p-2 rounded-full shrink-0 flex items-center justify-center">
                     <span className="material-symbols-outlined text-[26px] leading-none">arrow_back_ios_new</span>

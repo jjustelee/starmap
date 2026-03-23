@@ -71,8 +71,36 @@ export const SacredList = ({ onSelect }) => {
 
             {/* List */}
             {isLoading ? (
-                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center text-[#9CA3AF]">
-                    성지글 불러오는 중
+                <div className="grid gap-3 sm:gap-4">
+                    {[0, 1, 2].map((index) => (
+                        <article
+                            key={`sacred-skeleton-${index}`}
+                            className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border border-white/10 bg-white/5 p-4 sm:p-6 crystal-glass"
+                        >
+                            <div className="animate-pulse space-y-4">
+                                <div className="flex items-start justify-between gap-3 sm:gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10" />
+                                        <div className="space-y-2">
+                                            <div className="h-3 w-16 rounded bg-white/10" />
+                                            <div className="h-3 w-24 rounded bg-white/10" />
+                                        </div>
+                                    </div>
+                                    <div className="h-3 w-12 rounded bg-white/10" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-6 w-3/4 rounded bg-white/10" />
+                                    <div className="h-4 w-1/2 rounded bg-white/10" />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="h-3 w-20 rounded bg-white/10" />
+                                    <div className="h-3 w-3 rounded-full bg-white/10" />
+                                    <div className="h-3 w-20 rounded bg-white/10" />
+                                </div>
+                                <div className="h-3 w-24 rounded bg-white/10 ml-auto" />
+                            </div>
+                        </article>
+                    ))}
                 </div>
             ) : posts.length === 0 ? (
                 <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
