@@ -886,7 +886,6 @@ function App() {
                                                     type="button"
                                                     className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-neon-teal/40 hover:bg-white/10"
                                                 >
-                                                    <p className="text-xs font-black uppercase tracking-[0.18em] text-neon-teal/70">최근 7일 많이 찍힘</p>
                                                     <p className="mt-1 text-sm font-black text-[#F3F4F6]">{stock.stockName}</p>
                                                     <p className="mt-1 text-[13px] font-bold text-[#9CA3AF]">{stock.predictionCount}건 찍힘</p>
                                                     <p className="mt-2 text-[13px] font-black text-neon-teal">목표가 보기 →</p>
@@ -939,37 +938,41 @@ function App() {
                                                             }
                                                         }
                                                         const visibleOptions = isExpanded ? PREDICTION_REACTION_OPTIONS : compactOptions;
-                                                        const hiddenCount = Math.max(0, PREDICTION_REACTION_OPTIONS.length - visibleOptions.length);
+                                                        const canTogglePredictionReactions = PREDICTION_REACTION_OPTIONS.length > 3;
 
                                                         return (
                                                             <>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCommunityPredictionClick(item)}
-                                                        className="flex w-full items-start justify-between gap-3 rounded-[1rem] text-left transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-neon-pink/40"
+                                                        className="flex w-full flex-col rounded-[1rem] text-left transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-neon-pink/40"
                                                     >
-                                                        <div className="min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FF86C3]/75">방금 박제</p>
-                                                                <span className={`rounded-full border px-2 py-1 text-xs font-black uppercase tracking-[0.14em] ${getPromotionStatusClasses(item.promotionStatus)}`}>
-                                                                    {item.promotionLabel}
-                                                                </span>
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#FF86C3]/75">방금 박제</p>
+                                                                    <span className={`rounded-full border px-1 py-0.5 text-[10px] font-black uppercase tracking-[0.1em] ${getPromotionStatusClasses(item.promotionStatus)}`}>
+                                                                        {item.promotionLabel}
+                                                                    </span>
+                                                                </div>
+                                                                <h4 className="mt-1 text-[16px] font-semibold text-[#F3F4F6] break-words whitespace-normal leading-snug">{buildHomePredictionHeadline(item)}</h4>
                                                             </div>
-                                                            <h4 className="mt-1 text-[16px] font-semibold text-[#F3F4F6] break-words whitespace-normal leading-snug">{buildHomePredictionHeadline(item)}</h4>
-                                                            <p className="mt-1 text-sm font-bold text-[#9CA3AF]">
-                                                                {item.authorNickname} · {formatRelativeTime(item.createdAt)}
-                                                            </p>
+                                                            <div className="shrink-0 text-right">
+                                                                <p className="text-[13px] font-bold text-[#6B7280]">{formatRelativeTime(item.createdAt)}</p>
+                                                            </div>
                                                         </div>
-                                                        <div className="shrink-0 text-right">
-                                                            <p className="text-base font-black text-[#F3F4F6]">{Number(item.targetPrice || 0).toLocaleString()}원</p>
-                                                            <p className="mt-1 text-xs font-bold text-[#6B7280]">~ {formatSacredDate(item.targetDate)}</p>
-                                                            <p className={`mt-2 text-[13px] font-black ${item.promotionStatus === 'sacred' ? 'text-[#FF86C3]' : 'text-neon-teal'}`}>
+                                                        <div className="mt-1 flex items-center justify-between gap-3">
+                                                            <p className="min-w-0 text-[13px] font-bold text-[#9CA3AF]">
+                                                                {item.authorNickname}
+                                                            </p>
+                                                            <p className={`shrink-0 text-[13px] font-black ${item.promotionStatus === 'sacred' ? 'text-[#FF86C3]' : 'text-neon-teal'}`}>
                                                                 {item.promotionStatus === 'sacred' ? '성지글 보러 →' : '예언 남기기 →'}
                                                             </p>
                                                         </div>
                                                     </button>
-                                                    <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
-                                                        {visibleOptions.map((option) => {
+                                                    <div className="mt-4 flex items-start gap-2">
+                                                        <div className="flex min-w-0 flex-1 flex-wrap gap-1.5 sm:gap-2">
+                                                            {visibleOptions.map((option) => {
                                                             const isSelected = predictionReactionSelections[item.id] === option.key;
                                                             const reactionCount = Number(item.reactionCounts?.[option.key] || 0);
                                                             return (
@@ -978,7 +981,7 @@ function App() {
                                                                     type="button"
                                                                     onClick={(event) => handlePredictionReactionClick(event, item, option.key)}
                                                                     disabled={reactionBusyPredictionId === item.id}
-                                                                    className={`rounded-full border px-2.5 sm:px-3 py-1.5 text-[13px] font-bold transition ${isSelected
+                                                                    className={`rounded-full border px-2 py-[5px] text-[12px] font-bold transition ${isSelected
                                                                         ? 'border-neon-pink/40 bg-neon-pink/15 text-[#FF86C3]'
                                                                         : 'border-white/10 bg-white/5 text-[#9CA3AF] hover:border-neon-teal/30 hover:text-[#F3F4F6]'
                                                                     } ${reactionBusyPredictionId === item.id ? 'opacity-60' : ''}`}
@@ -987,16 +990,17 @@ function App() {
                                                                 </button>
                                                             );
                                                         })}
-                                                        {hiddenCount > 0 ? (
+                                                        </div>
+                                                        {canTogglePredictionReactions ? (
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setExpandedPredictionReactions((prev) => ({
                                                                     ...prev,
-                                                                    [item.id]: true
+                                                                    [item.id]: !prev[item.id]
                                                                 }))}
-                                                                className="rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-[13px] font-bold text-[#9CA3AF] transition hover:border-white/20 hover:text-[#D1D5DB]"
+                                                                className="shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center text-[20px] leading-none text-[#9CA3AF] transition hover:text-[#D1D5DB]"
                                                             >
-                                                                반응 더 보기
+                                                                {isExpanded ? '−' : '+'}
                                                             </button>
                                                         ) : null}
                                                     </div>

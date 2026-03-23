@@ -16,6 +16,36 @@ import {
     validatePredictionDraft
 } from '../services/predictionGatewayV2';
 
+function SectionHeader({ icon, title, right, compact = false, className = '' }) {
+    const iconClass = compact
+        ? 'text-[14px]'
+        : 'text-[22px]';
+    const titleClass = compact
+        ? 'text-[13px] font-black leading-none tracking-tight text-[#F3F4F6]'
+        : 'text-[20px] font-black leading-none tracking-tight text-[#F3F4F6]';
+    const rightClass = compact
+        ? 'rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-bold text-[#D1D5DB]'
+        : 'rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]';
+
+    return (
+        <div className={`flex items-start justify-between gap-3 ${className}`}>
+            <div className="min-w-0 flex items-center gap-2">
+                <span className={`shrink-0 inline-flex items-center justify-center text-neon-teal ${iconClass}`}>
+                    {icon}
+                </span>
+                <p className={`${titleClass} truncate`}>{title}</p>
+            </div>
+            {right ? (
+                typeof right === 'string' ? (
+                    <span className={`shrink-0 ${rightClass}`}>{right}</span>
+                ) : (
+                    <div className="shrink-0">{right}</div>
+                )
+            ) : null}
+        </div>
+    );
+}
+
 /**
  * Integration Notes
  * - BACKEND_TODO(SUPABASE): predictions, prediction_aggregates, dashboard_distribution_history를 한 응답으로 조합.
@@ -472,28 +502,28 @@ function TargetConsensusSummary({ symbol, currentPrice, stats, sampleSize, isLoa
             const deltaPct = ((anchorPrice - currentPrice) / currentPrice) * 100;
 
             if (Math.abs(deltaPct) < 1) {
-                return '현재가 근처';
+                return '근처';
             }
             if (deltaPct >= 0) {
-                return safeSampleSize >= 5 ? '상향 우세' : '상향 흐름';
+                return safeSampleSize >= 5 ? '↑ 우세' : '↑ 흐름';
             }
-            return safeSampleSize >= 5 ? '하향 우세' : '하향 흐름';
+            return safeSampleSize >= 5 ? '↓ 우세' : '↓ 흐름';
         }
 
         if (hasAnchorPrice) {
-            return '집중 구간 집계';
+            return '집중';
         }
 
         if (safeSampleSize > 0) {
-            return '목표가 집계 중';
+            return '집계';
         }
 
-        return '집계 준비 중';
+        return '대기';
     })();
 
     const subline = safeSampleSize > 0
-        ? `예언 ${safeSampleSize}건`
-        : (hasAnchorPrice ? '집중 구간을 모으는 중이에요' : '예언이 아직 쌓이는 중이에요');
+        ? `${safeSampleSize}건`
+        : (hasAnchorPrice ? '집중 중' : '대기');
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -563,27 +593,22 @@ function TargetConsensusSummary({ symbol, currentPrice, stats, sampleSize, isLoa
 
     return (
         <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-            <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">사람들이 보는 목표가</p>
+            <SectionHeader icon="◎" title="집단 합의" right={safeSampleSize > 0 ? `${safeSampleSize}건` : null} />
             <div className="mt-2 flex items-start justify-between gap-3">
                 <p className="min-w-0 text-[28px] font-extrabold leading-none text-[#F3F4F6] truncate">{headline}</p>
-                {safeSampleSize > 0 ? (
-                    <span className="shrink-0 rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
-                        예언 {safeSampleSize}건
-                    </span>
-                ) : null}
             </div>
             <p className="mt-2 text-[15px] font-bold text-[#D1D5DB] truncate">{subline}</p>
             {summaryHasMeaningfulData ? (
                 <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-[12px] font-bold text-[#D1D5DB]">
                     <span className="h-1.5 w-1.5 rounded-full bg-neon-teal" />
-                    {visitNote || '첫 방문'}
+                    {visitNote || '0'}
                 </div>
             ) : null}
             <div className="grid grid-cols-2 gap-2 mt-4">
                 <SummaryMetric label="현재가" value={hasCurrentPrice ? formatSummaryWon(currentPrice) : '-'} tone="teal" />
-                <SummaryMetric label="대표 목표가" value={hasAnchorPrice ? formatSummaryWon(anchorPrice) : '-'} tone="amber" />
-                <SummaryMetric label="집중 구간" value={focusBandText} tone="neutral" />
-                <SummaryMetric label="상향" value={bullishText} tone="pink" />
+                <SummaryMetric label="목표가" value={hasAnchorPrice ? formatSummaryWon(anchorPrice) : '-'} tone="amber" />
+                <SummaryMetric label="구간" value={focusBandText} tone="neutral" />
+                <SummaryMetric label="↑" value={bullishText} tone="pink" />
             </div>
         </section>
     );
@@ -636,24 +661,14 @@ function LatestPredictionFeed({ snapshot, currentPrice, stockName, isLoading = f
     if (!feedItems.length) {
         return (
             <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-                <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">최신 예언 피드</p>
-                <p className="mt-2 text-[18px] font-extrabold leading-none text-[#F3F4F6]">아직 예언이 없습니다</p>
-                <p className="mt-2 text-[14px] font-bold text-[#9CA3AF]">예언이 쌓이면 최근 3건을 먼저 보여드려요.</p>
+                <SectionHeader icon="✦" title="최근 예언" right="대기" />
             </section>
         );
     }
 
     return (
         <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">최신 예언 피드</p>
-                    <p className="mt-2 text-[18px] font-extrabold leading-tight text-[#F3F4F6]">최근 3건만 먼저 보여드려요</p>
-                </div>
-                <p className="shrink-0 rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
-                    방금부터
-                </p>
-            </div>
+            <SectionHeader icon="✦" title="최근 예언" right="LIVE" />
 
             <div className="mt-4 space-y-3">
                 {feedItems.map((item) => (
@@ -676,7 +691,7 @@ function PredictionFeedCard({ item }) {
         <article className={`rounded-[22px] border px-3 py-3 ${toneClass}`}>
             <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <p className="text-[13px] font-bold text-[#F3F4F6]">{item.isMine ? '내 예언' : '익명'}</p>
+                    <p className="text-[13px] font-bold text-[#F3F4F6]">{item.isMine ? '내' : '익명'}</p>
                     <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-bold text-[#D1D5DB]">{item.timeLabel}</span>
                 </div>
                 <span className="shrink-0 rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-bold text-[#D1D5DB]">
@@ -776,12 +791,11 @@ function TargetDirectionSummary({ stats, sampleSize, currentPrice, isLoading = f
 
     return (
         <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-            <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">목표가 방향성</p>
-            <p className="mt-2 text-[18px] font-extrabold leading-tight text-[#F3F4F6]">사람들은 이 종목을 위로 더 보나요, 아래로 더 보나요?</p>
-            <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">{headline}</p>
-                <p className="text-[12px] font-bold text-[#9CA3AF]">{safeSampleSize > 0 ? `예언 ${safeSampleSize}건` : '예언이 아직 적어요'}</p>
-            </div>
+            <SectionHeader
+                icon="⇅"
+                title="목표가 방향"
+                right={safeSampleSize > 0 ? `${headline} · ${safeSampleSize}건` : '대기'}
+            />
 
             <div className="mt-4 rounded-[22px] border border-white/10 bg-[#121212]/20 px-3 py-3">
                 <div className="flex items-center justify-between gap-3">
@@ -801,14 +815,14 @@ function TargetDirectionSummary({ stats, sampleSize, currentPrice, isLoading = f
                     />
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3 text-[12px] font-bold">
-                    <span className="text-[#D1D5DB]">상향파 {bullishCount !== null ? `${bullishCount}건` : '-'}</span>
-                    <span className="text-[#D1D5DB]">하향파 {bearishCount !== null ? `${bearishCount}건` : '-'}</span>
+                <span className="text-[#D1D5DB]">{`↑ ${bullishCount !== null ? `${bullishCount}건` : '-'}`}</span>
+                    <span className="text-[#D1D5DB]">{`↓ ${bearishCount !== null ? `${bearishCount}건` : '-'}`}</span>
                 </div>
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-                <SummaryMetric label="가장 과감한 목표가" value={aggressiveLabel} tone="pink" />
-                <SummaryMetric label="가장 보수적인 목표가" value={conservativeLabel} tone="teal" />
+                <SummaryMetric label="상단" value={aggressiveLabel} tone="pink" />
+                <SummaryMetric label="하단" value={conservativeLabel} tone="teal" />
             </div>
         </section>
     );
@@ -849,9 +863,7 @@ function TargetDistributionSummary({ snapshot, currentPrice, isLoading = false }
     if (!buckets.length) {
         return (
             <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-                <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">목표가 분포</p>
-                <p className="mt-2 text-[18px] font-extrabold leading-tight text-[#F3F4F6]">사람들이 많이 찍은 가격대</p>
-                <p className="mt-2 text-[14px] font-bold text-[#9CA3AF]">예언이 쌓이면 가격대별 분포를 보여드려요.</p>
+                <SectionHeader icon="▦" title="가격대 분포" right="대기" />
             </section>
         );
     }
@@ -860,26 +872,18 @@ function TargetDistributionSummary({ snapshot, currentPrice, isLoading = false }
 
     return (
         <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">목표가 분포</p>
-                    <p className="mt-2 text-[18px] font-extrabold leading-tight text-[#F3F4F6]">사람들이 많이 찍은 가격대</p>
-                </div>
-                <div className="shrink-0 rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
-                    {sampleSize > 0 ? `예언 ${sampleSize}건` : '분포 준비 중'}
-                </div>
-            </div>
+            <SectionHeader icon="▦" title="가격대 분포" right={focusBandText !== '-' ? '집중' : '대기'} />
 
             <div className="mt-3 flex flex-wrap gap-2">
                 <span className="rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
-                    {focusBandText !== '-' ? `집중 구간 ${focusBandText}` : '집중 구간 정리 중'}
+                    {focusBandText !== '-' ? `집중 ${focusBandText}` : '집중 중'}
                 </span>
                 <span className="rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
-                    현재가 기준선
+                    기준선
                 </span>
                 {mineCount > 0 ? (
                     <span className="rounded-full bg-neon-pink/10 px-3 py-1 text-[12px] font-bold text-neon-pink">
-                        내 예언 {mineCount}건
+                        내 점 {mineCount}
                     </span>
                 ) : null}
             </div>
@@ -904,12 +908,12 @@ function TargetDistributionSummary({ snapshot, currentPrice, isLoading = false }
                                         </span>
                                         {bucket.hasMine ? (
                                             <span className="rounded-full bg-neon-pink/10 px-2 py-0.5 text-[11px] font-bold text-neon-pink">
-                                                내 예언
+                                                내 점
                                             </span>
                                         ) : null}
                                         {isCurrentInBucket ? (
                                             <span className="rounded-full bg-neon-teal/10 px-2 py-0.5 text-[11px] font-bold text-neon-teal">
-                                                현재가
+                                                현재
                                             </span>
                                         ) : null}
                                     </div>
@@ -987,24 +991,10 @@ function SacredBridgeSection({ symbol, posts, isLoading = false, onOpenArchive, 
 
     return (
         <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">성지글 연결</p>
-                    <p className="mt-2 text-[18px] font-extrabold leading-tight text-[#F3F4F6]">최근 적중 후보와 반응이 좋은 글</p>
-                </div>
-                <div className="shrink-0 rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
-                    {sameStockPosts.length > 0 ? `이 종목 ${sameStockPosts.length}건` : '아직 이 종목 기록 없음'}
-                </div>
-            </div>
+            <SectionHeader icon="★" title="성지글 기록" right={sameStockPosts.length > 0 ? `이 종목 ${sameStockPosts.length}` : '기록 없음'} />
 
             <div className="mt-4 space-y-4">
                 <div>
-                    <div className="flex items-center justify-between gap-3">
-                        <p className="text-[13px] font-bold text-[#D1D5DB]">최근 적중 후보</p>
-                        <span className="text-[12px] font-bold text-[#9CA3AF]">
-                            {sameStockPosts.length > 0 ? '이 종목 먼저 보기' : '전체 기록에서 먼저 보기'}
-                        </span>
-                    </div>
                     <div className="mt-3 space-y-2.5">
                         {recentPosts.length > 0 ? recentPosts.map((post) => (
                             <SacredBridgeCard
@@ -1016,18 +1006,14 @@ function SacredBridgeSection({ symbol, posts, isLoading = false, onOpenArchive, 
                             />
                         )) : (
                             <div className="rounded-[20px] border border-white/10 bg-[#121212]/20 px-3 py-4">
-                                <p className="text-[14px] font-bold text-[#F3F4F6]">아직 이 종목의 성지글이 없습니다</p>
-                                <p className="mt-1 text-[13px] font-bold text-[#9CA3AF]">적중이 나오면 먼저 연결해드려요.</p>
+                                <p className="text-[14px] font-bold text-[#F3F4F6]">기록 없음</p>
+                                <p className="mt-1 text-[13px] font-bold text-[#9CA3AF]">적중시 연결</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div>
-                    <div className="flex items-center justify-between gap-3">
-                        <p className="text-[13px] font-bold text-[#D1D5DB]">반응이 좋은 글</p>
-                        <span className="text-[12px] font-bold text-[#9CA3AF]">아카이브에서 많이 본 기록</span>
-                    </div>
                     <div className="mt-3 space-y-2.5">
                         {hotPosts.length > 0 ? hotPosts.map((post) => (
                             <SacredBridgeCard
@@ -1040,8 +1026,8 @@ function SacredBridgeSection({ symbol, posts, isLoading = false, onOpenArchive, 
                             />
                         )) : (
                             <div className="rounded-[20px] border border-white/10 bg-[#121212]/20 px-3 py-4">
-                                <p className="text-[14px] font-bold text-[#F3F4F6]">아직 반응이 쌓인 성지글이 없어요</p>
-                                <p className="mt-1 text-[13px] font-bold text-[#9CA3AF]">적중 기록이 늘면 바로 보여드릴게요.</p>
+                                <p className="text-[14px] font-bold text-[#F3F4F6]">기록 없음</p>
+                                <p className="mt-1 text-[13px] font-bold text-[#9CA3AF]">기록 쌓이면</p>
                             </div>
                         )}
                     </div>
@@ -1052,7 +1038,7 @@ function SacredBridgeSection({ symbol, posts, isLoading = false, onOpenArchive, 
                 onClick={onOpenArchive}
                 className="mt-4 inline-flex w-full items-center justify-center rounded-[20px] border border-neon-pink/20 bg-neon-pink/5 px-4 py-3 text-[14px] font-bold text-neon-pink transition hover:bg-neon-pink/10"
             >
-                성지글 더보기 →
+                + 더보기
             </button>
         </section>
     );
@@ -1116,20 +1102,6 @@ function SacredBridgeCard({ post, symbol, onClick, emphasizeCurrent = false, sho
 function SupportInfoSection({ children }) {
     return (
         <section className="space-y-4">
-            <div className="flex items-start justify-between gap-3 px-1">
-                <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">보조 정보</p>
-                    <p className="mt-2 text-[18px] font-extrabold leading-tight text-[#F3F4F6]">
-                        차트와 팩트로 흐름을 다시 확인해요
-                    </p>
-                </div>
-                <div className="shrink-0 flex flex-wrap justify-end gap-2">
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">차트</span>
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">팩트체크</span>
-                    <span className="rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">52주 맥락</span>
-                </div>
-            </div>
-
             <div className="space-y-4">
                 {children}
             </div>
@@ -1210,29 +1182,29 @@ function writeSummaryVisitRecord(storageKey, value) {
 
 function buildSummaryVisitNote(previous, current) {
     if (!previous) {
-        return '첫 방문';
+        return '첫';
     }
 
     const prevSampleSize = Number(previous.sampleSize) || 0;
     const currentSampleSize = Number(current.sampleSize) || 0;
     const sampleDelta = currentSampleSize - prevSampleSize;
     if (sampleDelta > 0) {
-        return `지난 방문 이후 +${sampleDelta}건`;
+        return `+${sampleDelta}`;
     }
 
     const prevBand = String(previous.focusBandText || '').trim();
     const currentBand = String(current.focusBandText || '').trim();
     if (prevBand && currentBand && prevBand !== currentBand) {
-        return `집중 구간이 ${prevBand} → ${currentBand}`;
+        return `${prevBand}→${currentBand}`;
     }
 
     const prevAnchor = Number(previous.anchorPrice) || 0;
     const currentAnchor = Number(current.anchorPrice) || 0;
     if (prevAnchor > 0 && currentAnchor > 0 && prevAnchor !== currentAnchor) {
-        return `대표 목표가가 ${formatCompactSummaryPrice(prevAnchor)} → ${formatCompactSummaryPrice(currentAnchor)}`;
+        return `${formatCompactSummaryPrice(prevAnchor)}→${formatCompactSummaryPrice(currentAnchor)}`;
     }
 
-    return '지난 방문과 비슷해요';
+    return '비슷';
 }
 
 function buildLatestPredictionFeedItems(dots, currentPrice, stockName = '') {

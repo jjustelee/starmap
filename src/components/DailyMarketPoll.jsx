@@ -7,9 +7,9 @@ import {
 } from '../services/dailyMarketPollService';
 
 const POLL_OPTIONS = [
-    { key: 'up', label: '상승', tone: 'pink', description: '내일 더 오른다' },
-    { key: 'flat', label: '보합', tone: 'neutral', description: '당분간 비슷하다' },
-    { key: 'down', label: '하락', tone: 'teal', description: '내일은 눌린다' }
+    { key: 'up', label: '상승', tone: 'pink', description: '위' },
+    { key: 'flat', label: '보합', tone: 'neutral', description: '유지' },
+    { key: 'down', label: '하락', tone: 'teal', description: '아래' }
 ];
 
 const DailyMarketPoll = ({ stockId, symbol, currentPrice, isLoggedIn = false, userId = null, onLogin }) => {
@@ -131,20 +131,6 @@ const DailyMarketPoll = ({ stockId, symbol, currentPrice, isLoggedIn = false, us
     ]);
 
     const totalVotes = Number(pollState?.totalVotes || 0);
-    const leader = useMemo(() => {
-        const ordered = [...POLL_OPTIONS]
-            .map((option) => ({
-                ...option,
-                count: Number(pollState?.counts?.[option.key] || 0)
-            }))
-            .sort((a, b) => b.count - a.count);
-        return ordered[0] || null;
-    }, [pollState?.counts]);
-
-    const summaryLabel = totalVotes > 0
-        ? (leader?.key === 'up' ? '상승 우세' : leader?.key === 'down' ? '하락 우세' : '의견이 갈립니다')
-        : '첫 투표를 기다려요';
-
     if (isLoading) {
         return (
             <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)] animate-pulse">
@@ -160,23 +146,15 @@ const DailyMarketPoll = ({ stockId, symbol, currentPrice, isLoggedIn = false, us
     }
 
     return (
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)]">
             <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-[#9CA3AF] uppercase tracking-wider">내일장 예측</p>
-                    <p className="mt-2 text-[18px] font-extrabold leading-tight text-[#F3F4F6]">오늘 분위기로 내일장은 어떨까?</p>
-                    <p className="mt-2 text-[14px] font-bold text-[#9CA3AF]">
-                        현재가 기준으로 방향을 골라보세요.
-                    </p>
+                <div className="min-w-0 flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center text-neon-teal text-[22px]">↗</span>
+                    <p className="text-[20px] font-black leading-none tracking-tight text-[#F3F4F6]">내일장 예측</p>
                 </div>
-                <div className="shrink-0 rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
-                    오늘 자정 마감
-                </div>
-            </div>
-
-            <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-[13px] font-bold text-[#D1D5DB]">{summaryLabel}</p>
-                <p className="text-[12px] font-bold text-[#9CA3AF]">{totalVotes > 0 ? `총 ${totalVotes}표` : '첫 투표를 기다려요'}</p>
+                <span className="shrink-0 rounded-full bg-white/5 px-3 py-1 text-[12px] font-bold text-[#D1D5DB]">
+                    D-1
+                </span>
             </div>
 
             <div className="mt-4 space-y-3">
@@ -233,10 +211,10 @@ const DailyMarketPoll = ({ stockId, symbol, currentPrice, isLoggedIn = false, us
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3">
                 <div className="flex items-center justify-between gap-3">
                     <p className="text-[13px] font-bold text-[#D1D5DB]">
-                        {isLoggedIn ? '투표 후 결과를 다시 보면 흐름이 보여요.' : '로그인하면 바로 투표가 저장돼요.'}
+                        {isLoggedIn ? '결과 확인' : '로그인 후 저장'}
                     </p>
                     <p className="text-[12px] font-bold text-[#9CA3AF]">
-                        {currentPrice > 0 ? `${Math.round(currentPrice).toLocaleString()}원 기준` : '현재가 기준'}
+                        {currentPrice > 0 ? `${Math.round(currentPrice).toLocaleString()}원` : '기준'}
                     </p>
                 </div>
             </div>
