@@ -23,7 +23,7 @@ const formatQuoteAge = (value) => {
 const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpdatedAt, quoteErrorCode, onBack }) => {
     const market = getMarketStatus();
     const hasPrice = Number(basePrice) > 0;
-    const statusText = hasPrice ? (formatQuoteAge(quoteUpdatedAt) || '시각없음') : '시각없음';
+    const statusText = formatQuoteAge(quoteUpdatedAt);
     const shouldShowQuoteStatus = market.isOpen;
 
     return (
@@ -45,16 +45,20 @@ const DetailHeader = ({ stock, basePrice, priceChange, priceChangeRate, quoteUpd
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.9)]"></span>
                         </span>
                     ) : null}
-                    <p className="font-brandEn text-[26px] font-black text-[#F3F4F6] leading-none tracking-tighter truncate">
-                        {hasPrice ? Number(basePrice).toLocaleString() : '갱신 중'}
-                    </p>
+                    {hasPrice ? (
+                        <p className="font-brandEn text-[26px] font-black text-[#F3F4F6] leading-none tracking-tighter truncate">
+                            {Number(basePrice).toLocaleString()}
+                        </p>
+                    ) : (
+                        <div className="h-8 w-28 rounded-xl bg-white/10 animate-pulse" />
+                    )}
                 </div>
                 <div className="flex items-center justify-end gap-2 min-h-[18px]">
                     {!market.isOpen ? (
                         <span className="px-1.5 py-0.5 rounded text-[11px] font-black bg-white/10 text-[#9CA3AF] uppercase tracking-tighter shrink-0">
                             {market.text}
                         </span>
-                    ) : shouldShowQuoteStatus ? (
+                    ) : shouldShowQuoteStatus && statusText ? (
                         <span className="px-1.5 py-0.5 rounded text-[11px] font-black bg-white/10 text-[#9CA3AF] tracking-tighter shrink-0">
                             {statusText}
                         </span>

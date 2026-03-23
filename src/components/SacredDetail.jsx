@@ -1,7 +1,7 @@
 import React from 'react';
 import { BadgeCheck, ChevronLeft, Share2, TrendingUp, Calendar, Target } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { fetchSacredPosts } from '../utils/mockData';
+import { fetchSacredPosts, readSacredPostsCache, writeSacredPostsCache } from '../utils/mockData';
 import { shareContent } from '../utils/shareContent';
 import { useAuth } from '../context/AuthContext';
 import { fetchUserSacredReactions, toggleSacredReaction } from '../utils/sacredReactions';
@@ -17,8 +17,9 @@ const SACRED_REACTION_OPTIONS = [
 export const SacredDetail = ({ onBack, onPredictStock }) => {
     const { id } = useParams();
     const { user, isLoggedIn, signInWithKakao } = useAuth();
-    const [post, setPost] = React.useState(null);
-    const [isLoading, setIsLoading] = React.useState(true);
+    const cacheOptions = React.useMemo(() => ({ id }), [id]);
+    const [post, setPost] = React.useState(() => readSacredPostsCache('detail', cacheOptions)?.item || null);
+    const [isLoading, setIsLoading] = React.useState(() => readSacredPostsCache('detail', cacheOptions) === null);
     const [shareFeedback, setShareFeedback] = React.useState('');
     const [myReactionKey, setMyReactionKey] = React.useState('');
     const [reactionFeedback, setReactionFeedback] = React.useState('');
@@ -27,19 +28,23 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
     React.useEffect(() => {
         let active = true;
         const load = async () => {
-            if (active) {
+            const cached = readSacredPostsCache('detail', cacheOptions);
+            if (cached !== null) {
+                setPost(cached?.item || null);
+                setIsLoading(false);
+            } else if (active) {
                 setIsLoading(true);
             }
             try {
                 const result = await fetchSacredPosts('detail', { id });
                 if (!active) return;
                 setPost(result?.item || null);
+                writeSacredPostsCache('detail', { id }, result || { item: null });
                 setShareFeedback('');
                 setReactionFeedback('');
             } catch (error) {
                 if (!active) return;
                 console.error('Failed to load sacred detail:', error);
-                setPost(null);
             } finally {
                 if (active) {
                     setIsLoading(false);
@@ -50,7 +55,7 @@ export const SacredDetail = ({ onBack, onPredictStock }) => {
         return () => {
             active = false;
         };
-    }, [id]);
+    }, [cacheOptions, id]);
 
     React.useEffect(() => {
         let active = true;

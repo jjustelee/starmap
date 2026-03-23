@@ -316,6 +316,7 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
                         currentPrice={currentPrice}
                         stats={mergedSnapshot?.stats}
                         sampleSize={mergedSnapshot?.sampleSize}
+                        isLoading={!snapshot && isLoadingSnapshot}
                     />
 
                     <div className="rounded-[22px] border border-neon-pink/20 bg-white/[0.035] px-3 py-3 shadow-[0_8px_28px_rgba(0,0,0,0.24)]">
@@ -373,13 +374,45 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
     );
 };
 
-function TargetConsensusSummary({ currentPrice, stats, sampleSize }) {
+function TargetConsensusSummary({ currentPrice, stats, sampleSize, isLoading = false }) {
     const anchorPrice = pickPositiveNumber(stats?.mode, stats?.avg);
     const hasCurrentPrice = Number(currentPrice) > 0;
     const hasAnchorPrice = Number(anchorPrice) > 0;
     const safeSampleSize = Number(sampleSize) || 0;
     const bullishRatio = Number(stats?.bullishRatio);
     const bullishText = Number.isFinite(bullishRatio) ? `${Math.round(bullishRatio * 100)}%` : '-';
+
+    if (isLoading) {
+        return (
+            <section className="rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl px-4 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.28)] animate-pulse">
+                <div className="h-4 w-20 rounded bg-white/10" />
+                <div className="mt-4 h-7 w-36 rounded bg-white/10" />
+                <div className="mt-2 h-4 w-28 rounded bg-white/10" />
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="rounded-2xl border border-white/10 bg-[#121212]/20 px-3 py-3">
+                        <div className="h-3 w-12 rounded bg-white/10" />
+                        <div className="mt-2 h-5 w-20 rounded bg-white/10" />
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#121212]/20 px-3 py-3">
+                        <div className="h-3 w-16 rounded bg-white/10" />
+                        <div className="mt-2 h-5 w-20 rounded bg-white/10" />
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#121212]/20 px-3 py-3">
+                        <div className="h-3 w-16 rounded bg-white/10" />
+                        <div className="mt-2 h-5 w-20 rounded bg-white/10" />
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#121212]/20 px-3 py-3">
+                        <div className="h-3 w-10 rounded bg-white/10" />
+                        <div className="mt-2 h-5 w-12 rounded bg-white/10" />
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#121212]/20 px-3 py-3">
+                        <div className="h-3 w-12 rounded bg-white/10" />
+                        <div className="mt-2 h-5 w-16 rounded bg-white/10" />
+                    </div>
+                </div>
+            </section>
+        );
+    }
 
     let headline = '첫 예언 전';
     let subline = '예언 0건';

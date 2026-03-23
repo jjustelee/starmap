@@ -1,28 +1,38 @@
 import React from 'react';
 import { BadgeCheck, Award, ChevronRight } from 'lucide-react';
-import { fetchSacredPosts } from '../utils/mockData';
+import { fetchSacredPosts, readSacredPostsCache } from '../utils/mockData';
 
 export const SacredList = ({ onSelect }) => {
     const [filter, setFilter] = React.useState('recent');
-    const [posts, setPosts] = React.useState([]);
-    const [isLoading, setIsLoading] = React.useState(true);
+    const cacheOptions = React.useMemo(() => ({
+        sort: filter === 'recent' ? 'recent' : 'accuracy'
+    }), [filter]);
+    const [posts, setPosts] = React.useState(() => {
+        const cached = readSacredPostsCache('list', cacheOptions);
+        return Array.isArray(cached?.items) ? cached.items : [];
+    });
+    const [isLoading, setIsLoading] = React.useState(() => {
+        const cached = readSacredPostsCache('list', cacheOptions);
+        return cached === null;
+    });
 
     React.useEffect(() => {
         let active = true;
         const load = async () => {
-            if (active) {
+            const cached = readSacredPostsCache('list', cacheOptions);
+            if (cached !== null) {
+                setPosts(Array.isArray(cached.items) ? cached.items : []);
+                setIsLoading(false);
+            } else if (active) {
                 setIsLoading(true);
             }
             try {
-                const result = await fetchSacredPosts('list', {
-                    sort: filter === 'recent' ? 'recent' : 'accuracy'
-                });
+                const result = await fetchSacredPosts('list', cacheOptions);
                 if (!active) return;
                 setPosts(Array.isArray(result?.items) ? result.items : []);
             } catch (error) {
                 if (!active) return;
                 console.error('Failed to load sacred posts:', error);
-                setPosts([]);
             } finally {
                 if (active) {
                     setIsLoading(false);
@@ -33,7 +43,7 @@ export const SacredList = ({ onSelect }) => {
         return () => {
             active = false;
         };
-    }, [filter]);
+    }, [cacheOptions, filter]);
 
     return (
         <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">

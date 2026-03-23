@@ -1,5 +1,45 @@
 import { supabase } from './supabaseClient';
 
+const SACRED_POSTS_CACHE_TTL_MS = 1000 * 60 * 3;
+const SACRED_POSTS_CACHE_PREFIX = 'kokok.sacred.posts:';
+
+const getSacredPostsCacheKey = (mode, options = {}) => {
+    const sort = options.sort || 'recent';
+    const id = options.id || '';
+    return `${SACRED_POSTS_CACHE_PREFIX}${mode}:${sort}:${id}`;
+};
+
+export const readSacredPostsCache = (mode, options = {}) => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const key = getSacredPostsCacheKey(mode, options);
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (Date.now() - Number(parsed.savedAt || 0) > SACRED_POSTS_CACHE_TTL_MS) {
+            window.localStorage.removeItem(key);
+            return null;
+        }
+        return parsed.value || null;
+    } catch {
+        return null;
+    }
+};
+
+export const writeSacredPostsCache = (mode, options = {}, value) => {
+    if (typeof window === 'undefined') return;
+    try {
+        const key = getSacredPostsCacheKey(mode, options);
+        window.localStorage.setItem(key, JSON.stringify({
+            savedAt: Date.now(),
+            value
+        }));
+    } catch {
+        // cache is best-effort
+    }
+};
+
 /**
  * [백엔드] 공개 현재가 API 호출 (price 전용)
  * @param {string} symbol
@@ -51,7 +91,9 @@ export const fetchSacredPosts = async (mode, options = {}) => {
         console.error('Error calling sacred-posts-public:', error);
         return mode === 'detail' ? { item: null } : { items: [] };
     }
-    return data || (mode === 'detail' ? { item: null } : { items: [] });
+    const payload = data || (mode === 'detail' ? { item: null } : { items: [] });
+    writeSacredPostsCache(mode, options, payload);
+    return payload;
 };
 
 /**
