@@ -26,6 +26,36 @@ const PREDICTION_REACTION_OPTIONS = [
     { key: 'want_reason', label: '근거 궁금함' }
 ];
 
+const HOME_CACHE_TTL_MS = 5 * 60 * 1000;
+const HOME_CACHE_KEYS = {
+    popularStocks: 'kokok.home.popularStocks',
+    sacredHomePosts: 'kokok.home.sacredHomePosts',
+    communityHomeFeed: 'kokok.home.communityHomeFeed'
+};
+
+const readHomeCache = (key, fallback) => {
+    if (typeof window === 'undefined') return fallback;
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return fallback;
+        if (Date.now() - Number(parsed.ts || 0) > HOME_CACHE_TTL_MS) return fallback;
+        return parsed.value ?? fallback;
+    } catch {
+        return fallback;
+    }
+};
+
+const writeHomeCache = (key, value) => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(key, JSON.stringify({ ts: Date.now(), value }));
+    } catch {
+        // 캐시는 보조 기능이므로 저장 실패는 무시합니다.
+    }
+};
+
 const HeaderProfileButton = () => {
     const { isLoggedIn, isLoading: authLoading, profile } = useAuth();
     const navigate = useNavigate();
@@ -63,11 +93,20 @@ function App() {
     const [selectedStock, setSelectedStock] = useState(null);
     const [lastTargetPrice, setLastTargetPrice] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
-    const [popularStocks, setPopularStocks] = useState([]);
-    const [sacredHomePosts, setSacredHomePosts] = useState([]);
-    const [communityHomeFeed, setCommunityHomeFeed] = useState({ recentPredictions: [], hotStocks: [] });
+    const [isSearchMode, setIsSearchMode] = useState(false);
+    const [popularStocks, setPopularStocks] = useState(() => readHomeCache(HOME_CACHE_KEYS.popularStocks, []));
+    const [sacredHomePosts, setSacredHomePosts] = useState(() => readHomeCache(HOME_CACHE_KEYS.sacredHomePosts, []));
+    const [communityHomeFeed, setCommunityHomeFeed] = useState(() => readHomeCache(HOME_CACHE_KEYS.communityHomeFeed, { recentPredictions: [], hotStocks: [] }));
     const [searchResults, setSearchResults] = useState([]);
-    const [stocksLoading, setStocksLoading] = useState(true);
+    const [stocksLoading, setStocksLoading] = useState(() => !readHomeCache(HOME_CACHE_KEYS.popularStocks, []).length);
+    const [sacredHomePostsLoading, setSacredHomePostsLoading] = useState(() => !readHomeCache(HOME_CACHE_KEYS.sacredHomePosts, []).length);
+    const [communityHomeFeedLoading, setCommunityHomeFeedLoading] = useState(() => {
+        const cached = readHomeCache(HOME_CACHE_KEYS.communityHomeFeed, { recentPredictions: [], hotStocks: [] });
+        return !(
+            (Array.isArray(cached?.hotStocks) && cached.hotStocks.length > 0) ||
+            (Array.isArray(cached?.recentPredictions) && cached.recentPredictions.length > 0)
+        );
+    });
     const [isSearching, setIsSearching] = useState(false);
     const [visibleCount, setVisibleCount] = useState(20); // 무한 스크롤: 현재 보여줄 개수
     const [allStockMaster, setAllStockMaster] = useState([]); // [백엔드] 전 종목 캐싱용
@@ -75,8 +114,6 @@ function App() {
     const observerTarget = useRef(null); // 무한 스크롤 감지용 타겟
     const searchInputRef = useRef(null);
     const searchSectionRef = useRef(null);
-    const searchQuoteInFlightRef = useRef(new Set());
-    const searchQuoteCacheRef = useRef({});
     const stockMasterPromiseRef = useRef(null);
     const stockMasterLoadedRef = useRef(false);
     const [openComposerSignal, setOpenComposerSignal] = useState(0);
@@ -183,19 +220,31 @@ function App() {
 
     useEffect(() => {
         const loadSacredHomePosts = async () => {
-            const result = await fetchSacredPosts('home');
-            setSacredHomePosts(Array.isArray(result?.items) ? result.items : []);
+            try {
+                const result = await fetchSacredPosts('home');
+                const nextItems = Array.isArray(result?.items) ? result.items : [];
+                setSacredHomePosts(nextItems);
+                writeHomeCache(HOME_CACHE_KEYS.sacredHomePosts, nextItems);
+            } finally {
+                setSacredHomePostsLoading(false);
+            }
         };
         loadSacredHomePosts();
     }, []);
 
     const refreshCommunityHomeFeed = async () => {
-        const result = await fetchCommunityHomeFeed();
-        setCommunityHomeFeed({
-            recentPredictions: Array.isArray(result?.recentPredictions) ? result.recentPredictions : [],
-            hotStocks: Array.isArray(result?.hotStocks) ? result.hotStocks : []
-        });
-        return result;
+        try {
+            const result = await fetchCommunityHomeFeed();
+            const nextFeed = {
+                recentPredictions: Array.isArray(result?.recentPredictions) ? result.recentPredictions : [],
+                hotStocks: Array.isArray(result?.hotStocks) ? result.hotStocks : []
+            };
+            setCommunityHomeFeed(nextFeed);
+            writeHomeCache(HOME_CACHE_KEYS.communityHomeFeed, nextFeed);
+            return result;
+        } finally {
+            setCommunityHomeFeedLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -236,6 +285,7 @@ function App() {
 
                     // 1단계: 먼저 DB 데이터를 표시
                     setPopularStocks(sorted);
+                    writeHomeCache(HOME_CACHE_KEYS.popularStocks, sorted);
                     setStocksLoading(false);
 
                     // 2단계: 상위 종목 현재가 동기화는 뒤에서 조용히 반영
@@ -263,6 +313,7 @@ function App() {
                                 const idx = updated.findIndex(u => u.symbol === res.symbol);
                                 if (idx !== -1) updated[idx] = res;
                             });
+                            writeHomeCache(HOME_CACHE_KEYS.popularStocks, updated);
                             return updated;
                         });
                     });
@@ -299,15 +350,14 @@ function App() {
             
             // 검색 결과를 기존 UI 형식에 맞게 변환
             const formatted = localResults.map(s => {
-                const cachedQuote = searchQuoteCacheRef.current[s.code];
                 return {
                 symbol: s.code,
                 name: s.name,
                 market: s.market_type,
-                currentPrice: Number(cachedQuote?.currentPrice ?? s.current_price ?? 0),
-                priceChange: Number(cachedQuote?.priceChange ?? s.price_change ?? 0),
-                priceChangeRate: Number(cachedQuote?.priceChangeRate ?? s.price_change_rate ?? 0),
-                quoteStatusLabel: cachedQuote?.quoteStatusLabel || (Number(s.current_price || 0) > 0 ? '최근값' : '갱신중'),
+                currentPrice: Number(s.current_price ?? 0),
+                priceChange: Number(s.price_change ?? 0),
+                priceChangeRate: Number(s.price_change_rate ?? 0),
+                quoteStatusLabel: Number(s.current_price || 0) > 0 ? '최근값' : '갱신중',
                 isFromDb: false
                 };
             });
@@ -336,39 +386,6 @@ function App() {
         observer.observe(observerTarget.current);
 
         return () => observer.disconnect();
-    }, [searchResults, visibleCount]);
-
-    // [백엔드] 검색 결과 현재가 동기화: 화면에 보이는 항목부터 quote-public 기반으로 보강
-    useEffect(() => {
-        if (!searchResults.length) return;
-        const visibleItems = searchResults.slice(0, visibleCount);
-        visibleItems.forEach((stock) => {
-            if (Number(stock.currentPrice || 0) > 0) return;
-            if (searchQuoteInFlightRef.current.has(stock.symbol)) return;
-            searchQuoteInFlightRef.current.add(stock.symbol);
-
-            fetchStockInfo(stock.symbol)
-                .then((info) => {
-                    const price = Number(info?.currentPrice || 0);
-                    if (price <= 0) return;
-                    const nextQuote = {
-                        currentPrice: price,
-                        priceChange: Number(info?.price_change || 0),
-                        priceChangeRate: Number(info?.price_change_rate || 0),
-                        quoteStatusLabel: info?.quoteStatusLabel || '최근값'
-                    };
-                    searchQuoteCacheRef.current[stock.symbol] = nextQuote;
-                    setSearchResults((prev) => prev.map((item) => (
-                        item.symbol === stock.symbol ? { ...item, ...nextQuote } : item
-                    )));
-                })
-                .catch((err) => {
-                    console.warn(`Failed to sync search quote for ${stock.symbol}:`, err);
-                })
-                .finally(() => {
-                    searchQuoteInFlightRef.current.delete(stock.symbol);
-                });
-        });
     }, [searchResults, visibleCount]);
 
     // [백엔드 Level 3] Supabase Realtime 구독: stocks 테이블 변경 시 즉시 UI 반영
@@ -557,6 +574,7 @@ function App() {
     };
 
     const navigateHome = () => {
+        setIsSearchMode(false);
         setSearchQuery('');
         setSearchResults([]);
         setVisibleCount(20);
@@ -565,6 +583,7 @@ function App() {
     };
 
     const navigateToSearch = () => {
+        setIsSearchMode(true);
         setSearchQuery('');
         setSearchResults([]);
         setVisibleCount(20);
@@ -687,7 +706,7 @@ function App() {
                     <Route path="/" element={
                         <div className="space-y-8 sm:space-y-12 animate-in fade-in duration-700">
                             {/* Hero - Hide when searching */}
-                            {!searchQuery && (
+                            {!isSearchMode && (
                                 <section className="space-y-6 sm:space-y-8 pt-2 sm:pt-4 text-center">
                                     <div className="space-y-3 sm:space-y-4">
                                         <p className="text-[13px] font-bold tracking-[0.32em] text-[#9CA3AF] uppercase">사람들이 보는 목표가 • 기록 • 성지글</p>
@@ -732,14 +751,24 @@ function App() {
                                             type="text"
                                             value={searchQuery}
                                             onFocus={() => {
+                                                setIsSearchMode(true);
                                                 if (!stockMasterLoadedRef.current) {
                                                     void loadStockMaster();
                                                 }
                                             }}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                         />
-                                        {searchQuery && (
-                                            <button onClick={() => setSearchQuery('')} className="text-[#6B7280] hover:text-[#F3F4F6] transition">
+                                        {isSearchMode && (
+                                            <button
+                                                onClick={() => {
+                                                    if (searchQuery) {
+                                                        setSearchQuery('');
+                                                        return;
+                                                    }
+                                                    setIsSearchMode(false);
+                                                }}
+                                                className="text-[#6B7280] hover:text-[#F3F4F6] transition"
+                                            >
                                                 <X className="w-5 h-5" />
                                             </button>
                                         )}
@@ -847,7 +876,7 @@ function App() {
                                 </div>
                             </section>
 
-                            {!searchQuery && (
+                            {!isSearchMode && (
                                 <section className="space-y-4 sm:space-y-5">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
@@ -871,6 +900,22 @@ function App() {
                                                     <p className="mt-1 text-[13px] font-bold text-[#9CA3AF]">{stock.predictionCount}건 찍힘</p>
                                                     <p className="mt-2 text-[13px] font-black text-neon-teal">목표가 보기 →</p>
                                                 </button>
+                                            ))}
+                                        </div>
+                                    ) : communityHomeFeedLoading ? (
+                                        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                                            {[0, 1, 2].map((index) => (
+                                                <div
+                                                    key={index}
+                                                    className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 min-w-[144px] animate-pulse"
+                                                >
+                                                    <div className="space-y-3">
+                                                        <div className="h-3 w-24 rounded-full bg-white/10"></div>
+                                                        <div className="h-4 w-20 rounded-full bg-white/10"></div>
+                                                        <div className="h-3 w-16 rounded-full bg-white/10"></div>
+                                                        <div className="h-3 w-14 rounded-full bg-white/10"></div>
+                                                    </div>
+                                                </div>
                                             ))}
                                         </div>
                                     ) : (
@@ -989,6 +1034,27 @@ function App() {
                                                 </div>
                                             ))}
                                         </div>
+                                    ) : communityHomeFeedLoading ? (
+                                        <div className="grid gap-2.5">
+                                            {[0, 1, 2].map((index) => (
+                                                <div
+                                                    key={index}
+                                                    className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-left animate-pulse space-y-3"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="h-3 w-24 rounded-full bg-white/10"></div>
+                                                        <div className="h-6 w-16 rounded-full bg-white/10"></div>
+                                                    </div>
+                                                    <div className="h-5 w-3/5 rounded-full bg-white/10"></div>
+                                                    <div className="h-3 w-40 rounded-full bg-white/10"></div>
+                                                    <div className="h-4 w-24 rounded-full bg-white/10"></div>
+                                                    <div className="flex gap-2 pt-1">
+                                                        <div className="h-7 w-20 rounded-full bg-white/10"></div>
+                                                        <div className="h-7 w-20 rounded-full bg-white/10"></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     ) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
                                             <p className="text-[#9CA3AF] font-bold">아직 새 예언이 없습니다</p>
@@ -999,10 +1065,10 @@ function App() {
                             )}
 
                             {/* Featured Distribution - Hide when searching */}
-                            {!searchQuery && popularStocks.length > 0 && (
+                            {!isSearchMode && (popularStocks.length > 0 || stocksLoading) && (
                                 <section
                                     className="crystal-glass relative overflow-hidden rounded-[1.75rem] sm:rounded-[2.25rem] p-5 sm:p-7 md:p-8 cursor-pointer group"
-                                    onClick={() => handleStockClick(popularStocks[0])}
+                                    onClick={() => popularStocks[0] && handleStockClick(popularStocks[0])}
                                 >
                                     <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-neon-teal/10 blur-3xl"></div>
                                     <div className="mb-6 sm:mb-8 flex items-end justify-between gap-4">
@@ -1013,39 +1079,67 @@ function App() {
                                         <span className="text-sm font-bold text-neon-teal group-hover:translate-x-1 transition">더 보기 →</span>
                                     </div>
                                     <div className="rounded-[1.5rem] sm:rounded-[1.75rem] glass-soft p-4 sm:p-5 border border-white/5">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <p className="text-sm font-bold text-[#9CA3AF]">{popularStocks[0].name}</p>
-                                                <p className="text-[32px] sm:text-3xl font-black text-[#F3F4F6]">
-                                                    {popularStocks[0].currentPrice > 0 ? popularStocks[0].currentPrice.toLocaleString() : '시세 동기화 중'}
-                                                </p>
-                                                <p className="text-xs font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
-                                                    {popularStocks[0].currentPrice > 0 ? (popularStocks[0].quoteStatusLabel || '최근값') : '갱신중'}
-                                                </p>
-                                                <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-[#FF86C3]' : 'text-[#7BD1FA]'}`}>
-                                                    {popularStocks[0].priceChange >= 0 ? '▲' : '▼'} {Math.abs(popularStocks[0].priceChange).toLocaleString()} ({popularStocks[0].priceChangeRate.toFixed(2)}%)
-                                                </p>
+                                        {popularStocks.length > 0 ? (
+                                            <>
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-[#9CA3AF]">{popularStocks[0].name}</p>
+                                                        <p className="text-[32px] sm:text-3xl font-black text-[#F3F4F6]">
+                                                            {popularStocks[0].currentPrice > 0 ? popularStocks[0].currentPrice.toLocaleString() : '시세 동기화 중'}
+                                                        </p>
+                                                        <p className="text-xs font-bold text-neon-teal/70 uppercase tracking-[0.16em] mt-1">
+                                                            {popularStocks[0].currentPrice > 0 ? (popularStocks[0].quoteStatusLabel || '최근값') : '갱신중'}
+                                                        </p>
+                                                        <p className={`text-sm font-bold mt-1 ${popularStocks[0].priceChange >= 0 ? 'text-[#FF86C3]' : 'text-[#7BD1FA]'}`}>
+                                                            {popularStocks[0].priceChange >= 0 ? '▲' : '▼'} {Math.abs(popularStocks[0].priceChange).toLocaleString()} ({popularStocks[0].priceChangeRate.toFixed(2)}%)
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[13px] font-black text-[#FF86C3] uppercase tracking-widest">기록 수</p>
+                                                        <p className="text-xl font-black text-[#F3F4F6]">{popularStocks[0].predictionCount.toLocaleString()}건</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-center text-xs font-bold text-[#9CA3AF]">
+                                                        <span>관심 흐름</span>
+                                                        <span>많이 보는 편</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                        <div className="h-full w-full bg-gradient-to-r from-neon-teal to-neon-pink animate-pulse"></div>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="space-y-4 animate-pulse">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="space-y-3">
+                                                        <div className="h-3 w-20 rounded-full bg-white/10"></div>
+                                                        <div className="h-9 w-40 rounded-full bg-white/10"></div>
+                                                        <div className="h-3 w-16 rounded-full bg-white/10"></div>
+                                                        <div className="h-4 w-28 rounded-full bg-white/10"></div>
+                                                    </div>
+                                                    <div className="space-y-3 text-right">
+                                                        <div className="h-3 w-16 rounded-full bg-white/10 ml-auto"></div>
+                                                        <div className="h-6 w-20 rounded-full bg-white/10 ml-auto"></div>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-center text-xs font-bold text-[#9CA3AF]">
+                                                        <span>관심 흐름</span>
+                                                        <span>많이 보는 편</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                        <div className="h-full w-2/3 bg-white/10 rounded-full"></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-[13px] font-black text-[#FF86C3] uppercase tracking-widest">기록 수</p>
-                                                <p className="text-xl font-black text-[#F3F4F6]">{popularStocks[0].predictionCount.toLocaleString()}건</p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center text-xs font-bold text-[#9CA3AF]">
-                                                <span>관심 흐름</span>
-                                                <span>많이 보는 편</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                <div className="h-full w-full bg-gradient-to-r from-neon-teal to-neon-pink animate-pulse"></div>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
                                 </section>
                             )}
 
                             {/* Sacred Posts Section - Hide when searching */}
-                            {!searchQuery && (
+                            {!isSearchMode && (
                                 <section className="space-y-4 sm:space-y-5">
                                     <div className="flex items-end justify-between px-1">
                                         <div>
@@ -1085,7 +1179,31 @@ function App() {
                                                 </p>
                                             </div>
                                         </article>
-                                    )) : (
+                                    )) : sacredHomePostsLoading ? (
+                                        <>
+                                            {[0, 1, 2].map((index) => (
+                                                <article
+                                                    key={index}
+                                                    className="group relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] border border-white/10 bg-white/5 p-4 sm:p-6 crystal-glass animate-pulse"
+                                                >
+                                                    <div className="relative space-y-4">
+                                                        <div className="mb-5 flex items-start justify-between gap-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10"></div>
+                                                                <div className="space-y-2">
+                                                                    <div className="h-3 w-14 rounded-full bg-white/10"></div>
+                                                                    <div className="h-3 w-20 rounded-full bg-white/10"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="h-6 w-16 rounded-full bg-white/10"></div>
+                                                        </div>
+                                                        <div className="h-5 w-52 rounded-full bg-white/10"></div>
+                                                        <div className="h-3 w-40 rounded-full bg-white/10"></div>
+                                                    </div>
+                                                </article>
+                                            ))}
+                                        </>
+                                    ) : (
                                         <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-6 text-center">
                                             <p className="text-[#9CA3AF] font-bold">아직 성지글이 없습니다</p>
                                             <p className="mt-2 text-sm text-[#9CA3AF]">첫 적중 기록이 올라오면 여기에 뜹니다</p>
@@ -1165,7 +1283,7 @@ function App() {
                             <li className="flex justify-center">
                                 <button
                                     onClick={navigateToSearch}
-                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition hover:text-[#F3F4F6] active:scale-95 ${(view === 'home' && searchQuery.trim()) ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
+                                    className={`flex w-full flex-col items-center gap-1 rounded-2xl py-2 transition hover:text-[#F3F4F6] active:scale-95 ${(view === 'home' && isSearchMode) ? 'text-neon-teal' : 'text-[#9CA3AF]'}`}
                                 >
                                     <Search className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="text-xs font-bold tracking-[0.12em]">검색</span>

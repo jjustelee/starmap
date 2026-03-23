@@ -179,7 +179,7 @@ const normalizeDetailRealityData = (stock, reality) => {
  * [백엔드] 상세 페이지가 소비하는 stock/history/predictions/reality/dashboard를 한 경계로 묶습니다.
  * BACKEND_TODO(API): GET /api/v1/stocks/{symbol}/detail 로 대체될 프론트 조합 경계입니다.
  */
-export const fetchStockDetailBundle = async (symbol, prefetchedStock = null) => {
+export const fetchStockDetailBundle = async (symbol, prefetchedStock = null, prefetchedBundle = null) => {
     const stock = prefetchedStock || await fetchStockInfo(symbol);
     if (!stock) {
         return {
@@ -191,7 +191,7 @@ export const fetchStockDetailBundle = async (symbol, prefetchedStock = null) => 
         };
     }
 
-    const bundled = await callStockDetailPublic(stock.symbol);
+    const bundled = prefetchedBundle || await callStockDetailPublic(stock.symbol);
     if (bundled && typeof bundled === 'object') {
         return {
             stock,

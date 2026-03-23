@@ -42,6 +42,7 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
     const [currentPrice, setCurrentPrice] = useState(initialPrice);
     const [snapshot, setSnapshot] = useState(null);
     const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(true);
+    const [hasPrimedSnapshot, setHasPrimedSnapshot] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [showRestoreNotice, setShowRestoreNotice] = useState(false);
@@ -94,6 +95,16 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
     }, [draftStorageKey, symbol, draftTtlMs]);
 
     useEffect(() => {
+        setSnapshot(null);
+        setIsLoadingSnapshot(true);
+        setHasPrimedSnapshot(false);
+        const timer = window.setTimeout(() => {
+            setHasPrimedSnapshot(true);
+        }, 0);
+        return () => window.clearTimeout(timer);
+    }, [symbol]);
+
+    useEffect(() => {
         const price = Math.max(0, Math.round(Number(stockInfo?.currentPrice || basePrice || 0)));
         if (!price) return;
         setCurrentPrice(price);
@@ -109,6 +120,7 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
     }, [stockInfo?.currentPrice, basePrice, symbol, initialDate]);
 
     const reloadSnapshot = useCallback(async () => {
+        if (!hasPrimedSnapshot) return;
         setIsLoadingSnapshot(true);
         const data = await loadPredictionSnapshot(symbol, windowKey, {
             stockId,
@@ -117,11 +129,12 @@ const StockDetailV2 = ({ stock, onBack, onRecord, openComposerSignal = 0, onComp
         });
         setSnapshot(data);
         setIsLoadingSnapshot(false);
-    }, [symbol, windowKey, stockId, currentPrice, userId]);
+    }, [hasPrimedSnapshot, symbol, windowKey, stockId, currentPrice, userId]);
 
     useEffect(() => {
+        if (!hasPrimedSnapshot) return;
         reloadSnapshot();
-    }, [reloadSnapshot]);
+    }, [hasPrimedSnapshot, reloadSnapshot]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

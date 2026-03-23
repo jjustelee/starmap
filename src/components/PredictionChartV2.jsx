@@ -23,6 +23,7 @@ const PredictionChartV2 = ({
 }) => {
     const snapshotWindow = snapshot?.window || selectedWindow;
     const isWindowSyncing = isLoading && snapshotWindow !== selectedWindow;
+    const isInitialLoading = isLoading && !snapshot?.overlay?.dots?.length;
     const dots = useMemo(
         () => buildDots(snapshot?.overlay?.dots || []),
         [snapshot]
@@ -75,7 +76,7 @@ const PredictionChartV2 = ({
                         </p>
                     </div>
 
-                    {isWindowSyncing ? (
+                    {isInitialLoading || isWindowSyncing ? (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[15px] text-[#9CA3AF] font-medium">
                             {WINDOW_LABELS[selectedWindow]} 예언 불러오는 중
                         </div>
@@ -150,7 +151,7 @@ const PredictionChartV2 = ({
                                 </div>
                             </div>
                         </>
-                    ) : isWindowSyncing ? (
+                    ) : (isInitialLoading || isWindowSyncing) ? (
                         <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-4 text-center text-[15px] text-[#9CA3AF] font-medium">
                             {WINDOW_LABELS[selectedWindow]} 예언 불러오는 중
                         </div>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchStockDetailBundle, fetchStockInfo } from '../utils/mockData';
+import { callStockDetailPublic, fetchStockDetailBundle, fetchStockInfo } from '../utils/mockData';
 
 const ChartContext = createContext(null);
 
@@ -11,7 +11,7 @@ export const useChartContext = () => {
     return context;
 };
 
-export const ChartProvider = ({ children, symbol = '005930' }) => {
+export const ChartProvider = ({ children, symbol = '005930', seedStock = null }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isDetailLoading, setIsDetailLoading] = useState(true);
     const [stockInfo, setStockInfo] = useState(null);
@@ -51,14 +51,32 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
 
     useEffect(() => {
         const loadInitialData = async () => {
+            const normalizedSeed = normalizeSeedStock(seedStock, symbol);
             setIsLoading(true);
             setIsDetailLoading(true);
-            setStockInfo(null);
+            setStockInfo(normalizedSeed);
             setHistoryData([]);
             setStarsData([]);
             setRealityData(null);
             setDashboardData(null);
 
+            if (normalizedSeed) {
+                setIsLoading(false);
+
+                const seedPrice = Number(normalizedSeed.currentPrice || 0);
+                const realPrice = Number.isFinite(seedPrice) && seedPrice > 0 ? seedPrice : 0;
+                const iMin = Math.max(0, Math.round(realPrice * 0.75));
+                const iMax = Math.round(realPrice * 1.25);
+
+                const s = stateRef.current;
+                s.currentPriceValue = realPrice;
+                s.currentPriceMin = iMin;
+                s.currentPriceMax = iMax;
+                s.axisPriceMin = iMin;
+                s.axisPriceMax = iMax;
+            }
+
+            const detailBundlePromise = callStockDetailPublic(symbol);
             const stock = await fetchStockInfo(symbol);
             if (!stock) {
                 setIsLoading(false);
@@ -87,7 +105,7 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
                 starsData: stars,
                 realityData: reality,
                 dashboardData: dashboard
-            } = await fetchStockDetailBundle(symbol, stock);
+            } = await fetchStockDetailBundle(symbol, stock, await detailBundlePromise);
 
             setHistoryData(history);
             setStarsData(stars);
@@ -96,7 +114,7 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
             setIsDetailLoading(false);
         };
         loadInitialData();
-    }, [symbol]);
+    }, [seedStock, symbol]);
 
     const value = useMemo(() => ({
         stateRef,
@@ -138,3 +156,13 @@ export const ChartProvider = ({ children, symbol = '005930' }) => {
         </ChartContext.Provider>
     );
 };
+
+function normalizeSeedStock(seedStock, symbol) {
+    if (!seedStock) return null;
+    if (String(seedStock.symbol || '') !== String(symbol || '')) return null;
+    return {
+        ...seedStock,
+        currentPrice: Number(seedStock.currentPrice || seedStock.current_price || 0) || null,
+        quoteStatusLabel: seedStock.quoteStatusLabel || seedStock.quote_status_label || '최근값'
+    };
+}

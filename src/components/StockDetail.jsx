@@ -50,10 +50,11 @@ export const StockDetailContent = (props) => {
 
 export const StockDetail = (props) => {
     const { symbol } = useParams();
-    const effectiveStock = props.stock || { symbol };
+    const matchingStock = props.stock?.symbol === symbol ? props.stock : null;
+    const effectiveStock = matchingStock || { symbol };
 
     return (
-        <ChartProvider symbol={effectiveStock.symbol}>
+        <ChartProvider symbol={effectiveStock.symbol} seedStock={matchingStock}>
             <StockDetailContent {...props} stock={effectiveStock} />
         </ChartProvider>
     );
