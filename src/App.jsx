@@ -674,6 +674,7 @@ function App() {
                                 setSearchQuery('');
                                 setSearchResults([]);
                                 setVisibleCount(20);
+                                setIsSearchMode(false);
                                 navigate('/');
                                 window.scrollTo(0, 0);
                             }}
